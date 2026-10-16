@@ -63,3 +63,33 @@
 - Mihomo v1.19.32：10 份默认输出 + 120 份随机选项（IPv6/TUN/fake-ip/故转/负载均衡/广告/STUN/QUIC/低内存/App 内模式）全部 `-t` 通过。
 - sing-box 1.14.3：`check` 全部通过（含 Karing 输出）。
 - 文本客户端（Surge、Shadowrocket、QX、Loon、Egern、Stash）：没有官方校验器，按官方手册/样例逐项核对语法，并用 lint 检查不含 `undefined/NaN/[object`；**未做真机导入，标为未验证**。
+
+## 6. 时效性核查（检查日期：2026-10-16）
+
+要求：学习/引用的来源最近 1–2 年内仍在维护，不用已废弃的语法。
+
+**仓库最近一次推送（GitHub API）**，均未归档：
+
+| 仓库 | 最近推送 | 仓库 | 最近推送 |
+|---|---|---|---|
+| blackmatrix7/ios_rule_script | 2026-10-15 | MetaCubeX/mihomo | 2026-10-13 |
+| Loyalsoldier/clash-rules | 2026-10-15 | SagerNet/sing-box | 2026-10-13 |
+| MetaCubeX/meta-rules-dat | 2026-10-16 | clash-verge-rev/clash-verge-rev | 2026-10-16 |
+| ACL4SSR/ACL4SSR | 2026-10-07 | chen08209/FlClash | 2026-10-16 |
+| Aethersailor/Custom_OpenClash_Rules | 2026-10-16 | MetaCubeX/ClashMetaForAndroid | 2026-10-13 |
+| SukkaW/Surge | 2026-10-16 | KaringX/clashmi-docu | 2026-09-20 |
+| Johnshall/Shadowrocket-ADBlock-Rules-Forever | 2026-10-15 | Loon0x00/LoonExampleConfig | 2026-09-18 |
+| LOWERTOP/Shadowrocket | 2026-10-15 | ClashConnectRules/Egern | 2026-09-13 |
+| svcvit/sr-rule | 2026-07-13 | crossutility/Quantumult-X | 2026-06-29 |
+| ianzo0/Shadowrocket-Rule | 2026-07-30 | Koolson/Qure（仅图标 URL） | 2026-06-30 |
+| tom-snow/Sidestore-ClashMi | 2026-02-13 | | |
+
+- 已排除：Semporia/Clash-Rules、fmz200/wangzhe666、DivineEngine/Profiles（API 返回 Not Found，视为已失效）。
+- 博客与视频的发布日期没有逐一核实；其中的写法一律与同期官方文档交叉核对后才采用（例如 Surge 选项以 manual.nssurge.com 为准，mihomo 以 wiki.metacubex.one 为准，sing-box 以 sing-box.sagernet.org 为准）。已发现并拒绝一条过时/错误说法（「sing-box 1.14 移除 FakeIP」，见第 2 节）。
+
+**废弃语法检查**：
+
+- Mihomo 输出用 mihomo 1.19.32 校验，无 warn / deprecated 提示；不使用 Clash Premium 独有键（如 `script:` 规则块、`tun.device-url`），Stash 走独立生成路径。
+- sing-box 输出用 1.14.3 校验，无弃用提示；使用新式带类型 DNS server（`type: https/local/fakeip`），嗅探用路由动作 `sniff`（不在入站里写 `sniff`），远程规则集用 `http_client`（不用已废弃的 `download_detour`），不使用 `rule_set_ip_cidr_accept_empty`。
+- Loon 用 `ip-mode`（取代旧的 `ipv6`）；Surge 的 `ipv6-vif` 用 `disabled`（旧值 `off` 仅兼容）；Shadowrocket / QX 选项来自 2026 年仍在更新的社区手册与官方样例。
+- **局限**：Surge、Loon、Shadowrocket、QX、Egern、Stash 没有官方离线校验器，无法自动发现这些客户端的新弃用项；若你发现某项在新版本里被移除，请提 issue。
