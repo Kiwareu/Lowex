@@ -150,6 +150,7 @@ final class Store: ObservableObject {
         }
         if !supports("wifi") { o["wifiCalling"] = false }
         s["opts"] = o
+        if !nodeModeChoice, (s["nodeMode"] as? String) == "app" { s["nodeMode"] = "config" }
         if !reset.isEmpty { notes.append("\(reset.count) 个当前客户端不支持的选项已恢复默认") }
         // 按应用规则：进程名只属于 Windows，包名只属于 Android
         let apps = (s["apps"] as? [[String: Any]]) ?? []
@@ -418,6 +419,14 @@ final class Store: ObservableObject {
         return f.joined(separator: " · ")
     }
 
+    /// 同时支持「写入配置」与「在客户端 App 内自己添加」的客户端（QX、小火箭）
+    var nodeModeChoice: Bool { family == "qx" || family == "shadowrocket" }
+    var appMode: Bool { nodeModeChoice && str("nodeMode") == "app" }
+    func setNodeMode(_ m: String) {
+        Haptics.selection()
+        var s = state; s["nodeMode"] = m; state = s
+        pasteNote = ""; save()
+    }
     var unsupportedOptionNames: [String] {
         let all: [(String, String)] = [("故障转移", "failover"), ("广告拦截", "ads"), ("拦截追踪器", "trackers"), ("拦截遥测", "telemetry"),
             ("策略组图标", "icons"), ("关闭 IPv6", "ipv6"), ("TUN", "tun"), ("fake-ip", "fakeIp"), ("QUIC 拦截", "quic"), ("STUN 防护", "stun"),
@@ -470,7 +479,7 @@ final class Store: ObservableObject {
     var hasNodes: Bool { !nodesText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !subs.isEmpty || manualActiveCount > 0 }
     var stepClientDone: Bool { clientInfo != nil && (clientInfo?.platforms.contains(platform) ?? false) }
     /// 小火箭的节点在 App 内添加，这一步对本 App 视为「无需」，计为完成
-    var stepNodesDone: Bool { family == "shadowrocket" ? true : hasNodes }
+    var stepNodesDone: Bool { (family == "shadowrocket" || appMode) ? true : hasNodes }
     var stepRulesDone: Bool { catalog.groups.contains { isOn($0) } }
     var stepGenerateDone: Bool { !result.text.isEmpty }
     var activeStep: Int { !stepClientDone ? 1 : (!stepNodesDone ? 2 : (!stepRulesDone ? 3 : 4)) }

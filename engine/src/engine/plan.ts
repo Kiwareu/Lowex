@@ -35,7 +35,7 @@ export function setProblem(fam:string,url:string,kind:string):string|null{
 export interface Conflict{level:'info'|'warn';text:string}
 export interface Plan{
   state:State;regions:Region[];services:{g:RuleGroup;p:Policy}[];rules:Rule[];warnings:string[];
-  nodes:Node[];badNodes:number;subs:{name:string;url:string}[];overseas:boolean;
+  nodes:Node[];appMode:boolean;badNodes:number;subs:{name:string;url:string}[];overseas:boolean;
   pname:(p:Policy)=>string;conflicts:Conflict[];
 }
 export const N={proxy:'一键代理',direct:'DIRECT',reject:'REJECT',home:'回国',update:'资源更新',final:'漏网之鱼'};
@@ -63,17 +63,19 @@ export function makePlan(s:State):Plan{
   const parsed0=parseNodes(s.nodesText);const bad=parsed0.bad;
   const reOf=(x:string)=>{try{return x.trim()?new RegExp(x.trim(),'i'):null}catch{return null}};
   const inc=reOf(o.nodeInclude||''),exc=reOf(o.nodeExclude||'');
+  // 「在客户端 App 内自己添加」：只有订阅 / 节点能在 App 里全局生效、配置靠名称正则收纳的客户端（QX、小火箭）支持
+  const appMode=s.nodeMode==='app'&&(client.family==='qx'||client.family==='shadowrocket');
   const parsedOk=parsed0.nodes.filter(n=>(!inc||inc.test(n.name))&&(!exc||!exc.test(n.name)));
   // 手动节点：不受包含 / 排除过滤；客户端写不出的会被剔除并给出原因
   const manualWarn:string[]=[];const taken=new Set(parsedOk.map(n=>n.name));const manualNodes:Node[]=[];
-  for(const m of (s.manualNodes||[])){
+  for(const m of (appMode?[]:(s.manualNodes||[]))){
     if(m.on===false)continue;
     const why=manualIssue(s.client,m);
     if(why){manualWarn.push(`手动节点「${m.name||m.host}」未写入：${why}。`);continue}
     const nn=manualToNode(m);let base=nn.name,i=1;while(taken.has(nn.name)){i++;nn.name=`${base} ${i}`}taken.add(nn.name);manualNodes.push(nn);
   }
-  const nodes=[...parsedOk,...manualNodes];
-  const subs=s.subs.filter(x=>x.url.trim());
+  const nodes=appMode?[]:[...parsedOk,...manualNodes];
+  const subs=appMode?[]:s.subs.filter(x=>x.url.trim());
   const fam=CLIENTS.find(c=>c.id===s.client)?.family;
   const norm=(p:Policy):Policy=>{
     if(p.startsWith('R:')&&!regIds.has(p.slice(2).split('/')[0]))return'PROXY';
@@ -161,9 +163,10 @@ export function makePlan(s:State):Plan{
   push({t:'site',name:'cn',g:CORE.cn,p:cnT},{t:'ip',name:'cn',g:CORE.cn,p:cnT});
   push({t:'final',p:o.unknown==='proxy'?'PROXY':'DIRECT'});
   if(overseas&&!subs.length&&!nodes.length)warnings.push('海外模式需要订阅里有「回国」线路节点；没有的话「回国」组只会指向直连。');
-  if(!subs.length&&!nodes.length&&client.subInConfig)warnings.push('还没有填订阅或节点：配置里使用了占位符 {{SUB_URL_1}}，导入前请替换。');
+  if(appMode)warnings.push('已选「在客户端 App 内自己添加」：配置不含订阅和节点，请在 '+client.name+' 里自行添加；策略组按节点名称里的地区关键词自动收纳。');
+  if(!appMode&&!subs.length&&!nodes.length&&client.subInConfig)warnings.push('还没有填订阅或节点：配置里使用了占位符 {{SUB_URL_1}}，导入前请替换。');
   warnings.push(...manualWarn);
-  if(client.family==='shadowrocket'){
+  if(client.family==='shadowrocket'&&!appMode){
     if(subs.length||parsedOk.length)warnings.push('小火箭：本配置不会写入节点链接或订阅 URL（只会写入手动添加的 SOCKS5/HTTP 节点）。请在 Shadowrocket 首页单独添加节点/订阅；策略组用正则从 App 内节点自动收纳。');
     else warnings.push('小火箭：请先在 App 首页添加节点或订阅，再导入本配置（只含规则与策略组）。');
   }
@@ -171,7 +174,7 @@ export function makePlan(s:State):Plan{
   void customDirect;
   const conflicts=findConflicts(s,rules,services,pname,regions);
   if((o.nodeExclude||o.nodeInclude)&&(subs.length)&&!(client.family==='mihomo'||client.family==='stash'))warnings.push('「节点过滤」对订阅里的节点只在 Mihomo 系 / Stash 生效；这个客户端只过滤了你粘贴的节点。');
-  return{state:s,regions,services,rules,warnings,nodes,badNodes:bad,subs,overseas,pname,conflicts};
+  return{state:s,regions,services,rules,warnings,nodes,appMode,badNodes:bad,subs,overseas,pname,conflicts};
 }
 /** MetaCubeX 规则集 URL */
 export const MC={site:(n:string)=>`https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/${n}.mrs`,ip:(n:string)=>`https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/${n}.mrs`,

@@ -254,13 +254,23 @@ struct NodesView: View {
     private var isSR: Bool { store.family == "shadowrocket" }
     private var isSB: Bool { store.family == "singbox" }
     /// 订阅区：只有能把订阅 URL 写进配置的客户端才显示
-    private var showSubs: Bool { store.embedsSub }
+    private var showSubs: Bool { !store.appMode && store.embedsSub }
     /// 节点链接区：Shadowrocket 的配置文件带不了节点链接
-    private var showLinks: Bool { !isSR }
+    private var showLinks: Bool { !store.appMode && !isSR }
+    private var showManual: Bool { !store.appMode }
     private var hiddenNote: String? {
-        if isSR { return "小火箭：配置无法携带订阅与节点链接，已隐藏这两块；请在小火箭 App 首页添加（右上角 + ）。手动节点会写进 conf 的 [Proxy]。" }
-        if !showSubs { return "\(store.clientInfo?.name ?? "该客户端") 没有订阅字段，已隐藏订阅 URL 区；请把节点链接或 Base64 正文粘贴到下面，生成时展开写入。" }
+        if store.appMode { return nil }
+        if isSR { return "小火箭的 conf 只能携带手动节点（[Proxy]）；订阅与节点链接请在 App 内添加，已隐藏这两块。" }
+        if !store.embedsSub { return "\(store.clientInfo?.name ?? "该客户端") 没有订阅字段，已隐藏订阅 URL 区；节点链接 / Base64 生成时展开写入。" }
         return nil
+    }
+    private var singleModeNote: String? {
+        store.nodeModeChoice ? nil : "该客户端只能把订阅 / 节点写进配置文件（无「在 App 内添加」模式）。"
+    }
+    private var appGuide: String {
+        store.family == "shadowrocket"
+        ? "在小火箭首页右上角「＋」添加订阅 / 节点（类型 Subscribe 或粘贴链接）。生成的配置只含规则与策略组，分组按节点名里的地区关键词自动收纳。"
+        : "在 Quantumult X「设置 → 节点 → 引用（订阅）」里自行添加。生成的配置不含订阅与节点，策略组用 server-tag-regex 按节点名里的地区关键词收纳。"
     }
     private func target(_ kind: String) -> String {
         switch store.family {
@@ -281,7 +291,19 @@ struct NodesView: View {
                 Text("节点来源，可同时使用").font(.title3.weight(.semibold))
                 Text("当前客户端：\(store.clientInfo?.name ?? "")。填写的内容会在生成时自动写入配置对应位置，导入文件即可用。")
                     .font(.footnote).foregroundStyle(.secondary)
+                if let n = singleModeNote { Text(n).font(.caption2).foregroundStyle(.secondary) }
                 if let n = hiddenNote { Text(n).font(.caption2).foregroundStyle(.secondary) }
+            }
+
+            if store.nodeModeChoice {
+                PlainCard {
+                    Text("节点放在哪里").font(.headline)
+                    Picker("模式", selection: Binding(get: { store.nodeMode }, set: { store.setNodeMode($0) })) {
+                        Text("写入配置文件").tag("config")
+                        Text("在客户端 App 内自己添加").tag("app")
+                    }.pickerStyle(.segmented)
+                    Text(store.appMode ? appGuide : "输入的内容会在生成时直接写进配置文件，导入后即可使用。").font(.caption).foregroundStyle(.secondary)
+                }
             }
 
             // A. 订阅 URL
@@ -342,7 +364,7 @@ struct NodesView: View {
 
             }
             // C. 手动节点
-            manualCard
+            if showManual { manualCard }
 
             PlainCard {
                 Text("地区分组").font(.headline)

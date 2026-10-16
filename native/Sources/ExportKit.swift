@@ -265,7 +265,8 @@ struct GenerateView: View {
                   : (store.stepNodesDone ? "已含节点 / 订阅" : "未粘贴节点（仍可生成）"),
                   systemImage: store.stepNodesDone ? "checkmark.circle" : "info.circle")
             Label(store.stepRulesHint, systemImage: "list.bullet")
-            if !store.manualNodes.isEmpty { Label("手动节点 \(store.manualActiveCount) 个可写入" + (store.manualBlockedCount > 0 ? "，\(store.manualBlockedCount) 个当前客户端写不出" : ""), systemImage: "network") }
+            if store.appMode { Label("节点：在客户端 App 内自己添加（配置不含订阅/节点）", systemImage: "app.badge") }
+            if !store.manualNodes.isEmpty && !store.appMode { Label("手动节点 \(store.manualActiveCount) 个可写入" + (store.manualBlockedCount > 0 ? "，\(store.manualBlockedCount) 个当前客户端写不出" : ""), systemImage: "network") }
             if store.supports("failover"), (store.opts["failover"] as? Bool) ?? true { Label("故障转移（故转）已开", systemImage: "arrow.triangle.branch") }
             if (store.opts["wifiCalling"] as? Bool) == true, store.supports("wifi") { Label("Wi-Fi 通话已开", systemImage: "phone.connection") }
             if !store.blockFlags.isEmpty { Label("拦截：" + store.blockFlags, systemImage: "hand.raised") }

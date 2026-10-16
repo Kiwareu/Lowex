@@ -192,7 +192,7 @@ export function genQX(s:State,plan?:Plan):string{
   for(const x of p.services){const f=c.tgt(x.p);L.push(`static=${x.g.name}, ${c.svcOrder(f).map(lc).join(', ')}`)}
   L.push(`static=${N.final}, ${lc(o.unknown==='proxy'?N.proxy:'DIRECT')}, ${N.proxy}, direct`,'');
   L.push('[server_remote]');
-  if(p.subs.length)p.subs.forEach((x,i)=>L.push(`${x.url}, tag=${nm(x.name)||'订阅'+(i+1)}, update-interval=86400, opt-parser=false, enabled=true`));else if(!p.nodes.length)L.push('{{SUB_URL_1}}, tag=订阅1, update-interval=86400, opt-parser=false, enabled=true');
+  if(p.subs.length)p.subs.forEach((x,i)=>L.push(`${x.url}, tag=${nm(x.name)||'订阅'+(i+1)}, update-interval=86400, opt-parser=false, enabled=true`));else if(!p.nodes.length&&!p.appMode)L.push('{{SUB_URL_1}}, tag=订阅1, update-interval=86400, opt-parser=false, enabled=true');
   L.push('','[filter_remote]');
   const fl:string[]=[];
   for(const it of c.items){
