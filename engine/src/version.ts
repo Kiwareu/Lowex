@@ -1,4 +1,4 @@
-export const VERSION='3.6.0';
+export const VERSION='1.1.0';
 export const CHANGELOG:{v:string;date:string;items:string[]}[]=[
  {v:'3.6.0',date:'2026-10-16',items:['原生版恢复 Windows / iOS / Android 三平台与完整客户端列表；按所选系统只输出该系统有效规则（Android 仅包名、Windows 仅 .exe 进程、iOS 无进程/包名）。','新增规则组：汇丰 HSBC、香港银行/虚拟银行、新加坡银行、跨境商业账户、远程工作平台、券商、数字游民工具。','Wi-Fi 通话规则仅在 iOS / Android 生成。']},
  {v:'3.5.1',date:'2026-10-16',items:['对齐作者 Clash Meta v4：嗅探 force-domain、empty-fallback、国内直连、iOS find-process-mode off、测速间隔 1800。','新增命名规则组 Bunq/SumUp/Maya/Blackcat/Bybit EU/MEXC/Krak/Bitget Wallet/WhatsApp。','一键预设：数字游民、加密货币、通用防泄漏；作者自用规则包入口。','图标仅来自 Qure、Orz-3 等公开图标库。']},

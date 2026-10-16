@@ -175,8 +175,9 @@ final class Store: ObservableObject {
         save()
     }
     var buildNumber: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?" }
-    var versionLabel: String { "v1.0.0 · App \(appVersion) (build \(buildNumber))" }
-    var appVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "3.6.0" }
+    var shortVersion: String { var v = appVersion; while v.hasSuffix(".0") { v.removeLast(2) }; return v }
+    var versionLabel: String { "v\(shortVersion) (build \(buildNumber))" }
+    var appVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1.0" }
 
     /// 当前客户端是否把订阅 URL 写进配置文件
     var embedsSub: Bool { clientInfo?.embedsSubscription ?? false }
@@ -415,6 +416,13 @@ final class Store: ObservableObject {
         if (opts["trackers"] as? Bool) ?? true { f.append("trackers") }
         if (opts["telemetry"] as? Bool) ?? true { f.append("telemetry") }
         return f.joined(separator: " · ")
+    }
+
+    var unsupportedOptionNames: [String] {
+        let all: [(String, String)] = [("故障转移", "failover"), ("广告拦截", "ads"), ("拦截追踪器", "trackers"), ("拦截遥测", "telemetry"),
+            ("策略组图标", "icons"), ("关闭 IPv6", "ipv6"), ("TUN", "tun"), ("fake-ip", "fakeIp"), ("QUIC 拦截", "quic"), ("STUN 防护", "stun"),
+            ("局域网连接", "allowLan"), ("Wi-Fi 通话", "wifi")]
+        return all.filter { !supports($0.1) }.map { $0.0 }
     }
 
     // MARK: 手动节点（SOCKS5 / HTTP / HTTPS）

@@ -27,7 +27,7 @@
 > 截图来自早期构建；当时配置名称未跟随客户端自动变化，v1.0.0 已修复。
 
 ## 安装 / Install
-从 [Releases](../../releases) 下载 `Lowex-native.ipa`（**未签名**）。
+从 [Releases](../../releases) 下载最新版 `Lowex-native.ipa`；安装后请核对首页顶部小字的版本与 build 是否与 Release 一致（**未签名**）。
 - **TrollStore**：用 TrollStore 打开 / 分享 IPA 安装（需要受支持的 iOS 版本）。
 - **自行签名**：用你自己的证书 / 侧载工具（AltStore、Sideloadly 等）签名后安装。
 - 系统要求：iOS 18+。作者在 iPhone XS（iOS 18.3.1 + TrollStore）上测试。
@@ -48,7 +48,7 @@ xcodebuild -project LowexNative.xcodeproj -scheme LowexNative -configuration Rel
 或直接运行 GitHub Actions 的 *Build Lowex IPA*（macOS runner，输出未签名 IPA）。
 
 ## 版本 / Versioning
-公开版本从 **v1.0.0** 开始；App 内显示的版本号为 3.6.0（内部版本线），对应关系见 [CHANGELOG.md](CHANGELOG.md)。
+版本号与 GitHub tag 一致：当前 **v1.1.0**（App 首页显示 `v1.1 (build 9)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## FAQ
 - **为什么没有节点 / 订阅？** 本工具不提供任何节点，只整理你自己的。

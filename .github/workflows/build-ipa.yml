@@ -43,10 +43,11 @@ jobs:
         with:
           name: LowexNative-ipa
           path: native/LowexNative.ipa
-      - name: Attach IPA to release (tags only)
+      - name: Attach IPA to release (tag builds only)
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp LowexNative.ipa Lowex-native.ipa
+          gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1 || gh release create "${GITHUB_REF_NAME}" --title "Lowex ${GITHUB_REF_NAME}" --notes "Unsigned IPA (TrollStore / self-sign). See CHANGELOG.md and DISCLAIMER.md."
           gh release upload "${GITHUB_REF_NAME}" Lowex-native.ipa --clobber

@@ -1,7 +1,14 @@
 # Changelog
 
+## v1.1.0 (build 9)
+版本规则：此前的内部 3.6 版本线（build 5–8）统一记为 **v1.0.x**；本次为 **v1.1**，App 内显示 `v1.1 (build 9)`。
+- 节点页按客户端能力显示三块并从上到下排列：① 订阅链接 URL（一行一个，可逐条删除）② 节点链接 / Base64 ③ 手动添加节点（SOCKS5 / HTTP / HTTPS）。客户端写不出的区块直接隐藏，只留一行小字说明（小火箭隐藏订阅与链接；sing-box / Karing 隐藏订阅区）。填写内容在生成时自动写入配置对应位置。
+- 首页：当前客户端不支持的选项合并成一行小字提示，不再逐个占位。
+- 版本号改为 1.1.0；发布流程只在 tag 构建里上传 Release 附件，避免旧构建覆盖。
+
+
 ## v1.0.0 — 首次公开发布 / First public release
-对应 App 内部版本 **3.6.0**（此前为私有迭代，3.x 为内部版本线；公开版本号从 v1.0.0 开始，后续 App 版本与 tag 对齐）。
+对应旧内部版本 3.6.0（build 5–8），现统一记为 v1.0.x。
 
 - Windows / iOS / Android 三平台配置生成，14 个客户端，按平台严格隔离规则（PROCESS-NAME `.exe` 仅 Windows，包名仅 Android，iOS 无）。
 - 75 个服务分组，新增：汇丰 HSBC、香港银行 / 虚拟银行、新加坡银行、跨境商业账户、远程工作平台、券商、数字游民工具。
@@ -16,4 +23,4 @@
 
 **build 8**：节点页拆为「订阅 URL / 节点链接与 Base64 / 手动节点」三块并按客户端说明行为；新增手动 SOCKS5 / HTTP / HTTPS 节点（可编辑 / 删除 / 开关，密码存钥匙串；Clash、sing-box、Surge、Shadowrocket、Loon、QX、Egern、Stash 各按官方写法输出，写不出的给出原因）；键盘「完成」按钮、点空白收起、滚动收起、Return 收起；全局触感反馈及设置开关。
 
-内部版本映射 / Internal mapping: 3.5.x（Apple-only 预览）→ 3.6.0（多平台）= public v1.0.0。
+内部版本映射 / Internal mapping: 3.5.x（Apple-only 预览）→ 3.6.0（多平台）= v1.0.x；v1.1.0 起 App 版本与 tag 一致。

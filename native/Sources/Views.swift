@@ -133,6 +133,10 @@ struct HomeView: View {
                 }
             }
 
+            if !store.unsupportedOptionNames.isEmpty {
+                Text("当前客户端不支持（已隐藏）：" + store.unsupportedOptionNames.joined(separator: "、"))
+                    .font(.caption2).foregroundStyle(.secondary).padding(.horizontal, 4)
+            }
             PlainCard {
                 Button(role: .destructive) { store.restoreDefaults() } label: {
                     Label("恢复默认选项", systemImage: "arrow.counterclockwise")
@@ -249,19 +253,40 @@ struct NodesView: View {
 
     private var isSR: Bool { store.family == "shadowrocket" }
     private var isSB: Bool { store.family == "singbox" }
+    /// 订阅区：只有能把订阅 URL 写进配置的客户端才显示
+    private var showSubs: Bool { store.embedsSub }
+    /// 节点链接区：Shadowrocket 的配置文件带不了节点链接
+    private var showLinks: Bool { !isSR }
+    private var hiddenNote: String? {
+        if isSR { return "小火箭：配置无法携带订阅与节点链接，已隐藏这两块；请在小火箭 App 首页添加（右上角 + ）。手动节点会写进 conf 的 [Proxy]。" }
+        if !showSubs { return "\(store.clientInfo?.name ?? "该客户端") 没有订阅字段，已隐藏订阅 URL 区；请把节点链接或 Base64 正文粘贴到下面，生成时展开写入。" }
+        return nil
+    }
+    private func target(_ kind: String) -> String {
+        switch store.family {
+        case "mihomo": return kind == "sub" ? "proxy-providers" : "proxies"
+        case "stash": return kind == "sub" ? "proxy-providers" : "proxies"
+        case "surge": return kind == "sub" ? "[Proxy Group] 的 policy-path" : "[Proxy]"
+        case "qx": return kind == "sub" ? "[server_remote]" : "[server_local]"
+        case "loon": return kind == "sub" ? "[Remote Proxy]" : "[Proxy]"
+        case "egern": return kind == "sub" ? "external 策略组" : "proxies"
+        case "singbox": return "outbounds"
+        default: return "配置文件"
+        }
+    }
 
     var body: some View {
         PageChrome(title: "节点") {
             HeroCard {
-                Text("三种来源，可同时使用").font(.title3.weight(.semibold))
-                Text("① 订阅 URL　② 节点链接 / Base64　③ 手动添加 SOCKS5 / HTTP(S)。当前客户端：\(store.clientInfo?.name ?? "")")
+                Text("节点来源，可同时使用").font(.title3.weight(.semibold))
+                Text("当前客户端：\(store.clientInfo?.name ?? "")。填写的内容会在生成时自动写入配置对应位置，导入文件即可用。")
                     .font(.footnote).foregroundStyle(.secondary)
-                Text(store.nodeModeHint).font(.caption).foregroundStyle(.secondary)
+                if let n = hiddenNote { Text(n).font(.caption2).foregroundStyle(.secondary) }
             }
 
             // A. 订阅 URL
-            PlainCard {
-                Label("订阅 URL", systemImage: "link").font(.headline)
+            if showSubs { PlainCard {
+                Label("① 订阅链接 URL", systemImage: "link").font(.headline)
                 Text(subHelper).font(.caption).foregroundStyle(.secondary)
                 inputBox($subDraft, placeholder: "https://example.com/sub?token=…\n可一行一个，多个订阅")
                 HStack {
@@ -288,9 +313,10 @@ struct NodesView: View {
                 }
             }
 
+            }
             // B. 节点链接
-            PlainCard {
-                Label("节点链接 / Base64 订阅正文", systemImage: "text.alignleft").font(.headline)
+            if showLinks { PlainCard {
+                Label(showSubs ? "② 节点链接 / Base64" : "① 节点链接 / Base64", systemImage: "text.alignleft").font(.headline)
                 Text(linkHelper).font(.caption).foregroundStyle(.secondary)
                 inputBox($linkDraft, placeholder: "ss://… vmess://… vless://… trojan://… hysteria2://… tuic://…\n每行一条，或整段 Base64")
                 HStack {
@@ -314,6 +340,7 @@ struct NodesView: View {
                 if !store.pasteNote.isEmpty { Text(store.pasteNote).font(.footnote).foregroundStyle(Brand.pink) }
             }
 
+            }
             // C. 手动节点
             manualCard
 
@@ -338,33 +365,24 @@ struct NodesView: View {
     }
 
     private var subHelper: String {
-        switch store.family {
-        case "shadowrocket": return "小火箭的订阅保存在 App 首页，conf 不能携带。这里的按钮只把 URL 复制到剪贴板，方便去 App 里添加（右上角 + → 类型 Subscribe）。"
-        case "singbox": return "sing-box / Karing 没有订阅字段：订阅 URL 不会写进 JSON，会被忽略。请先在别处下载订阅，把节点链接或 Base64 正文粘贴到下面的「节点链接」区。"
-        default: return "\(store.clientInfo?.name ?? "该客户端")：订阅 URL 会写进配置（\(store.family == "stash" || store.family == "mihomo" ? "proxy-providers" : "订阅/外部策略组")），由客户端自行更新。"
-        }
+        "一行一个 URL，点「添加订阅」→ 下方列表可逐条删除。生成时写入 \(target("sub"))，由客户端自行更新节点。"
     }
     private var linkHelper: String {
-        switch store.family {
-        case "shadowrocket": return "小火箭节点在 App 里添加，conf 不含这些节点。这里只是复制到剪贴板（App 首页 → + 会识别剪贴板里的链接）。"
-        case "singbox": return "会解析成 outbounds 展开进 JSON。支持 ss / vmess / vless / trojan / hysteria2 / tuic / anytls，也支持整段 Base64。"
-        default: return "支持 ss / vmess / vless / trojan / hysteria2 / tuic / anytls 链接及整段 Base64 订阅正文；该客户端不支持的协议会被跳过并提示。"
-        }
+        "支持 ss / vmess / vless / trojan / hysteria2 / tuic / anytls 链接（每行一条）或整段 Base64 订阅正文。点「写入方案」→ 生成时写入 \(target("link"))；客户端不支持的协议会跳过并提示。"
     }
 
     @ViewBuilder private var manualCard: some View {
         PlainCard {
             HStack {
-                Label("手动节点（SOCKS5 / HTTP / HTTPS）", systemImage: "network").font(.headline)
+                Label((showSubs ? "③ " : (showLinks ? "② " : "① ")) + "手动添加节点（SOCKS5 / HTTP / HTTPS）", systemImage: "network").font(.headline)
                 Spacer()
             }
-            Text("适合家宽 / 住宅代理套餐：填主机、端口、账号密码即可。密码保存在本机钥匙串，不写进日志，也不会上传。")
+            Text("适合家宽 / 住宅代理套餐：点「添加节点」填名称、类型、主机、端口、账号密码，保存后生成时写入 \(isSR ? "[Proxy]" : target("link"))。名称里的地区词决定归入哪个地区；密码存本机钥匙串，不上传。")
                 .font(.caption).foregroundStyle(.secondary)
             if let c = store.manualCaps {
                 Text("当前客户端支持：SOCKS5 \(c.socks5 ? "✓" : "✗") · SOCKS5-TLS \(c.socks5tls ? "✓" : "✗") · HTTP \(c.http ? "✓" : "✗") · HTTPS \(c.https ? "✓" : "✗")")
                     .font(.caption2).foregroundStyle(Brand.pink)
             }
-            if isSR { Text("小火箭：手动节点会写在 conf 的 [Proxy] 区（社区手册格式），不需要在 App 里再加。").font(.caption2).foregroundStyle(.secondary) }
             ForEach(Array(store.manualNodes.enumerated()), id: \.offset) { _, m in
                 let id = m["id"] as? String ?? ""
                 let on = (m["on"] as? Bool) ?? true
