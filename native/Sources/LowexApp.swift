@@ -29,7 +29,7 @@ struct RootContainer: View {
             RootView().id(appearance.revision)
             ConfettiView(trigger: store.celebrate)
             if store.showSplash {
-                SplashView().transition(.opacity).zIndex(5)
+                SplashView().allowsHitTesting(false).transition(.opacity).zIndex(5)
             }
         }
         .preferredColorScheme(appearance.scheme)

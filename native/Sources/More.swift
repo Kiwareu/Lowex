@@ -514,7 +514,7 @@ struct AboutView: View {
             }
             PlainCard {
                 Text("版本").font(.headline)
-                Text("App \(store.appVersion) · 引擎 \(store.engine.version)")
+                Text("\(store.versionLabel) · 引擎 \(store.engine.version)")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }

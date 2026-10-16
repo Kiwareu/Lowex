@@ -32,6 +32,7 @@ struct PinkBackground: View {
             }
         }
         .ignoresSafeArea()
+        .allowsHitTesting(false)
     }
     @ViewBuilder private var blobs: some View {
         let speed = Appearance.shared.gradientSpeed

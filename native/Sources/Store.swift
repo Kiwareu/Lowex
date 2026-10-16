@@ -46,6 +46,17 @@ final class Store: ObservableObject {
             }
             // 旧版本把自动生成的名字也存了下来：没有「手动改过」标记就丢弃，改回跟随客户端
             if (merged["profileNameCustom"] as? Bool) != true { merged["profileName"] = "" }
+            // 任何形如「Lowex-<某客户端名>」的旧名字都是自动生成的，一律丢弃
+            if let pn = merged["profileName"] as? String, !pn.isEmpty {
+                let autos = Set(cat.clients.flatMap { c -> [String] in
+                    var short = c.name
+                    for (l, r) in [("(", ")"), ("（", "）")] {
+                        while let a = short.range(of: l), let b = short.range(of: r, range: a.upperBound..<short.endIndex) { short.removeSubrange(a.lowerBound..<b.upperBound) }
+                    }
+                    return ["Lowex-" + c.name, "Lowex-" + short, "Lowex-" + short.replacingOccurrences(of: " ", with: ""), "Lowex-" + c.id]
+                })
+                if autos.contains(pn) || pn.hasPrefix("Lowex-Shadowrocket") { merged["profileName"] = ""; merged["profileNameCustom"] = false }
+            }
             // 缺失的选项补默认值（旧版本升级）
             let base = Engine.shared.initialState(client: merged["client"] as? String ?? "shadowrocket", platform: pf)
             var o = (base["opts"] as? [String: Any]) ?? [:]
@@ -154,6 +165,8 @@ final class Store: ObservableObject {
         }
         save()
     }
+    var buildNumber: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?" }
+    var versionLabel: String { "v1.0.0 · App \(appVersion) (build \(buildNumber))" }
     var appVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "3.6.0" }
 
     /// 当前客户端是否把订阅 URL 写进配置文件

@@ -15,6 +15,7 @@ struct HomeView: View {
 
     var body: some View {
         PageChrome(showBrand: true) {
+            Text(store.versionLabel).font(.caption2.monospaced()).foregroundStyle(.secondary)
             HeroCard {
                 Text("代理配置生成器")
                     .font(.title3.weight(.semibold))
@@ -34,16 +35,8 @@ struct HomeView: View {
                 Text("① 选择系统与客户端").font(.headline)
                 Text("先选目标设备系统，再选客户端。生成的规则只含该系统有效的内容，不会混入其他平台。")
                     .font(.caption).foregroundStyle(.secondary)
-                Picker("系统", selection: Binding(get: { store.platform }, set: { store.setPlatform($0) })) {
-                    Text("Windows").tag("windows")
-                    Text("iOS").tag("ios")
-                    Text("Android").tag("android")
-                }
-                .pickerStyle(.segmented)
-                Picker("客户端", selection: Binding(get: { store.str("client") }, set: { store.setClient($0); store.pasteNote = "" })) {
-                    ForEach(store.clientsForPlatform) { Text($0.name).tag($0.id) }
-                }
-                .pickerStyle(.menu)
+                PlatformSelector()
+                ClientGrid()
                 if let c = store.clientInfo {
                     if let b = c.blurb { Text(b).font(.caption).foregroundStyle(.secondary) }
                     if let h = c.importHint {
@@ -467,26 +460,88 @@ struct ProfileNameField: View {
     @FocusState private var focused: Bool
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            TextField("配置名称", text: $text)
+            HStack(spacing: 6) {
+                Text(store.profileNameIsCustom ? "自定义" : "自动")
+                    .font(.caption2.weight(.bold)).foregroundStyle(.white)
+                    .padding(.horizontal, 7).padding(.vertical, 2)
+                    .background(store.profileNameIsCustom ? Color.orange : Brand.pink, in: Capsule())
+                Text(store.profileNameIsCustom ? "手动名称，不随客户端变化" : "随所选客户端自动变化").font(.caption2).foregroundStyle(.secondary)
+            }
+            // 未聚焦时永远直接显示 store 里的当前名字，避免本地缓存过期
+            TextField("配置名称", text: Binding(get: { focused ? text : store.profileName }, set: { text = $0 }))
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .focused($focused)
                 .submitLabel(.done)
-                .onSubmit { commit() }
-                .onChange(of: focused) { _, f in if !f { commit() } }
-                .onAppear { text = store.profileName }
-                .onChange(of: store.autoProfileName) { _, n in if !store.profileNameIsCustom { text = n } }
+                .onSubmit { focused = false }
+                .onChange(of: focused) { _, f in
+                    if f { text = store.profileName } else { store.profileName = text }
+                }
             if store.profileNameIsCustom {
-                Button("恢复自动名称（\(store.autoProfileName)）") { store.profileName = ""; text = store.profileName }
+                Button("恢复自动名称（\(store.autoProfileName)）") { focused = false; store.profileName = "" }
                     .font(.caption).buttonStyle(.plain).foregroundStyle(Brand.pink)
-            } else {
-                Text("名称会随所选客户端自动变化；手动修改后保持不变。").font(.caption2).foregroundStyle(.secondary)
             }
         }
     }
-    private func commit() {
-        let v = text.trimmingCharacters(in: .whitespaces)
-        store.profileName = v
-        text = store.profileName
+}
+
+/// 系统选择：三个大按钮（不用系统分段控件，点击反馈明确）
+struct PlatformSelector: View {
+    @EnvironmentObject var store: Store
+    private let items: [(String, String, String)] = [("windows", "Windows", "pc"), ("ios", "iOS", "iphone"), ("android", "Android", "smartphone")]
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(items, id: \.0) { it in
+                let on = store.platform == it.0
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) { store.setPlatform(it.0) }
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: it.2 == "pc" ? "desktopcomputer" : (it.2 == "iphone" ? "iphone" : "candybarphone"))
+                            .font(.title3)
+                        Text(it.1).font(.footnote.weight(.semibold))
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 56)
+                    .foregroundStyle(on ? Color.white : Brand.ink)
+                    .background(on ? Brand.pink : Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .buttonStyle(PressableStyle())
+            }
+        }
+        .sensoryFeedback(.selection, trigger: store.platform)
     }
+}
+
+/// 客户端选择：当前系统可用的客户端全部平铺显示，点哪个就选哪个
+struct ClientGrid: View {
+    @EnvironmentObject var store: Store
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("当前选择：\(platformLabel) · \(store.clientInfo?.name ?? "—")")
+                .font(.caption.weight(.semibold)).foregroundStyle(Brand.pink)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 8)], spacing: 8) {
+                ForEach(store.clientsForPlatform) { c in
+                    let on = store.client == c.id
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) { store.setClient(c.id) }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: on ? "checkmark.circle.fill" : "circle").font(.footnote)
+                            Text(c.name).font(.footnote.weight(.semibold)).lineLimit(2).multilineTextAlignment(.leading)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 10).padding(.vertical, 10)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .foregroundStyle(on ? Color.white : Brand.ink)
+                        .background(on ? Brand.pink : Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(PressableStyle())
+                }
+            }
+        }
+        .sensoryFeedback(.selection, trigger: store.client)
+    }
+    private var platformLabel: String { store.platform == "windows" ? "Windows" : (store.platform == "android" ? "Android" : "iOS") }
 }
