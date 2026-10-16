@@ -7,6 +7,7 @@ import {GROUPS,REGIONS,CATS} from '../src/data/groups';
 import {ICONS} from '../src/data/icons';
 import {APPDB} from '../src/data/appdb';
 import {SHARED} from '../src/data/shared';
+import {RESEARCH} from '../src/data/research';
 import {VERSION} from '../src/version';
 import {has,CAPS} from '../src/data/caps';
 import {makePlan} from '../src/engine/plan';
@@ -22,7 +23,7 @@ const J=(x:unknown)=>JSON.stringify(x);
   initial:(client:string,platform:string)=>J({client,platform,location:'cn',network:'other',subs:[],nodesText:'',regions:['HK','TW','JP','SG','US'],groups:{},apps:[],customDomains:[],opts:defaultOpts()}),
   manualMatrix:()=>J(manualMatrix()),
   manualIssue:(client:string,json:string)=>{try{return J({issue:manualIssue(client,JSON.parse(json))})}catch(e:any){return J({issue:String(e)})}},
-  catalog:()=>J({clients:CLIENTS.map(c=>({id:c.id,name:c.name,family:c.family,platforms:c.platforms,blurb:c.blurb,ext:c.ext,subInConfig:c.subInConfig,processRules:c.processRules,importHint:c.importHint,caps:(Object.keys(CAPS) as any[]).filter(f=>has(c.id,f))})),platforms:PLATFORMS,capList:Object.entries(CAPS).map(([k,v])=>({id:k,label:(v as any).label})),
+  catalog:()=>J({clients:CLIENTS.map(c=>({id:c.id,name:c.name,family:c.family,platforms:c.platforms,blurb:c.blurb,ext:c.ext,subInConfig:c.subInConfig,processRules:c.processRules,importHint:c.importHint,placement:RESEARCH[c.id]?.placement||'config',howConfig:RESEARCH[c.id]?.howConfig||'',howApp:RESEARCH[c.id]?.howApp||'',inApp:RESEARCH[c.id]?.inApp||[],conf:RESEARCH[c.id]?.conf||'low',verified:RESEARCH[c.id]?.verified||false,caps:(Object.keys(CAPS) as any[]).filter(f=>has(c.id,f))})),platforms:PLATFORMS,capList:Object.entries(CAPS).map(([k,v])=>({id:k,label:(v as any).label})),
     groups:GROUPS.map(g=>({id:g.id,name:g.name,cat:g.cat,def:g.def,defOn:g.defOn,risk:g.risk,notes:g.notes,icon:ICONS['g:'+g.id]||null})),
     regions:REGIONS.map(r=>({id:r.id,name:r.name,icon:ICONS['r:'+r.id]||null})),cats:CATS,
     apps:APPDB.map(a=>({n:a.n,en:a.en||null,pkg:a.pkg||null,exe:a.exe||null,bid:a.bid||null,dom:a.dom||[],g:a.g||null})),

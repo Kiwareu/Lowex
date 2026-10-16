@@ -188,7 +188,7 @@ struct GenerateView: View {
     private var importCard: some View {
         PlainCard {
             Text("导入到客户端").font(.headline)
-            if let hint = store.clientInfo?.importHint ?? ClientOpen.hint(for: store.client) {
+            if let hint = store.importHow ?? ClientOpen.hint(for: store.client) {
                 Text(hint).font(.caption2).foregroundStyle(.secondary)
             }
             if let sc = ClientOpen.scheme(for: store.client) {

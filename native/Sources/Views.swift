@@ -39,12 +39,10 @@ struct HomeView: View {
                 ClientGrid()
                 if let c = store.clientInfo {
                     if let b = c.blurb { Text(b).font(.caption).foregroundStyle(.secondary) }
-                    if let h = c.importHint {
+                    if let h = store.importHow {
                         Text(h).font(.caption2).foregroundStyle(Brand.pink.opacity(0.9)).padding(.top, 2)
                     }
-                    Text(c.embedsSubscription
-                         ? "订阅模式：可将订阅 URL 写入配置文件"
-                         : "订阅模式：节点/订阅需在客户端内添加或展开进文件，URL 不直接进配置")
+                    Text((c.placement == "both" ? "订阅 / 节点：可写进配置，也可在客户端 App 内自己添加（在「节点」页选择）" : (c.embedsSubscription ? "订阅 / 节点：写进配置文件" : "订阅 / 节点：展开成节点写进配置（无订阅字段）")) + " · 资料可信度：" + c.confLabel)
                         .font(.caption2).foregroundStyle(.secondary)
                     Text("按应用分流：" + platformRuleText).font(.caption2).foregroundStyle(.secondary)
                 }
@@ -265,13 +263,9 @@ struct NodesView: View {
         return nil
     }
     private var singleModeNote: String? {
-        store.nodeModeChoice ? nil : "该客户端只能把订阅 / 节点写进配置文件（无「在 App 内添加」模式）。"
+        store.nodeModeChoice ? nil : "该客户端的订阅 / 节点只能写进配置文件（资料可信度：\(store.clientInfo?.confLabel ?? "低")）。"
     }
-    private var appGuide: String {
-        store.family == "shadowrocket"
-        ? "在小火箭首页右上角「＋」添加订阅 / 节点（类型 Subscribe 或粘贴链接）。生成的配置只含规则与策略组，分组按节点名里的地区关键词自动收纳。"
-        : "在 Quantumult X「设置 → 节点 → 引用（订阅）」里自行添加。生成的配置不含订阅与节点，策略组用 server-tag-regex 按节点名里的地区关键词收纳。"
-    }
+    private var appGuide: String { store.clientInfo?.howApp ?? "" }
     private func target(_ kind: String) -> String {
         switch store.family {
         case "mihomo": return kind == "sub" ? "proxy-providers" : "proxies"
@@ -302,7 +296,7 @@ struct NodesView: View {
                         Text("写入配置文件").tag("config")
                         Text("在客户端 App 内自己添加").tag("app")
                     }.pickerStyle(.segmented)
-                    Text(store.appMode ? appGuide : "输入的内容会在生成时直接写进配置文件，导入后即可使用。").font(.caption).foregroundStyle(.secondary)
+                    Text(store.appMode ? appGuide : "输入的内容会在生成时直接写进配置文件，导入后即可使用。\(store.family == "shadowrocket" ? "（小火箭 conf 只能带手动节点，订阅请选「在客户端 App 内自己添加」。）" : "")").font(.caption).foregroundStyle(.secondary)
                 }
             }
 

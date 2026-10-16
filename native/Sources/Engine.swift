@@ -95,6 +95,8 @@ struct Catalog: Decodable {
         let id: String; let name: String; let family: String; let platforms: [String]
         let blurb: String?; let ext: String?
         let subInConfig: Bool?; let importHint: String?; let processRules: Bool?; let caps: [String]?
+        let placement: String?; let howConfig: String?; let howApp: String?; let inApp: [String]?; let conf: String?; let verified: Bool?
+        var confLabel: String { conf == "high" ? "高" : (conf == "medium" ? "中" : "低") }
         var fileExt: String { ext ?? "conf" }
         var embedsSubscription: Bool { subInConfig ?? false }
     }

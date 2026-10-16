@@ -33,6 +33,7 @@ struct MoreView: View {
                             navCard("模块与脚本", icon: "puzzlepiece.extension", dest: ModulesView())
                         }
                         navCard("作者自用规则分享", icon: "person.crop.circle.badge.checkmark", dest: SharedView())
+                        navCard("备份与恢复 Lowex 设置", icon: "externaldrive.badge.icloud", dest: BackupView())
                         navCard("免责声明", icon: "exclamationmark.shield.fill", dest: DisclaimerView())
                         navCard("关于 Lowex", icon: "info.circle", dest: AboutView())
                     }

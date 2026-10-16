@@ -1,0 +1,513 @@
+{
+ "schema": 1,
+ "generated": "2026-10-16",
+ "note": "conf: high/medium/low；verified: 关键结论是否有官方/一手来源；unverified 列出明确没核实的点",
+ "clients": [
+  {
+   "id": "verge",
+   "name": "Clash Verge Rev",
+   "family": "mihomo",
+   "platforms": [
+    "windows",
+    "macos",
+    "linux"
+   ],
+   "placement": "both",
+   "inApp": [
+    "订阅页：粘贴 URL 导入（可设更新间隔）",
+    "本地文件导入",
+    "URL Scheme：clash://install-config?url=<编码后的订阅地址>"
+   ],
+   "embed": "proxy-providers（type: http）或 proxies",
+   "importCfg": [
+    "订阅 → 新建 → 本地文件",
+    "URL",
+    "URL Scheme"
+   ],
+   "backup": [
+    "WebDAV 备份 / 本地备份（二手资料，未逐项核对）"
+   ],
+   "overlay": "扩展配置：Merge（YAML 合并，支持 prepend-/append-/delete- 前缀）与 Script（JS main(config)）；全局扩展 + 订阅专属扩展，先全局后订阅",
+   "howConfig": "订阅 → 新建 → 选「Local」→ 导入生成的 .yaml，启用该配置。",
+   "howApp": "先在「订阅」粘贴你自己的订阅 URL；再把生成的 .yaml 内容粘贴到「全局扩展配置 → Merge」（或当作该订阅的 Merge）。这份文件只含策略组和规则，节点由订阅提供（策略组用 include-all 收纳）。",
+   "conf": "medium",
+   "verified": true,
+   "unverified": [
+    "Merge 对 proxy-groups / rules 整体覆盖的具体行为按文档推断，未在设备上实测",
+    "WebDAV 备份细节"
+   ],
+   "sources": [
+    "https://www.clashverge.dev/guide/profile",
+    "https://www.clashverge.dev/guide/url_schemes.html",
+    "https://www.clashverge.dev/guide/extend.html"
+   ]
+  },
+  {
+   "id": "flclash",
+   "name": "FlClash",
+   "family": "mihomo",
+   "platforms": [
+    "windows",
+    "macos",
+    "linux",
+    "android"
+   ],
+   "placement": "both",
+   "inApp": [
+    "配置 → 添加：URL / 本地 YAML 文件 / 二维码（扫描或相册识别）",
+    "Deep link：flclash://install-config?url=<编码后的地址>（兼容 clash://install-config）"
+   ],
+   "embed": "proxy-providers 或 proxies",
+   "importCfg": [
+    "文件",
+    "URL",
+    "二维码",
+    "Deep link"
+   ],
+   "backup": [
+    "WebDAV / 本地文件备份与恢复"
+   ],
+   "overlay": "覆写：标准覆写（界面）与覆写脚本（JS），订阅更新后保留",
+   "howConfig": "「配置」→ 添加 → 选择文件，导入生成的 .yaml 并启用。",
+   "howApp": "先在「配置」里用 URL / 二维码添加你的订阅；再在该订阅的「覆写」里把生成的 .yaml 作为覆写内容（或覆写脚本）。文件只含策略组与规则。",
+   "conf": "medium",
+   "verified": false,
+   "unverified": [
+    "覆写对数组字段是合并还是替换，未实测",
+    "Deep link 以社区文档为准"
+   ],
+   "sources": [
+    "https://flclashguide.com/guides/import-subscription/",
+    "https://flclashapp.org/tutorial/",
+    "https://deepwiki.com/chen08209/FlClash/6.3-profile-management"
+   ]
+  },
+  {
+   "id": "clashmi",
+   "name": "Clash Mi",
+   "family": "mihomo",
+   "platforms": [
+    "ios",
+    "android",
+    "windows",
+    "macos"
+   ],
+   "placement": "both",
+   "inApp": [
+    "我的配置：获取配置 / 添加配置链接 / 从剪贴板导入 / 扫描二维码 / 导入配置文件 / 登录（用户截图 + 官方文档）",
+    "导入时可选覆写方式：内置-覆写 / 内置-不覆写；链接加 overwrite=false 可在添加时关闭 App 默认覆写"
+   ],
+   "embed": "proxy-providers（官方社区常见做法：完整 proxy-providers 配置文件）",
+   "importCfg": [
+    "URL",
+    "剪贴板",
+    "二维码",
+    "本地文件"
+   ],
+   "backup": [
+    "未发现官方备份/同步功能（未核实）"
+   ],
+   "overlay": "三层：订阅配置 ← 自定义覆写配置（可导入 YAML）← Clash Mi 内置覆写（DNS/TUN/端口）。「内置-不覆写」＝完全使用订阅/配置原文，不应用 App 内置的 DNS、TUN、端口覆写；订阅只认 Clash 格式（.yml/.yaml），不认 sing-box/v2ray 订阅",
+   "howConfig": "我的配置 → 导入配置文件（或添加配置链接），选「内置-不覆写」，让 DNS/TUN 以生成文件为准。",
+   "howApp": "先在「我的配置」用「添加配置链接 / 剪贴板 / 扫码」加你的订阅；再把生成的 .yaml 导入为「自定义覆写配置」。若订阅的 DNS/TUN 要保持原样选「内置-不覆写」。",
+   "conf": "high",
+   "verified": true,
+   "unverified": [
+    "自定义覆写对 proxy-groups / rules 是替换还是合并，官方 FAQ 只写了「覆写」，未实测"
+   ],
+   "sources": [
+    "https://clashmi.app/guide/faq",
+    "https://github.com/KaringX/clashmi-docu/blob/main/guide/faq.md",
+    "https://github.com/tom-snow/Sidestore-ClashMi",
+    "用户截图（我的配置页）"
+   ]
+  },
+  {
+   "id": "cmfa",
+   "name": "Clash Meta for Android",
+   "family": "mihomo",
+   "platforms": [
+    "android"
+   ],
+   "placement": "both",
+   "inApp": [
+    "配置 → ＋ → 从 URL 导入（可设更新间隔）/ 本地文件"
+   ],
+   "embed": "proxy-providers 或 proxies",
+   "importCfg": [
+    "URL",
+    "文件"
+   ],
+   "backup": [
+    "无内置云备份（未核实）"
+   ],
+   "overlay": "扩展覆写配置 / Meta Features 的 override（订阅刷新后保留）",
+   "howConfig": "配置 → ＋ → 文件，选生成的 .yaml，并设为当前配置。",
+   "howApp": "先「从 URL 导入」你的订阅；再在 Meta Features 里使用「扩展覆写配置」放入生成内容。",
+   "conf": "medium",
+   "verified": false,
+   "unverified": [
+    "覆写入口名称随版本不同",
+    "数组字段替换/合并未实测"
+   ],
+   "sources": [
+    "https://clashmetaforandroid.com/tutorial/",
+    "https://github.com/MetaCubeX/ClashMetaForAndroid/discussions/517"
+   ]
+  },
+  {
+   "id": "clashparty",
+   "name": "Mihomo Party / Clash Party",
+   "family": "mihomo",
+   "platforms": [
+    "windows",
+    "macos",
+    "linux"
+   ],
+   "placement": "both",
+   "inApp": [
+    "订阅：URL / 本地文件（以官方仓库说明为准）"
+   ],
+   "embed": "proxy-providers 或 proxies",
+   "importCfg": [
+    "URL",
+    "文件"
+   ],
+   "backup": [
+    "未核实"
+   ],
+   "overlay": "覆写配置（YAML / JS），按订阅启用（以仓库说明为准）",
+   "howConfig": "订阅 → 导入本地文件，选生成的 .yaml。",
+   "howApp": "先添加你自己的订阅；再在「覆写」里导入生成的 .yaml（只含策略组与规则）。",
+   "conf": "low",
+   "verified": false,
+   "unverified": [
+    "本次未取得一手文档；结论来自内核族共性与印象"
+   ],
+   "sources": []
+  },
+  {
+   "id": "mihomo",
+   "name": "Mihomo 内核（命令行/路由器）",
+   "family": "mihomo",
+   "platforms": [
+    "linux",
+    "windows",
+    "macos",
+    "android"
+   ],
+   "placement": "config",
+   "inApp": [],
+   "embed": "proxy-providers 或 proxies（mihomo -f config.yaml）",
+   "importCfg": [
+    "文件"
+   ],
+   "backup": [],
+   "overlay": "无（直接改文件）",
+   "howConfig": "保存为 config.yaml，mihomo -f config.yaml 启动。",
+   "howApp": "",
+   "conf": "high",
+   "verified": true,
+   "unverified": [],
+   "sources": [
+    "https://wiki.metacubex.one/"
+   ]
+  },
+  {
+   "id": "singbox",
+   "name": "sing-box",
+   "family": "singbox",
+   "platforms": [
+    "windows",
+    "macos",
+    "linux",
+    "android",
+    "ios"
+   ],
+   "placement": "config",
+   "inApp": [
+    "SFI / sing-box 官方 App：远程配置 URL（sing-box://import-remote-profile?url=…#名称）",
+    "iCloud（sing-box 文件夹，可自动更新）",
+    "本地 JSON 文件"
+   ],
+   "embed": "没有订阅字段：节点必须展开成 outbounds",
+   "importCfg": [
+    "远程 URL",
+    "iCloud",
+    "本地文件",
+    "URL Scheme"
+   ],
+   "backup": [
+    "iCloud 配置存储"
+   ],
+   "overlay": "无",
+   "howConfig": "Profiles → New → Local/iCloud 或 Remote，导入生成的 .json。",
+   "howApp": "",
+   "conf": "high",
+   "verified": true,
+   "unverified": [
+    "远程配置是「整份配置」，不是节点订阅，所以订阅 URL 无法写进 sing-box 配置"
+   ],
+   "sources": [
+    "https://sing-box.sagernet.org/clients/general/"
+   ]
+  },
+  {
+   "id": "karing",
+   "name": "Karing（sing-box 内核）",
+   "family": "singbox",
+   "platforms": [
+    "ios",
+    "android",
+    "windows",
+    "macos"
+   ],
+   "placement": "config",
+   "inApp": [
+    "添加配置链接（clash/stash/v2ray/sing-box/ss/sub/github 类型）",
+    "从剪贴板导入",
+    "扫描二维码",
+    "导入本地配置文件（不可更新）",
+    "自定义",
+    "URL Scheme：karing://install-config?url=…&name=…"
+   ],
+   "embed": "没有订阅字段：节点展开成 outbounds",
+   "importCfg": [
+    "链接",
+    "剪贴板",
+    "二维码",
+    "文件",
+    "Scheme"
+   ],
+   "backup": [
+    "备份与同步：iCloud（仅 iOS/macOS）/ WebDAV / 局域网同步；导入导出"
+   ],
+   "overlay": "无（有自定义配置入口）",
+   "howConfig": "添加配置 → 导入本地配置文件，选生成的 .json。",
+   "howApp": "",
+   "conf": "high",
+   "verified": true,
+   "unverified": [
+    "当前不提供 Karing「在 App 内添加订阅 + 导入规则覆盖」模式，因为 Karing 的覆盖机制未核实"
+   ],
+   "sources": [
+    "https://karing.app/en/app-manual/add-profiles",
+    "https://karing.pro/en/faq/karing-subscription/"
+   ]
+  },
+  {
+   "id": "surge",
+   "name": "Surge",
+   "family": "surge",
+   "platforms": [
+    "ios",
+    "macos"
+   ],
+   "placement": "config",
+   "inApp": [
+    "策略组 policy-path 引用订阅 / 完整 Profile（写在配置里）",
+    "surge:///install-config?url=… 安装托管配置"
+   ],
+   "embed": "[Proxy Group] policy-path=URL；#!include 引用托管配置",
+   "importCfg": [
+    "URL（托管配置）",
+    "文件",
+    "Scheme"
+   ],
+   "backup": [
+    "iCloud 同步配置（未核实）"
+   ],
+   "overlay": "Detached Profile + #!include ManagedProfile.conf",
+   "howConfig": "配置 → 从 URL 安装或用「文件」打开 .conf。",
+   "howApp": "",
+   "conf": "medium",
+   "verified": true,
+   "unverified": [
+    "App 界面里单独添加节点的入口未核实，所以不提供「App 内添加」模式"
+   ],
+   "sources": [
+    "https://kb.nssurge.com/surge-knowledge-base/guidelines/proxy-provider",
+    "https://manual.nssurge.com/policy-groups/policy-including.html",
+    "https://kb.nssurge.com/surge-knowledge-base/guidelines/detached-profile"
+   ]
+  },
+  {
+   "id": "qx",
+   "name": "Quantumult X",
+   "family": "qx",
+   "platforms": [
+    "ios"
+   ],
+   "placement": "both",
+   "inApp": [
+    "节点页长按「节点」→ 引用（订阅）添加",
+    "URL Scheme：quantumult-x:///add-resource?remote-resource=<JSON>（追加，不覆盖）；update-configuration 会替换全部资源"
+   ],
+   "embed": "[server_remote]（订阅）、[server_local]（节点）",
+   "importCfg": [
+    "URL",
+    "iCloud/Profiles 目录",
+    "Scheme",
+    "剪贴板"
+   ],
+   "backup": [
+    "iCloud 配置"
+   ],
+   "overlay": "策略组 server-tag-regex / resource-tag-regex 可按名称从 App 内全部节点/订阅里筛选",
+   "howConfig": "配置文件 → 下载 / 打开本地文件，再「编辑」确认 [server_remote] 已有订阅。",
+   "howApp": "先在「设置 → 节点 → 引用」添加订阅（长按「节点」也可）；再导入生成的 conf。策略组用 server-tag-regex 按节点名里的地区收纳。",
+   "conf": "high",
+   "verified": true,
+   "unverified": [],
+   "sources": [
+    "https://github.com/crossutility/Quantumult-X/blob/master/url-scheme.md",
+    "https://raw.githubusercontent.com/crossutility/Quantumult-X/master/sample.conf",
+    "https://qx.atlucky.me/shi-yong-fang-fa/pei-zhi-wen-jian-xiang-jie/jie-dian/serverremote-jie-dian-zi-yuan"
+   ]
+  },
+  {
+   "id": "shadowrocket",
+   "name": "Shadowrocket（小火箭）",
+   "family": "shadowrocket",
+   "platforms": [
+    "ios",
+    "macos"
+   ],
+   "placement": "both",
+   "inApp": [
+    "首页 ＋ → 类型 Subscribe → 粘贴 URL（可设备注、正则筛选、自动更新）",
+    "扫码 / 粘贴节点链接 / 手动填写",
+    "配置里的订阅分组：策略组可按订阅收纳"
+   ],
+   "embed": "conf 的 [Proxy] 只能放本地节点（社区手册：仅为兼容其他配置，不是首选）；订阅无法写进 conf",
+   "importCfg": [
+    "配置页 → 远程文件 URL",
+    "iCloud / 本地文件",
+    "Wi-Fi 上传"
+   ],
+   "backup": [
+    "iCloud 自动同步（配置、模块、脚本）"
+   ],
+   "overlay": "策略组 policy-regex-filter 按节点名筛选 App 内全部节点",
+   "howConfig": "配置 → 添加配置 / 导入文件，选生成的 conf 并设为当前配置。订阅仍要在首页 App 内添加。",
+   "howApp": "首页 ＋ 添加订阅或节点；再导入生成的 conf。策略组用 policy-regex-filter 按节点名里的地区收纳。",
+   "conf": "medium",
+   "verified": true,
+   "unverified": [
+    "[Proxy] 内 socks5/http 手动节点语法来自社区手册"
+   ],
+   "sources": [
+    "https://github.com/LOWERTOP/Shadowrocket",
+    "https://shadowrocketx.com/en/guide-subscription.html",
+    "https://shadowrocket6.com/en/import.html"
+   ]
+  },
+  {
+   "id": "loon",
+   "name": "Loon",
+   "family": "loon",
+   "platforms": [
+    "ios"
+   ],
+   "placement": "config",
+   "inApp": [
+    "配置 → 订阅节点 → ＋（写入当前配置的 [Remote Proxy]）",
+    "loon://import?nodelist=<编码URL>（节点订阅）；loon://import?sub=<编码URL>（远端配置）；rules / plugin 等"
+   ],
+   "embed": "[Remote Proxy]；筛选写 [Remote Filter]（NodeSelect / NameKeyword / NameRegex），策略组引用别名",
+   "importCfg": [
+    "URL（sub）",
+    "文件",
+    "Scheme"
+   ],
+   "backup": [
+    "iCloud（未核实）"
+   ],
+   "overlay": "插件（Plugin）",
+   "howConfig": "配置 → 远端配置 / 导入文件，选生成的 conf。",
+   "howApp": "",
+   "conf": "high",
+   "verified": true,
+   "unverified": [
+    "App 内添加的订阅同样写进当前配置，Remote Filter 需要引用别名，所以没有独立的「App 内模式」"
+   ],
+   "sources": [
+    "https://nsloon.bid/document/scheme",
+    "https://github.com/chiupam/tutorial/blob/master/Loon/Plus/Remote_Filter.md",
+    "https://raw.githubusercontent.com/fanmingming/Rules/main/Loon.conf"
+   ]
+  },
+  {
+   "id": "stash",
+   "name": "Stash",
+   "family": "stash",
+   "platforms": [
+    "ios",
+    "macos"
+   ],
+   "placement": "config",
+   "inApp": [
+    "设置 → 配置文件 → 从 URL 下载（订阅本身就是配置）",
+    "AirDrop / iCloud / OneDrive 文件打开",
+    "stash://install-config?url=…",
+    ".stoverride 覆写文件可直接导入"
+   ],
+   "embed": "proxy-providers / proxies",
+   "importCfg": [
+    "URL",
+    "文件",
+    "Scheme"
+   ],
+   "backup": [
+    "iCloud 同步 Providers（release notes）"
+   ],
+   "overlay": ".stoverride：标量覆盖、字典递归合并、数组默认插到原数组前（#!replace 整体替换），可带参数；订阅更新后保留",
+   "howConfig": "设置 → 配置文件 → 导入生成的 .yaml 并选中。",
+   "howApp": "",
+   "conf": "high",
+   "verified": true,
+   "unverified": [
+    "App 内添加订阅 + 覆写叠加规则的组合没有实测，所以不提供第二种模式"
+   ],
+   "sources": [
+    "https://stash.wiki/get-started",
+    "https://stash.wiki/configuration/override",
+    "https://stash.wiki/release-notes/ios"
+   ]
+  },
+  {
+   "id": "egern",
+   "name": "Egern",
+   "family": "egern",
+   "platforms": [
+    "ios",
+    "macos"
+   ],
+   "placement": "config",
+   "inApp": [
+    "工具 → 策略组 → 外部（External）填订阅 URL"
+   ],
+   "embed": "policy_groups 里 type: external + urls",
+   "importCfg": [
+    "URL",
+    "文件",
+    "Surge 配置文件导入"
+   ],
+   "backup": [
+    "未核实"
+   ],
+   "overlay": "模块（Surge 模块格式）",
+   "howConfig": "导入生成的 .yaml 并启用。",
+   "howApp": "",
+   "conf": "medium",
+   "verified": false,
+   "unverified": [
+    "导入入口、备份能力来自第三方教程，未对照官方文档"
+   ],
+   "sources": [
+    "https://github.com/ClashConnectRules/Egern/blob/main/README_zh.md",
+    "https://getegern.org/"
+   ]
+  }
+ ]
+}

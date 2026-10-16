@@ -1,5 +1,6 @@
-export const VERSION='1.1.0';
+export const VERSION='1.2.0';
 export const CHANGELOG:{v:string;date:string;items:string[]}[]=[
+ {v:'1.2.0',date:'2026-10-16',items:['先调研再设计：逐个客户端核对订阅/节点的 App 内添加方式、配置导入方式、备份能力，数据见 docs/clients.research.json 与 docs/CLIENTS.md（含来源与置信度）。','纠正：Clash Mi 可以在 App 内添加订阅（添加配置链接/剪贴板/二维码/文件）；Clash Verge Rev、FlClash、Clash Meta for Android、Clash Party 同样可以。','节点放置选择扩展到所有 Mihomo 系 GUI 客户端：选「在客户端 App 内自己添加」时输出覆写 YAML（策略组 include-all + 规则，不含订阅/节点）。','按客户端和模式显示导入步骤；新增 Lowex 设置备份 / 恢复（本地 JSON，订阅链接不入备份）。']},
  {v:'3.6.0',date:'2026-10-16',items:['原生版恢复 Windows / iOS / Android 三平台与完整客户端列表；按所选系统只输出该系统有效规则（Android 仅包名、Windows 仅 .exe 进程、iOS 无进程/包名）。','新增规则组：汇丰 HSBC、香港银行/虚拟银行、新加坡银行、跨境商业账户、远程工作平台、券商、数字游民工具。','Wi-Fi 通话规则仅在 iOS / Android 生成。']},
  {v:'3.5.1',date:'2026-10-16',items:['对齐作者 Clash Meta v4：嗅探 force-domain、empty-fallback、国内直连、iOS find-process-mode off、测速间隔 1800。','新增命名规则组 Bunq/SumUp/Maya/Blackcat/Bybit EU/MEXC/Krak/Bitget Wallet/WhatsApp。','一键预设：数字游民、加密货币、通用防泄漏；作者自用规则包入口。','图标仅来自 Qure、Orz-3 等公开图标库。']},
  {v:'3.5.0',date:'2026-10-16',items:['原生版仅保留 Apple/iOS 可运行客户端；按客户端能力矩阵隐藏无效选项。','小火箭等「订阅不进配置」的客户端：节点页改为明确提示，不再假装把订阅 URL 写进 conf。','Surge / Loon / 小火箭 / QX / Egern 补齐地区「故转」故障转移组（结构对齐作者自用模板，无私人信息）。','原生：免责声明、图标磁盘缓存 + SF Symbol 回退、配置名称、恢复默认、客户端导入说明。']},

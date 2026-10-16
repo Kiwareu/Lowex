@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.0 (build 11)
+App 内显示 `v1.2 (build 11)`。
+- **先调研再设计**：逐个客户端核对「App 内添加订阅/节点」「配置导入」「备份/同步」「覆写机制」，结果、来源 URL、置信度（high/medium/low）和「未核实」清单写进 [`docs/CLIENTS.md`](docs/CLIENTS.md) 与机器可读的 [`docs/clients.research.json`](docs/clients.research.json)。
+- **纠错**：此前 v1.1 认为 Clash Mi 等客户端不能在 App 内添加订阅——错误。Clash Mi（添加配置链接/剪贴板/扫码/文件）、Clash Verge Rev、FlClash、Clash Meta for Android、Clash Party 都可以。Shadowrocket 的 conf 确实不能携带订阅（只可带本地节点），Surge/Loon/Stash/Egern/sing-box/Karing 的 App 内添加与配置是同一份数据，所以仍只提供「写入配置」。
+- 「节点放在哪里」选择扩展到所有 Mihomo 系 GUI 客户端（Verge Rev、FlClash、Clash Mi、CMFA、Clash Party）：选「在客户端 App 内自己添加」时输出**覆写用 YAML**（不含订阅/节点，策略组用 `include-all` + 地区正则收纳），按各客户端的覆写入口给出导入步骤。
+- 导入步骤按「客户端 × 放置方式」分别显示；首页显示该客户端的资料可信度。
+- 新增「备份与恢复 Lowex 设置」：导出/导入/分享本地 JSON（订阅链接永不写入；手动节点需手动勾选）。
+- 已知未核实：Clash Mi 等「自定义覆写」对 proxy-groups / rules 是替换还是合并，官方文档未写明，未在设备上实测；如覆写后分组异常请改用「写入配置文件」。
+
 ## v1.1.0 (build 10)
 版本规则：此前的内部 3.6 版本线（build 5–8）统一记为 **v1.0.x**；本次为 **v1.1**，App 内显示 `v1.1 (build 10)`。
 - 节点页按客户端能力显示三块并从上到下排列：① 订阅链接 URL（一行一个，可逐条删除）② 节点链接 / Base64 ③ 手动添加节点（SOCKS5 / HTTP / HTTPS）。客户端写不出的区块直接隐藏，只留一行小字说明（小火箭隐藏订阅与链接；sing-box / Karing 隐藏订阅区）。填写内容在生成时自动写入配置对应位置。

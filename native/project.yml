@@ -6,8 +6,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.1.0"
-    CURRENT_PROJECT_VERSION: "10"
+    MARKETING_VERSION: "1.2.0"
+    CURRENT_PROJECT_VERSION: "11"
     CODE_SIGNING_ALLOWED: "NO"
     CODE_SIGNING_REQUIRED: "NO"
     CODE_SIGN_IDENTITY: ""
@@ -30,8 +30,8 @@ targets:
       path: Info.plist
       properties:
         CFBundleDisplayName: Lowex
-        CFBundleShortVersionString: "1.1.0"
-        CFBundleVersion: "10"
+        CFBundleShortVersionString: "1.2.0"
+        CFBundleVersion: "11"
         UILaunchScreen: {}
         UIRequiredDeviceCapabilities: [arm64]
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]

@@ -31,7 +31,7 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   const p=plan||makePlan(s);const o=s.opts;
   const mobile=s.platform==='ios'||s.platform==='android';
   const low=o.lowMemory;
-  const hdr=`# Lowex 生成 · ${stash?'Stash':'Mihomo'} · ${new Date().toISOString().slice(0,10)}\n# 全部在浏览器本地生成，未上传任何内容。订阅链接/密钥属于敏感信息，分享前请删除。\n`;
+  const hdr=`# Lowex 生成 · ${stash?'Stash':'Mihomo'} · ${new Date().toISOString().slice(0,10)}\n${p.appMode?'# 覆写模式：不含订阅/节点；请先在客户端 App 内添加订阅，再把本文件作为覆写/扩展配置导入。\n':''}# 全部在浏览器本地生成，未上传任何内容。订阅链接/密钥属于敏感信息，分享前请删除。\n`;
   const top:Record<string,any>={
     'mixed-port':o.mixedPort,'allow-lan':o.allowLan,'bind-address':o.allowLan?'*':'127.0.0.1',mode:'rule',ipv6:o.ipv6,'log-level':o.logLevel,
     'unified-delay':true,'tcp-concurrent':true,...(stash?{}:{'find-process-mode':s.platform==='ios'?'off':(p.rules.some(r=>r.t==='process')?'always':'strict')}),
@@ -64,7 +64,7 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   // proxies / providers
   const proxies=p.nodes.map(mihomoProxy);
   const providers:Record<string,any>={};
-  const subs=p.subs.length?p.subs:(p.nodes.length?[]:[{name:'',url:'{{SUB_URL_1}}'}]);
+  const subs=p.appMode?[]:(p.subs.length?p.subs:(p.nodes.length?[]:[{name:'',url:'{{SUB_URL_1}}'}]));
   subs.forEach((x,i)=>{providers['sub'+(i+1)]={type:'http',url:x.url,interval:86400,...(o.nodeInclude?.trim()?{filter:o.nodeInclude.trim()}:{}),...(o.nodeExclude?.trim()?{'exclude-filter':o.nodeExclude.trim()}:{}),...(stash?{}:{proxy:N.update,'health-check':{enable:false},
     override:{...(x.name?{'additional-prefix':`[${x.name}] `}:{}),'override-expr':['(select(.type == "vless" or .type == "vmess" or .type == "trojan" or .type == "anytls" or .tls == true) | ."client-fingerprint") |= (. // "chrome")']}})}});
   // groups
@@ -150,7 +150,7 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   let cfg=top;
   const out:Record<string,any>={...cfg};
   if(proxies.length)out.proxies=proxies;
-  out['proxy-providers']=providers;
+  if(Object.keys(providers).length||!p.appMode)out['proxy-providers']=providers;
   if(!stash){out.tun=tun;out.sniffer=sniffer}out.dns=dns;
   if(!stash&&(o.homeDomain&&o.lanGateway))out.hosts={[o.homeDomain]:o.lanGateway};
   if(!stash&&s.platform==='android')out.hosts={...(out.hosts||{}),'services.googleapis.cn':'services.googleapis.com'};

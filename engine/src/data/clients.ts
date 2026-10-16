@@ -11,6 +11,7 @@ export interface Client{
   processRules:boolean;     // 是否支持按进程/包名分流
   status:string;            // 维护状态依据
 }
+
 export const CLIENTS:Client[]=[
  {id:'verge',name:'Clash Verge Rev',family:'mihomo',platforms:['windows','macos','linux'],blurb:'桌面首选 · Mihomo 内核',ext:'yaml',mime:'text/yaml',subInConfig:true,processRules:true,status:'v2.5.8（2026-10-09）仍在更新',importHint:'「订阅」→ 新建 → 本地文件导入；或把文件作为「全局扩展覆写」。系统代理 / TUN 以界面开关为准。',overrides:['端口','TUN','DNS（界面里「DNS 覆写」开启时）']},
  {id:'flclash',name:'FlClash',family:'mihomo',platforms:['windows','macos','linux','android'],blurb:'Win / Android · Mihomo 内核',ext:'yaml',mime:'text/yaml',subInConfig:true,processRules:true,status:'v0.9.0（2026-10-14）仍在更新',importHint:'「配置」→ 添加 → 文件导入。FlClash 会覆盖端口 / IPv6 / TUN / 分应用，请在界面里同步。',overrides:['端口','IPv6','TUN','分应用代理']},

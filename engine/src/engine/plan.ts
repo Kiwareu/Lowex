@@ -1,3 +1,4 @@
+import {RESEARCH} from '../data/research';
 import {CLIENTS} from '../data/clients';
 import {APPS} from '../data/apps';
 import {GROUPS,CORE,DIRECT_EXC,REGIONS,GROUP_BY_ID,type RuleGroup,type Region} from '../data/groups';
@@ -64,7 +65,7 @@ export function makePlan(s:State):Plan{
   const reOf=(x:string)=>{try{return x.trim()?new RegExp(x.trim(),'i'):null}catch{return null}};
   const inc=reOf(o.nodeInclude||''),exc=reOf(o.nodeExclude||'');
   // 「在客户端 App 内自己添加」：只有订阅 / 节点能在 App 里全局生效、配置靠名称正则收纳的客户端（QX、小火箭）支持
-  const appMode=s.nodeMode==='app'&&(client.family==='qx'||client.family==='shadowrocket');
+  const appMode=s.nodeMode==='app'&&RESEARCH[client.id]?.placement==='both';
   const parsedOk=parsed0.nodes.filter(n=>(!inc||inc.test(n.name))&&(!exc||!exc.test(n.name)));
   // 手动节点：不受包含 / 排除过滤；客户端写不出的会被剔除并给出原因
   const manualWarn:string[]=[];const taken=new Set(parsedOk.map(n=>n.name));const manualNodes:Node[]=[];
@@ -163,7 +164,7 @@ export function makePlan(s:State):Plan{
   push({t:'site',name:'cn',g:CORE.cn,p:cnT},{t:'ip',name:'cn',g:CORE.cn,p:cnT});
   push({t:'final',p:o.unknown==='proxy'?'PROXY':'DIRECT'});
   if(overseas&&!subs.length&&!nodes.length)warnings.push('海外模式需要订阅里有「回国」线路节点；没有的话「回国」组只会指向直连。');
-  if(appMode)warnings.push('已选「在客户端 App 内自己添加」：配置不含订阅和节点，请在 '+client.name+' 里自行添加；策略组按节点名称里的地区关键词自动收纳。');
+  if(appMode)warnings.push('已选「在客户端 App 内自己添加」：配置不含订阅和节点，请在 '+client.name+' 里自行添加；策略组按节点名称里的地区关键词自动收纳。'+(client.family==='mihomo'?'这份 YAML 是覆写内容：请导入为 '+client.name+' 的覆写/扩展配置，不要当作完整订阅替换。':''));
   if(!appMode&&!subs.length&&!nodes.length&&client.subInConfig)warnings.push('还没有填订阅或节点：配置里使用了占位符 {{SUB_URL_1}}，导入前请替换。');
   warnings.push(...manualWarn);
   if(client.family==='shadowrocket'&&!appMode){

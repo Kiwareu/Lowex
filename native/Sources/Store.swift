@@ -420,9 +420,15 @@ final class Store: ObservableObject {
     }
 
     /// 同时支持「写入配置」与「在客户端 App 内自己添加」的客户端（QX、小火箭）
-    var nodeModeChoice: Bool { family == "qx" || family == "shadowrocket" }
+    var nodeModeChoice: Bool { clientInfo?.placement == "both" }
     var nodeMode: String { nodeModeChoice && str("nodeMode") == "app" ? "app" : "config" }
     var appMode: Bool { nodeMode == "app" }
+    /// 当前模式下「如何导入到客户端」的步骤（来自调研数据）
+    var importHow: String? {
+        let h = appMode ? clientInfo?.howApp : clientInfo?.howConfig
+        if let h, !h.isEmpty { return h }
+        return clientInfo?.importHint
+    }
     func setNodeMode(_ m: String) {
         Haptics.selection()
         var s = state; s["nodeMode"] = m; state = s
