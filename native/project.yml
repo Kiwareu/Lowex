@@ -1,0 +1,56 @@
+name: LowexNative
+options:
+  bundleIdPrefix: com.wenx
+  deploymentTarget: {iOS: "18.0"}
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "3.6.0"
+    CURRENT_PROJECT_VERSION: "5"
+    CODE_SIGNING_ALLOWED: "NO"
+    CODE_SIGNING_REQUIRED: "NO"
+    CODE_SIGN_IDENTITY: ""
+    ARCHS: arm64
+    ONLY_ACTIVE_ARCH: "NO"
+    PRODUCT_BUNDLE_IDENTIFIER: com.wenx.lowex.native
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    TARGETED_DEVICE_FAMILY: "1,2"
+    GENERATE_INFOPLIST_FILE: "NO"
+targets:
+  LowexNative:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+      - path: Resources
+        excludes: ["Info.plist"]
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: Lowex
+        CFBundleShortVersionString: "3.6.0"
+        CFBundleVersion: "5"
+        UILaunchScreen: {}
+        UIRequiredDeviceCapabilities: [arm64]
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UIApplicationSceneManifest: {UIApplicationSupportsMultipleScenes: false}
+        UIUserInterfaceStyle: Automatic
+        ITSAppUsesNonExemptEncryption: false
+        LSSupportsOpeningDocumentsInPlace: true
+        UIFileSharingEnabled: true
+        LSApplicationQueriesSchemes:
+          - shadowrocket
+          - surge
+          - quantumult-x
+          - quantumultx
+          - loon
+          - stash
+          - egern
+          - sing-box
+          - clash
+          - clashx
+          - karing
+          - flclash
+          - clashmeta

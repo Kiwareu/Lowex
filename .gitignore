@@ -1,0 +1,16 @@
+# build
+build/
+DerivedData/
+*.xcodeproj/
+Payload/
+*.ipa
+# node
+node_modules/
+# macOS / editors
+.DS_Store
+.vscode/
+.idea/
+# 私有参考配置绝不入库
+user-reference*
+*.local.yaml
+.env

@@ -1,0 +1,60 @@
+{
+ "_note": "地区正则（PCRE，Mihomo filter 与 Shadowrocket policy-regex-filter 可用；Shadowrocket 需去掉 (?i) 并另做大小写处理，未核实 Shadowrocket 对 (?i) 的支持）",
+ "regions": [
+  {
+   "id": "HK",
+   "name_zh": "香港",
+   "regex": "(?i)^(?=.*(香港|(?<![a-zA-Z])(hk|hkg)(?![a-zA-Z])|hongkong|hong kong|🇭🇰)).*$"
+  },
+  {
+   "id": "TW",
+   "name_zh": "台湾",
+   "regex": "(?i)^(?=.*(台湾|(?<![a-zA-Z])(tw|tpe|khh|tsa)(?![a-zA-Z])|taiwan|taipei|🇹🇼)).*$"
+  },
+  {
+   "id": "JP",
+   "name_zh": "日本",
+   "regex": "(?i)^(?=.*(日本|(?<![a-zA-Z])(jp|nrt|hnd|kix|cts|fuk)(?![a-zA-Z])|japan|tokyo|🇯🇵)).*$"
+  },
+  {
+   "id": "SG",
+   "name_zh": "新加坡",
+   "regex": "(?i)^(?=.*(新加坡|(?<![a-zA-Z])(sg|sin|xsp)(?![a-zA-Z])|singapore|🇸🇬)).*$"
+  },
+  {
+   "id": "KR",
+   "name_zh": "韩国",
+   "regex": "(?i)^(?=.*(韩国|(?<![a-zA-Z])(kr|icn|gmp|pus)(?![a-zA-Z])|korea|seoul|🇰🇷)).*$"
+  },
+  {
+   "id": "US",
+   "name_zh": "美国",
+   "regex": "(?i)^(?=.*(美国|(?<![a-zA-Z])(us|usa|lax|sfo|jfk|sjc)(?![a-zA-Z])|america|united states|🇺🇸)).*$"
+  },
+  {
+   "id": "EU",
+   "name_zh": "欧洲",
+   "regex": "(?i)^(?=.*(欧洲|奥地利|比利时|保加利亚|克罗地亚|塞浦路斯|捷克|丹麦|爱沙尼亚|芬兰|希腊|匈牙利|爱尔兰|意大利|拉脱维亚|立陶宛|卢森堡|荷兰|波兰|葡萄牙|罗马尼亚|斯洛伐克|斯洛文尼亚|西班牙|瑞典|🇪🇺|🇦🇹|🇧🇪|🇨🇿|🇩🇰|🇫🇮|🇮🇪|🇮🇹|🇱🇺|🇳🇱|🇵🇱|🇵🇹|🇪🇸|🇸🇪|europe|netherlands|amsterdam|(?<![a-zA-Z])(eu|nl|ams|mad|bcn|fco|bru)(?![a-zA-Z]))).*$"
+  },
+  {
+   "id": "UK",
+   "name_zh": "英国",
+   "regex": "(?i)^(?=.*(英国|大不列颠|英格兰|united kingdom|britain|england|london|🇬🇧|(?<![a-zA-Z])(uk|gb|gbr|lhr|lgw|man)(?![a-zA-Z]))).*$"
+  },
+  {
+   "id": "FR",
+   "name_zh": "法国",
+   "regex": "(?i)^(?=.*(法国|法兰西|france|paris|🇫🇷|(?<![a-zA-Z])(fr|cdg|ory)(?![a-zA-Z]))).*$"
+  },
+  {
+   "id": "DE",
+   "name_zh": "德国",
+   "regex": "(?i)^(?=.*(德国|德意志|germany|deutschland|frankfurt|berlin|🇩🇪|(?<![a-zA-Z])(de|deu|ger|fra|muc)(?![a-zA-Z]))).*$"
+  },
+  {
+   "id": "OT",
+   "name_zh": "其他",
+   "regex": "^(?!.*(DIRECT|香港|台湾|日本|新加坡|韩国|美国|英国|法国|德国|奥地利|比利时|保加利亚|克罗地亚|塞浦路斯|捷克|丹麦|爱沙尼亚|芬兰|希腊|匈牙利|爱尔兰|意大利|拉脱维亚|立陶宛|卢森堡|荷兰|波兰|葡萄牙|罗马尼亚|斯洛伐克|斯洛文尼亚|西班牙|瑞典|欧洲|🇭🇰|🇹🇼|🇸🇬|🇯🇵|🇰🇷|🇺🇸|🇬🇧|🇫🇷|🇩🇪|HK|TW|SG|JP|KR|US|GB|FR|DE|EU)).*$"
+  }
+ ]
+}

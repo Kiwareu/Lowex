@@ -1,0 +1,85 @@
+import SwiftUI
+import UIKit
+
+@main
+struct LowexApp: App {
+    init() {
+        UIScrollView.appearance().bounces = false
+        UITableView.appearance().bounces = false
+    }
+    @StateObject private var store = Store()
+    @StateObject private var appearance = Appearance.shared
+    var body: some Scene {
+        WindowGroup {
+            RootContainer()
+                .environmentObject(store)
+                .environmentObject(appearance)
+        }
+    }
+}
+
+struct RootContainer: View {
+    @EnvironmentObject var store: Store
+    @EnvironmentObject var appearance: Appearance
+    var body: some View {
+        ZStack {
+            RootView().id(appearance.revision)
+            ConfettiView(trigger: store.celebrate)
+            if store.showSplash {
+                SplashView().transition(.opacity).zIndex(5)
+            }
+        }
+        .preferredColorScheme(appearance.scheme)
+        .fontDesign(appearance.fontStyle.design)
+        .sensoryFeedback(.success, trigger: store.celebrate)
+        .task {
+            try? await Task.sleep(nanoseconds: 1_700_000_000)
+            store.finishSplash()
+        }
+        .sheet(isPresented: $store.showDisclaimer) {
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("免责声明").font(.title2.weight(.bold))
+                        Text(DisclaimerText.body).font(.footnote)
+                        Button { store.acceptDisclaimer() } label: {
+                            Text("我已阅读并知悉上述内容").frame(maxWidth: .infinity).padding(.vertical, 12)
+                        }
+                        .buttonStyle(.borderedProminent).tint(Brand.pink)
+                    }
+                    .padding(20)
+                }
+                .background(PinkBackground())
+            }
+            .interactiveDismissDisabled(true)
+            .preferredColorScheme(appearance.scheme)
+        }
+        .sheet(isPresented: $store.showAppearance) {
+            AppearanceView().id(appearance.revision)
+                .preferredColorScheme(appearance.scheme)
+                .fontDesign(appearance.fontStyle.design)
+                .tint(appearance.accent)
+        }
+    }
+}
+
+struct RootView: View {
+    @EnvironmentObject var store: Store
+    var body: some View {
+        TabView(selection: $store.tab) {
+            HomeView().tag(AppTab.home)
+                .tabItem { Label("首页", systemImage: "house.fill") }
+            NodesView().tag(AppTab.nodes)
+                .tabItem { Label("节点", systemImage: "server.rack") }
+            RulesView().tag(AppTab.rules)
+                .tabItem { Label("规则", systemImage: "list.bullet.rectangle") }
+            GenerateView().tag(AppTab.generate)
+                .tabItem { Label("生成", systemImage: "sparkles") }
+            MoreView().tag(AppTab.more)
+                .tabItem { Label("更多", systemImage: "ellipsis.circle") }
+        }
+        .tint(Brand.pink)
+    }
+}
+
+enum AppTab: Hashable { case home, nodes, rules, generate, more }

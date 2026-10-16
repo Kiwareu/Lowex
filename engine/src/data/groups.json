@@ -1,0 +1,1276 @@
+{
+ "_meta": {
+  "verified_date": "2026-10-15",
+  "verify_method": "curl HTTP 200",
+  "templates": {
+   "mihomo_mrs_domain": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/{name}.mrs",
+   "mihomo_mrs_ipcidr": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/{name}.mrs",
+   "mihomo_yaml_domain": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/{name}.yaml",
+   "singbox_srs_domain": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/{name}.srs",
+   "singbox_srs_ip": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geoip/{name}.srs",
+   "singbox_srs_sagernet_domain": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-{name}.srs",
+   "singbox_srs_sagernet_ip": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-{name}.srs",
+   "bm7_clash": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/{bm7}/{bm7}.yaml",
+   "bm7_surge": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/{bm7}/{bm7}.list",
+   "bm7_quantumultx": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/{bm7}/{bm7}.list",
+   "bm7_loon": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/{bm7}/{bm7}.list",
+   "bm7_shadowrocket": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/{bm7}/{bm7}.list"
+  },
+  "note": "exists=false 表示 2026-10-15 curl 未返回 200；name 占位符：{name}=geosite/geoip 名，{bm7}=blackmatrix7 目录名"
+ },
+ "groups": [
+  {
+   "id": "ai",
+   "name_zh": "AI 服务",
+   "category": "ai",
+   "geosite": [
+    {
+     "name": "category-ai-!cn",
+     "exists": true
+    },
+    {
+     "name": "openai",
+     "exists": true
+    },
+    {
+     "name": "anthropic",
+     "exists": true
+    },
+    {
+     "name": "perplexity",
+     "exists": true
+    },
+    {
+     "name": "huggingface",
+     "exists": true
+    },
+    {
+     "name": "cursor",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "OpenAI",
+    "exists": true
+   },
+   "default_exit": "region:us/sg/jp",
+   "misblock_risk": "中",
+   "notes": "AI 站点常按 IP 地区封锁，香港节点多数不可用；建议美/日/新。Claude、Gemini 等另有独立规则集（bm7: Claude, Gemini, Copilot）",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "youtube",
+   "name_zh": "YouTube",
+   "category": "streaming",
+   "geosite": [
+    {
+     "name": "youtube",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "YouTube",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "与 Google 域名重叠，规则顺序要 youtube 在 google 之前",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "netflix",
+   "name_zh": "Netflix",
+   "category": "streaming",
+   "geosite": [
+    {
+     "name": "netflix",
+     "exists": true
+    }
+   ],
+   "geoip": [
+    {
+     "name": "netflix",
+     "exists": true
+    }
+   ],
+   "bm7": {
+    "name": "Netflix",
+    "exists": true
+   },
+   "default_exit": "region:按解锁地区",
+   "misblock_risk": "中",
+   "notes": "地区解锁看节点；geoip 需 no-resolve",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "disney",
+   "name_zh": "Disney+",
+   "category": "streaming",
+   "geosite": [
+    {
+     "name": "disney",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Disney",
+    "exists": true
+   },
+   "default_exit": "region",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "hbo",
+   "name_zh": "HBO / Max",
+   "category": "streaming",
+   "geosite": [
+    {
+     "name": "hbo",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "HBO",
+    "exists": true
+   },
+   "default_exit": "region",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "primevideo",
+   "name_zh": "Prime Video",
+   "category": "streaming",
+   "geosite": [
+    {
+     "name": "primevideo",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "PrimeVideo",
+    "exists": true
+   },
+   "default_exit": "region",
+   "misblock_risk": "低",
+   "notes": "与 Amazon 购物域名部分重叠",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "spotify",
+   "name_zh": "Spotify",
+   "category": "streaming",
+   "geosite": [
+    {
+     "name": "spotify",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Spotify",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "部分地区可直连，直连会走国内 CDN 节点，音质/地区库可能不同",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "twitch",
+   "name_zh": "Twitch",
+   "category": "streaming",
+   "geosite": [
+    {
+     "name": "twitch",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Twitch",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "bilibili",
+   "name_zh": "哔哩哔哩",
+   "category": "cn-streaming",
+   "geosite": [
+    {
+     "name": "bilibili",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "BiliBili",
+    "exists": true
+   },
+   "default_exit": "direct",
+   "misblock_risk": "低",
+   "notes": "港澳台番剧需要 BiliBili 港澳台组指向港/台节点（本知识库默认不拆）",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "tiktok",
+   "name_zh": "TikTok",
+   "category": "social",
+   "geosite": [
+    {
+     "name": "tiktok",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "TikTok",
+    "exists": true
+   },
+   "default_exit": "region:按账号地区",
+   "misblock_risk": "中",
+   "notes": "TikTok 对节点地区/IP 类型敏感；与国内抖音是不同域名",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "twitter",
+   "name_zh": "Twitter / X",
+   "category": "social",
+   "geosite": [
+    {
+     "name": "twitter",
+     "exists": true
+    }
+   ],
+   "geoip": [
+    {
+     "name": "twitter",
+     "exists": true
+    }
+   ],
+   "bm7": {
+    "name": "Twitter",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "geoip 需 no-resolve",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "telegram",
+   "name_zh": "Telegram",
+   "category": "social",
+   "geosite": [
+    {
+     "name": "telegram",
+     "exists": true
+    }
+   ],
+   "geoip": [
+    {
+     "name": "telegram",
+     "exists": true
+    }
+   ],
+   "bm7": {
+    "name": "Telegram",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "需要 geoip（Telegram 常直连 IP）；UDP 通话需节点支持 UDP",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "meta",
+   "name_zh": "Meta（Facebook/Instagram/WhatsApp/Threads）",
+   "category": "social",
+   "geosite": [
+    {
+     "name": "facebook",
+     "exists": true
+    },
+    {
+     "name": "instagram",
+     "exists": true
+    },
+    {
+     "name": "whatsapp",
+     "exists": true
+    }
+   ],
+   "geoip": [
+    {
+     "name": "facebook",
+     "exists": true
+    }
+   ],
+   "bm7": {
+    "name": "Facebook",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "可拆成 facebook / instagram / whatsapp 三组",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "line",
+   "name_zh": "LINE",
+   "category": "social",
+   "geosite": [
+    {
+     "name": "line",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Line",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "与日本 naver 域名相关",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "discord",
+   "name_zh": "Discord",
+   "category": "social",
+   "geosite": [
+    {
+     "name": "discord",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Discord",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "语音为 UDP，需节点支持 UDP",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "reddit",
+   "name_zh": "Reddit",
+   "category": "social",
+   "geosite": [
+    {
+     "name": "reddit",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Reddit",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "linkedin",
+   "name_zh": "LinkedIn",
+   "category": "social",
+   "geosite": [
+    {
+     "name": "linkedin",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "LinkedIn",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "国内 LinkedIn 已停服，仅留海外",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "signal",
+   "name_zh": null,
+   "category": "social",
+   "geosite": [
+    {
+     "name": "signal",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": null,
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "steam",
+   "name_zh": "Steam",
+   "category": "game",
+   "geosite": [
+    {
+     "name": "steam",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Steam",
+    "exists": true
+   },
+   "default_exit": "direct 或 proxy",
+   "misblock_risk": "中",
+   "notes": "下载走国内 CDN 更快：规则集 steam@cn 需单独处理；商店/社区需代理",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "epic",
+   "name_zh": "Epic Games",
+   "category": "game",
+   "geosite": [
+    {
+     "name": "epicgames",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Epic",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "ea",
+   "name_zh": "EA / Origin",
+   "category": "game",
+   "geosite": [
+    {
+     "name": "ea",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "EA",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "ubisoft",
+   "name_zh": "Ubisoft",
+   "category": "game",
+   "geosite": [
+    {
+     "name": "ubisoft",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Ubisoft",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "blizzard",
+   "name_zh": "暴雪战网",
+   "category": "game",
+   "geosite": [
+    {
+     "name": "blizzard",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Blizzard",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "国服走 games@cn 直连",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "nintendo",
+   "name_zh": "任天堂",
+   "category": "game",
+   "geosite": [
+    {
+     "name": "nintendo",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Nintendo",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "playstation",
+   "name_zh": "PlayStation",
+   "category": "game",
+   "geosite": [
+    {
+     "name": "playstation",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "PlayStation",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "xbox",
+   "name_zh": "Xbox",
+   "category": "game",
+   "geosite": [
+    {
+     "name": "xbox",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Xbox",
+    "exists": true
+   },
+   "default_exit": "direct 或 proxy",
+   "misblock_risk": "中",
+   "notes": "与 Microsoft 规则重叠，Xbox 要放在 Microsoft 之前",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "games-cn",
+   "name_zh": "国服游戏（直连）",
+   "category": "game",
+   "geosite": [
+    {
+     "name": "category-games@cn",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": null,
+   "default_exit": "direct",
+   "misblock_risk": "低",
+   "notes": "必须放在海外游戏规则之前",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "github",
+   "name_zh": "GitHub",
+   "category": "dev",
+   "geosite": [
+    {
+     "name": "github",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "GitHub",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "git clone 走 SSH 22 端口需在 TUN 下生效",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "gitlab",
+   "name_zh": "GitLab",
+   "category": "dev",
+   "geosite": [
+    {
+     "name": "gitlab",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "GitLab",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "docker",
+   "name_zh": "Docker / 容器镜像",
+   "category": "dev",
+   "geosite": [
+    {
+     "name": "docker",
+     "exists": true
+    },
+    {
+     "name": "category-container",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Docker",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "镜像拉取量大，注意节点流量",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "npm",
+   "name_zh": "npm / JS 生态",
+   "category": "dev",
+   "geosite": [
+    {
+     "name": "npmjs",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": null,
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "jetbrains",
+   "name_zh": null,
+   "category": "dev",
+   "geosite": [
+    {
+     "name": "jetbrains",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": null,
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "stackexchange",
+   "name_zh": null,
+   "category": "dev",
+   "geosite": [
+    {
+     "name": "stackexchange",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": null,
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "cloudflare",
+   "name_zh": "Cloudflare",
+   "category": "dev",
+   "geosite": [
+    {
+     "name": "cloudflare",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Cloudflare",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "中",
+   "notes": "Cloudflare 承载大量国内可直连站点，建议只在 geolocation-!cn 兜底中处理，不单独成组",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "google",
+   "name_zh": "Google",
+   "category": "general",
+   "geosite": [
+    {
+     "name": "google",
+     "exists": true
+    }
+   ],
+   "geoip": [
+    {
+     "name": "google",
+     "exists": true
+    }
+   ],
+   "bm7": {
+    "name": "Google",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "中",
+   "notes": "含 google.cn 子集；国内可用的 Google 服务（如 Android 推送）看节点；geoip 需 no-resolve",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "microsoft",
+   "name_zh": "Microsoft",
+   "category": "office",
+   "geosite": [
+    {
+     "name": "microsoft",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Microsoft",
+    "exists": true
+   },
+   "default_exit": "direct 或 proxy",
+   "misblock_risk": "中",
+   "notes": "更新/Office 直连更快；Copilot/Bing 可能需代理。拆 onedrive 单独成组",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "onedrive",
+   "name_zh": "OneDrive",
+   "category": "office",
+   "geosite": [
+    {
+     "name": "onedrive",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "OneDrive",
+    "exists": true
+   },
+   "default_exit": "direct 或 proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "apple",
+   "name_zh": "Apple",
+   "category": "office",
+   "geosite": [
+    {
+     "name": "apple",
+     "exists": true
+    },
+    {
+     "name": "icloud",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Apple",
+    "exists": true
+   },
+   "default_exit": "direct",
+   "misblock_risk": "中",
+   "notes": "apple-cn 可直连；全部走代理会变慢，Apple Intelligence 需海外则单独指定",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "notion",
+   "name_zh": "Notion",
+   "category": "office",
+   "geosite": [
+    {
+     "name": "notion",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Notion",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "slack",
+   "name_zh": "Slack",
+   "category": "office",
+   "geosite": [
+    {
+     "name": "slack",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Slack",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "zoom",
+   "name_zh": null,
+   "category": "office",
+   "geosite": [
+    {
+     "name": "zoom",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": null,
+   "default_exit": "direct 或 proxy",
+   "misblock_risk": "中",
+   "notes": "国内版 Zoom 会议直连更稳",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "dropbox",
+   "name_zh": "Dropbox",
+   "category": "office",
+   "geosite": [
+    {
+     "name": "dropbox",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Dropbox",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "amazon",
+   "name_zh": "Amazon 购物",
+   "category": "shopping",
+   "geosite": [
+    {
+     "name": "amazon",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Amazon",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "中",
+   "notes": "含 AWS 与 CDN 域名，AWS 上国内服务可能被误代理",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "ebay",
+   "name_zh": "eBay",
+   "category": "shopping",
+   "geosite": [
+    {
+     "name": "ebay",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "eBay",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "shopee",
+   "name_zh": "Shopee",
+   "category": "shopping",
+   "geosite": [
+    {
+     "name": "shopee",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Shopee",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "paypal",
+   "name_zh": "PayPal",
+   "category": "finance",
+   "geosite": [
+    {
+     "name": "paypal",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "PayPal",
+    "exists": true
+   },
+   "default_exit": "region:账号所在地",
+   "misblock_risk": "高",
+   "notes": "风控敏感：频繁换出口 IP 可能触发风控，建议固定一个节点；MITM 必须排除",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "stripe",
+   "name_zh": "Stripe",
+   "category": "finance",
+   "geosite": [
+    {
+     "name": "stripe",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Stripe",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "中",
+   "notes": "支付页面脚本域名，误代理易导致支付页面加载慢",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "wise",
+   "name_zh": "Wise",
+   "category": "finance",
+   "geosite": [
+    {
+     "name": "wise",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": null,
+   "default_exit": "region:账号所在地",
+   "misblock_risk": "高",
+   "notes": "银行类，固定出口；MITM 必须排除",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "crypto",
+   "name_zh": "加密货币平台",
+   "category": "crypto",
+   "geosite": [
+    {
+     "name": "category-cryptocurrency",
+     "exists": true
+    },
+    {
+     "name": "binance",
+     "exists": true
+    },
+    {
+     "name": "okx",
+     "exists": true
+    },
+    {
+     "name": "bybit",
+     "exists": true
+    },
+    {
+     "name": "kraken",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Binance",
+    "exists": true
+   },
+   "default_exit": "region:合规地区",
+   "misblock_risk": "高",
+   "notes": "交易所对 IP 地区合规有要求；不建议自动切换节点；binance/okx/bybit/kraken 可拆成独立组；MITM 必须排除",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "pt",
+   "name_zh": "PT / BT 下载（直连）",
+   "category": "download",
+   "geosite": [
+    {
+     "name": "category-pt",
+     "exists": true
+    },
+    {
+     "name": "category-public-tracker",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": null,
+   "default_exit": "direct",
+   "misblock_risk": "中",
+   "notes": "Tracker 域名走代理会浪费流量；PT 站直连注意校园网/宽带",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "speedtest",
+   "name_zh": "Speedtest",
+   "category": "tools",
+   "geosite": [
+    {
+     "name": "speedtest",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Speedtest",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "测速结果取决于出口",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "wikimedia",
+   "name_zh": "Wikipedia",
+   "category": "tools",
+   "geosite": [
+    {
+     "name": "wikimedia",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": null,
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "scholar",
+   "name_zh": "学术（海外）",
+   "category": "tools",
+   "geosite": [
+    {
+     "name": "category-scholar-!cn",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": null,
+   "default_exit": "proxy",
+   "misblock_risk": "低",
+   "notes": "",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "ads",
+   "name_zh": "广告拦截",
+   "category": "reject",
+   "geosite": [
+    {
+     "name": "category-ads-all",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "AdvertisingLite",
+    "exists": true
+   },
+   "default_exit": "reject",
+   "misblock_risk": "中",
+   "notes": "误伤风险随规则集大小增加：不要对微信/支付宝/银行域名拦截，且置于其直连规则之后（ads-all 不含 iOS 大量 SDK 域名，iOS 上可用 bm7 AdvertisingLite 代替）",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "telemetry",
+   "name_zh": "隐私遥测",
+   "category": "reject",
+   "geosite": [
+    {
+     "name": "category-telemetry",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Privacy",
+    "exists": true
+   },
+   "default_exit": "reject",
+   "misblock_risk": "低",
+   "notes": "只含 GitHub/Mozilla 等遥测地址，规模小；放在直连白名单之后",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "cn",
+   "name_zh": "国内域名",
+   "category": "direct",
+   "geosite": [
+    {
+     "name": "cn",
+     "exists": true
+    }
+   ],
+   "geoip": [
+    {
+     "name": "cn",
+     "exists": true
+    }
+   ],
+   "bm7": {
+    "name": "China",
+    "exists": true
+   },
+   "default_exit": "direct",
+   "misblock_risk": "低",
+   "notes": "国内兜底；geoip cn 需 no-resolve 放最后",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "private",
+   "name_zh": "局域网/内网",
+   "category": "direct",
+   "geosite": [
+    {
+     "name": "private",
+     "exists": true
+    }
+   ],
+   "geoip": [
+    {
+     "name": "private",
+     "exists": true
+    }
+   ],
+   "bm7": {
+    "name": "Lan",
+    "exists": true
+   },
+   "default_exit": "direct",
+   "misblock_risk": "低",
+   "notes": "必须最先直连",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  },
+  {
+   "id": "proxy-fallback",
+   "name_zh": "海外兜底",
+   "category": "proxy",
+   "geosite": [
+    {
+     "name": "geolocation-!cn",
+     "exists": true
+    }
+   ],
+   "geoip": [],
+   "bm7": {
+    "name": "Global",
+    "exists": true
+   },
+   "default_exit": "proxy",
+   "misblock_risk": "中",
+   "notes": "国内未收录的新站会被误代理，放在 cn 之前还是之后取决于策略；见 README 规则顺序",
+   "sing_box_note": "blackmatrix7 没有 sing-box 格式；sing-box 请用 meta-rules-dat 的 sing 分支 .srs 或 SagerNet sing-geosite"
+  }
+ ],
+ "direct_exceptions": [
+  {
+   "id": "apple-cn",
+   "geosite": "apple-cn",
+   "exit": "direct",
+   "note": "Apple 国内 CDN/更新，放在 apple 组之前"
+  },
+  {
+   "id": "steam-cn",
+   "geosite": "steam@cn",
+   "exit": "direct",
+   "note": "Steam 国内下载 CDN"
+  },
+  {
+   "id": "google-cn",
+   "geosite": "google-cn",
+   "exit": "direct",
+   "note": "Google 在国内的可直连域名"
+  },
+  {
+   "id": "microsoft-cn",
+   "geosite": "microsoft@cn",
+   "exit": "direct",
+   "note": "Microsoft 国内域名"
+  },
+  {
+   "id": "win-update",
+   "geosite": "win-update",
+   "exit": "direct",
+   "note": "Windows 更新"
+  }
+ ]
+}
