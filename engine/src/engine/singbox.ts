@@ -85,8 +85,8 @@ export function genSingbox(s:State,plan?:Plan):string{
   const tunAddr=['172.19.0.1/30',...(o.ipv6?['fdfe:dcba:9876::1/126']:[])];
   const cfg:any={
     log:{level:o.logLevel==='warning'?'warn':o.logLevel},
-    dns:{servers:dnsServers,rules:dnsRules,final:'dns-remote',...(o.ipv6?{}:{strategy:'ipv4_only'})},
-    inbounds:[...(o.tun?[{type:'tun',tag:'tun-in',address:tunAddr,mtu:o.mtu,auto_route:true,strict_route:true}]:[]),...(mobile?[]:[{type:'mixed',tag:'mixed-in',listen:o.allowLan?'0.0.0.0':'127.0.0.1',listen_port:o.mixedPort}])],
+    dns:{servers:dnsServers,rules:dnsRules,final:'dns-remote',reverse_mapping:true,...(o.ipv6?{}:{strategy:'ipv4_only'})},
+    inbounds:[...(o.tun?[{type:'tun',tag:'tun-in',address:tunAddr,mtu:o.mtu,auto_route:true,strict_route:true,stack:'mixed'}]:[]),...(mobile?[]:[{type:'mixed',tag:'mixed-in',listen:o.allowLan?'0.0.0.0':'127.0.0.1',listen_port:o.mixedPort}])],
     outbounds:outs,
     route:{rules,rule_set:Object.values(rs),final:N.final,default_domain_resolver:'dns-cn',auto_detect_interface:true,default_http_client:'dl',...(p.rules.some(r=>r.t==='process'||r.t==='package')?{find_process:true}:{})},
     http_clients:[{tag:'dl',detour:'direct'}],

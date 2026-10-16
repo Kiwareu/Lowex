@@ -52,6 +52,13 @@ final class Engine {
                      status: st[$0["status"] as? String ?? ""] ?? ($0["status"] as? String ?? ""), why: $0["why"] as? String ?? "", how: $0["how"] as? String)
         }
     }
+    /// 防泄漏综合分（由引擎按生成出的配置文本取证后计算）
+    func leakScore(state: [String: Any]) -> (Int, String)? {
+        guard let d = try? JSONSerialization.data(withJSONObject: state), let s = String(data: d, encoding: .utf8) else { return nil }
+        let r = json(call("leak", [s]))
+        guard let sc = r["score"] as? [String: Any], let v = sc["score"] as? Int else { return nil }
+        return (v, sc["note"] as? String ?? "")
+    }
     func carriers() -> [Carrier] {
         (try? JSONDecoder().decode([Carrier].self, from: Data(call("carriers", []).utf8))) ?? []
     }

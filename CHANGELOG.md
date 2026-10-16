@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.0 (build 12)
+App 内显示 `v1.3 (build 12)`。
+- 对照 GitHub 高星配置、官方文档、博主文章（含 YouTube / X 公开内容）做了基准研究，来源、许可证和学到的东西见 [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)；只学结构，规则集仍以 URL 引用，不复制 GPL / CC-BY-SA 内容。
+- 各客户端补强：Surge（`ipv6-vif`、`hijack-dns`、`always-real-ip`）、Shadowrocket（`dns-fallback-system=false`、`dns-direct-system=false`、`hijack-dns`、`always-real-ip`、`icmp-auto-reply`、`stun-response-ip`）、Quantumult X（`no-system`）、Loon（`sni-sniffing`、拦截 STUN 时 `disable-stun`）、sing-box / Karing（TUN `stack: mixed`、DNS `reverse_mapping`）。
+- 防泄漏检查：每项都从生成出的配置文本里取证，新增综合分（0–100）；找不到对应字段就如实降级，客户端本身没有的开关不会被「补分」。
+- 校验：mihomo 1.19.32 `-t` 与 sing-box 1.14.3 `check` 通过 10 份默认输出 + 120 份随机选项输出；闭源客户端按文档核对，未做真机导入。
+
 ## v1.2.0 (build 11)
 App 内显示 `v1.2 (build 11)`。
 - **先调研再设计**：逐个客户端核对「App 内添加订阅/节点」「配置导入」「备份/同步」「覆写机制」，结果、来源 URL、置信度（high/medium/low）和「未核实」清单写进 [`docs/CLIENTS.md`](docs/CLIENTS.md) 与机器可读的 [`docs/clients.research.json`](docs/clients.research.json)。

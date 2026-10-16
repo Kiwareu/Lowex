@@ -93,11 +93,13 @@ export function nodeLine(n:Node,fmt:Fmt):string|null{
 }
 /** 只保留该格式写得出来的节点：策略组成员不能引用被跳过的节点 */
 function sup(p:Plan,fmt:Fmt):Plan{return{...p,nodes:p.nodes.filter(n=>nodeLine(n,fmt))}}
+const REAL_IP='localhost,*.local,*.lan,*.in-addr.arpa,*.ip6.arpa,captive.apple.com,*.msftncsi.com,*.msftconnecttest.com,time.*.apple.com,time.*.com,ntp.*.com,*.pool.ntp.org,*.push.apple.com,localhost.ptlogin2.qq.com';
+const HARD_DNS='8.8.8.8:53,8.8.4.4:53,1.1.1.1:53,1.0.0.1:53,9.9.9.9:53,208.67.222.222:53,208.67.220.220:53,223.5.5.5:53,223.6.6.6:53,119.29.29.29:53,114.114.114.114:53';
 const COMMON_SKIP='127.0.0.1, 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12, 100.64.0.0/10, localhost, *.local, captive.apple.com';
 export function genSurge(s:State,plan?:Plan):string{
   const P=plan||makePlan(s);const p=sup(P,'surge');const o=s.opts;const c=common(p,'surge');
   const L:string[]=[`# Lowex 生成 · Surge（已对照官方手册 manual.nssurge.com 逐项核对，未用真机导入）· ${new Date().toISOString().slice(0,10)}`,'# 全部在浏览器本地生成，未上传任何内容。',''];
-  L.push('[General]',`ipv6 = ${o.ipv6}`,'loglevel = notify','dns-server = system',`encrypted-dns-server = ${o.dnsCn.join(', ')}`,`skip-proxy = ${COMMON_SKIP}`,`proxy-test-url = ${o.testUrl}`,'test-timeout = 5',`allow-wifi-access = ${o.allowLan}`,'');
+  L.push('[General]',`ipv6 = ${o.ipv6}`,'loglevel = notify','dns-server = system',`encrypted-dns-server = ${o.dnsCn.join(', ')}`,...(o.ipv6?[]:['ipv6-vif = disabled']),'hijack-dns = *:53',`always-real-ip = ${REAL_IP}`,`skip-proxy = ${COMMON_SKIP}`,`proxy-test-url = ${o.testUrl}`,'test-timeout = 5',`allow-wifi-access = ${o.allowLan}`,'');
   L.push('[Proxy]','DIRECT = direct');let skippedN=0;
   for(const n of P.nodes){const l=nodeLine(n,'surge');if(l)L.push(l);else skippedN++}
   if(skippedN)L.push(`# 已跳过 ${skippedN} 个 Surge 不支持的节点（如 VLESS/Reality）`);
@@ -143,7 +145,7 @@ export function genSurge(s:State,plan?:Plan):string{
 export function genLoon(s:State,plan?:Plan):string{
   const P=plan||makePlan(s);const p=sup(P,'loon');const o=s.opts;const c=common(p,'loon');
   const L:string[]=[`# Lowex 生成 · Loon（已对照官方文档 nsloon.app 与 LoonExampleConfig 核对，未用真机导入）· ${new Date().toISOString().slice(0,10)}`,'# 全部在浏览器本地生成，未上传任何内容。',''];
-  L.push('[General]',`ip-mode = ${o.ipv6?'dual':'ipv4-only'}`,`skip-proxy = ${COMMON_SKIP}`,'bypass-tun = 10.0.0.0/8,100.64.0.0/10,127.0.0.0/8,169.254.0.0/16,172.16.0.0/12,192.168.0.0/16,224.0.0.0/4,255.255.255.255/32',`doh-server = ${o.dnsCn.join(',')}`,'dns-server = system',`allow-wifi-access = ${o.allowLan}`,`proxy-test-url = ${o.testUrl}`,'test-timeout = 5',...(o.stun==='reject'?['disable-stun = true']:[]),'');
+  L.push('[General]',`ip-mode = ${o.ipv6?'dual':'ipv4-only'}`,`skip-proxy = ${COMMON_SKIP}`,'bypass-tun = 10.0.0.0/8,100.64.0.0/10,127.0.0.0/8,169.254.0.0/16,172.16.0.0/12,192.168.0.0/16,224.0.0.0/4,255.255.255.255/32',`doh-server = ${o.dnsCn.join(',')}`,'dns-server = system','sni-sniffing = true',...(o.stun==='reject'?['disable-stun = true']:[]),`allow-wifi-access = ${o.allowLan}`,`proxy-test-url = ${o.testUrl}`,'test-timeout = 5',...(o.stun==='reject'?['disable-stun = true']:[]),'');
   L.push('[Proxy]');let sk=0;for(const n of P.nodes){const l=nodeLine(n,'loon');if(l)L.push(l);else sk++}if(sk)L.push(`# 已跳过 ${sk} 个 Loon 不支持的节点`);
   L.push('','[Remote Proxy]');
   if(p.subs.length)p.subs.forEach((x,i)=>L.push(`${nm(x.name)||'订阅'+(i+1)} = ${x.url}`));else if(!p.nodes.length)L.push('订阅1 = {{SUB_URL_1}}');
@@ -183,7 +185,7 @@ export function genQX(s:State,plan?:Plan):string{
   const lc=(x:string)=>x==='DIRECT'?'direct':x==='REJECT'?'reject':x;
   const L:string[]=[`# Lowex 生成 · Quantumult X（已对照官方 sample.conf 逐项核对，未用真机导入）· ${new Date().toISOString().slice(0,10)}`,'# 全部在浏览器本地生成，未上传任何内容。',''];
   const drop=[...(o.blockQuic==='foreign'?['QUIC']:[]),...(o.stun==='reject'?['STUN']:[])];
-  L.push('[general]',`server_check_url=${o.testUrl}`,'dns_exclusion_list=*.lan, *.local, captive.apple.com',...(drop.length?[`udp_drop_list=${drop.join(', ')}`]:[]),'','[dns]',`doh-server=${o.dnsCn.join(', ')}`,`${o.ipv6?'':'no-ipv6'}`,'');
+  L.push('[general]',`server_check_url=${o.testUrl}`,'dns_exclusion_list=*.lan, *.local, captive.apple.com',...(drop.length?[`udp_drop_list=${drop.join(', ')}`]:[]),'','[dns]','no-system',`doh-server=${o.dnsCn.join(', ')}`,`${o.ipv6?'':'no-ipv6'}`,'');
   L.push('[policy]');
   for(const r of c.regionsUsed){const rg=regionFilter(p,r);L.push(`url-latency-benchmark=${regionGroup(r,'自动')}, server-tag-regex=(?i)${rg}, check-interval=${o.urlTestInterval}, tolerance=${o.tolerance}, alive-checking=false`);L.push(`static=${regionGroup(r,'手动')}, server-tag-regex=(?i)${rg}`);if(c.fo)L.push(`available=${regionGroup(r,'故转')}, ${regionGroup(r,'手动')}, ${regionGroup(r,'自动')}`)}
   L.push(`url-latency-benchmark=全部-自动, server-tag-regex=.*, check-interval=${o.urlTestInterval}, tolerance=${o.tolerance}, alive-checking=false`);
@@ -217,7 +219,7 @@ export function genShadowrocket(s:State,plan?:Plan):string{
   const p=plan||makePlan(s);const o=s.opts;const c=common(p,'shadowrocket');
   const L:string[]=[`# Lowex 生成 · Shadowrocket（已对照社区手册 LOWERTOP/Shadowrocket 与配置样例核对，未用真机导入）· ${new Date().toISOString().slice(0,10)}`,'# 节点/订阅请在 App 首页里添加；下面的分组用正则自动收纳节点。全部在浏览器本地生成。','','[General]',
    `skip-proxy = ${COMMON_SKIP}`,'tun-excluded-routes = 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 255.255.255.255/32',
-   `dns-server = ${o.dnsCn.join(', ')}`,'fallback-dns-server = https://dns.alidns.com/dns-query, https://doh.pub/dns-query',`ipv6 = ${o.ipv6}`,'private-ip-answer = true','dns-direct-fallback-proxy = true','udp-policy-not-supported-behaviour = REJECT',
+   `dns-server = ${o.dnsCn.join(', ')}`,'fallback-dns-server = https://dns.alidns.com/dns-query, https://doh.pub/dns-query',`ipv6 = ${o.ipv6}`,'dns-fallback-system = false','dns-direct-system = false','prefer-ipv6 = false','private-ip-answer = true','dns-direct-fallback-proxy = true','icmp-auto-reply = true',`hijack-dns = ${HARD_DNS}`,`always-real-ip = ${REAL_IP}`,...(o.stun==='reject'?['stun-response-ip = 1.1.1.1']:[]),'udp-policy-not-supported-behaviour = REJECT',
    `block-quic = ${o.blockQuic==='foreign'?'all-proxy':'always-allow'}`,'',...(()=>{const ml=p.nodes.filter(n=>n.manual).map(n=>nodeLine(n,'shadowrocket')).filter(Boolean) as string[];return ml.length?['[Proxy]',...ml,'']:[]})(),'[Proxy Group]'];
   for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=${regionFilter(p,r)}`);L.push(`${regionGroup(r,'手动')} = select,policy-regex-filter=${regionFilter(p,r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,${regionGroup(r,'手动')},${regionGroup(r,'自动')},url=${o.testUrl},interval=${o.urlTestInterval}`)}
   L.push(`全部-自动 = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=.*`);

@@ -12,7 +12,11 @@ export const LEAK_SITES={
   ipv6:{t:'test-ipv6.com',u:'https://test-ipv6.com'},
 };
 export const STATUS_TEXT:Record<LeakStatus,string>={ok:'已防护',partial:'部分',manual:'需你手动',off:'未开启',na:'不适用'};
-export function leakChecklist(s:State):LeakItem[]{
+export function leakChecklist(s:State,text?:string):LeakItem[]{
+  const out=leakBase(s);
+  return text?applyProbes(s,text,out):out;
+}
+function leakBase(s:State):LeakItem[]{
   const c=CLIENTS.find(x=>x.id===s.client)!;const o=s.opts;const f=c.family;
   const core=f==='mihomo'||f==='stash';const sb=f==='singbox';const rich=core||sb;
   const enc=(u:string)=>/^(https|tls|quic|h3):\/\//.test(u);
@@ -58,4 +62,73 @@ export function leakChecklist(s:State):LeakItem[]{
   add({id:'sub-dl',group:'其他',title:'订阅 / 规则集的下载出口',status:core?'ok':'partial',
     why:core?'「资源更新」组：首次默认直连，节点就绪后切到「一键代理」，之后不再直连暴露机场域名。':'该客户端的订阅更新走它自己的机制，无法单独指定出口。'});
   return out;
+}
+
+// ───── 从生成出的配置文本里取证：每一项都去文本里找对应字段，找不到就如实降级，不凭「应该有」打分 ─────
+type Probe={id:string;fam:string[];re:RegExp;ok:string;miss:string;weakRe?:RegExp};
+const PROBES:Probe[]=[
+  {id:'dns-hijack',fam:['mihomo'],re:/^tun:\n(?:[ \t]+.*\n)*?[ \t]+enable: true[\s\S]*?dns-hijack/m,ok:'配置里有 tun.enable: true 和 dns-hijack。',miss:'配置里没有开启 TUN 的 dns-hijack。'},
+  {id:'dns-hijack',fam:['singbox'],re:/"action": ?"hijack-dns"/,ok:'路由规则里有 hijack-dns。',miss:'路由规则里没有 hijack-dns。'},
+  {id:'dns-hijack',fam:['surge'],re:/^hijack-dns *= *\*:53/m,ok:'[General] 里有 hijack-dns = *:53：连写死 DNS 的软件也被接管。',miss:'没有 hijack-dns。'},
+  {id:'dns-hijack',fam:['shadowrocket'],re:/^hijack-dns *= *.*8\.8\.8\.8:53/m,ok:'[General] 里有 hijack-dns，覆盖常见硬编码公共 DNS。',miss:'没有 hijack-dns。'},
+  {id:'dns-enc',fam:['mihomo','stash'],re:/nameserver:[\s\S]*?https:\/\/|nameserver:[\s\S]*?tls:\/\//,ok:'nameserver 使用 DoH/DoT。',miss:'nameserver 里没有加密 DNS。'},
+  {id:'dns-enc',fam:['surge'],re:/^encrypted-dns-server *= *(https|quic|tls)/m,ok:'有 encrypted-dns-server。',miss:'没有 encrypted-dns-server。'},
+  {id:'dns-enc',fam:['shadowrocket'],re:/^dns-server *= *(https|h3|quic|tls)/m,ok:'dns-server 为加密 DNS。',miss:'dns-server 不是加密 DNS。'},
+  {id:'dns-enc',fam:['qx'],re:/^doh-server *=|^doq-server *=/m,ok:'[dns] 有 doh-server。',miss:'[dns] 没有 doh/doq-server。'},
+  {id:'dns-enc',fam:['loon'],re:/^doh-server *= *https/m,ok:'[General] 有 doh-server。',miss:'没有 doh-server。'},
+  {id:'dns-enc',fam:['egern'],re:/upstreams:[\s\S]*?https:\/\//,ok:'upstreams 使用 DoH。',miss:'upstreams 里没有加密 DNS。'},
+  {id:'dns-enc',fam:['singbox'],re:/"type": ?"(https|tls|quic)"/,ok:'DNS server 为 https/tls。',miss:'没有加密 DNS server。'},
+  {id:'dns-proxy',fam:['mihomo'],re:/respect-rules: true/,ok:'有 respect-rules: true。',miss:'没有 respect-rules: true，境外 DNS 可能直连。'},
+  {id:'dns-proxy',fam:['singbox'],re:/"detour": ?"[^"]+"/,ok:'境外 DNS server 带 detour。',miss:'境外 DNS 没有 detour。'},
+  {id:'dns-mode',fam:['mihomo','stash'],re:/enhanced-mode: fake-ip/,ok:'enhanced-mode: fake-ip。',miss:'不是 fake-ip。'},
+  {id:'dns-mode',fam:['singbox'],re:/"type": ?"fakeip"/,ok:'有 fakeip DNS server（官方文档仍保留该类型，sing-box 1.14.3 校验通过）。',miss:'没有 fakeip，使用真实解析。'},
+  {id:'dns-policy',fam:['mihomo'],re:/nameserver-policy:/,ok:'有 nameserver-policy。',miss:'没有 nameserver-policy。'},
+  {id:'ipv6',fam:['mihomo','stash'],re:/^ipv6: false/m,ok:'顶层 ipv6: false。',miss:'IPv6 没有关闭。'},
+  {id:'ipv6',fam:['surge','shadowrocket'],re:/^ipv6 *= *false/m,ok:'ipv6 = false。',miss:'IPv6 没有关闭。'},
+  {id:'ipv6',fam:['loon'],re:/^ip-mode *= *ipv4-only/m,ok:'ip-mode = ipv4-only。',miss:'没有 ipv4-only。'},
+  {id:'ipv6',fam:['qx'],re:/^no-ipv6/m,ok:'[dns] 有 no-ipv6。',miss:'没有 no-ipv6。'},
+  {id:'ipv6',fam:['egern'],re:/^ipv6: false/m,ok:'ipv6: false。',miss:'没有关闭 IPv6。'},
+  {id:'ipv6',fam:['singbox'],re:/"strategy": ?"ipv4_only"/,ok:'DNS strategy: ipv4_only。',miss:'没有 ipv4_only。'},
+  {id:'tun-strict',fam:['mihomo'],re:/strict-route: true/,ok:'strict-route: true。',miss:'没有 strict-route。'},
+  {id:'tun-strict',fam:['singbox'],re:/"strict_route": ?true/,ok:'strict_route: true。',miss:'没有 strict_route。'},
+  {id:'sniffer',fam:['mihomo'],re:/^sniffer:/m,ok:'有 sniffer 段。',miss:'没有 sniffer。'},
+  {id:'sniffer',fam:['singbox'],re:/"action": ?"sniff"/,ok:'路由有 sniff 动作。',miss:'没有 sniff。'},
+  {id:'sniffer',fam:['loon'],re:/^sni-sniffing *= *true/m,ok:'sni-sniffing = true。',miss:'没有 SNI 嗅探。'},
+  {id:'webrtc-stun',fam:['shadowrocket'],re:/^stun-response-ip|STUN|3478/m,ok:'有 STUN 处理（stun-response-ip 或规则）。',miss:'没有 STUN 处理。'},
+  {id:'webrtc-stun',fam:['loon'],re:/^disable-stun *= *true|3478/m,ok:'有 disable-stun 或 STUN 规则。',miss:'没有 STUN 处理。'},
+  {id:'webrtc-stun',fam:['mihomo','singbox','surge','qx','egern','stash'],re:/3478/,ok:'有 3478 STUN 端口规则。',miss:'没有 STUN 端口规则。'},
+  {id:'quic',fam:['mihomo','stash','singbox'],re:/DST-PORT,443|"port": ?\[?443|port: ?443|protocol: ?quic|UDP/i,ok:'有 UDP/443 QUIC 规则。',miss:'没有 QUIC 规则。'},
+  {id:'quic',fam:['shadowrocket'],re:/^block-quic *= *all-proxy/m,ok:'block-quic = all-proxy。',miss:'没有 block-quic。'},
+  {id:'quic',fam:['qx'],re:/^udp_drop_list=.*QUIC/m,ok:'udp_drop_list=QUIC。',miss:'没有 udp_drop_list。'},
+  {id:'quic',fam:['surge','loon','egern'],re:/QUIC|quic/,ok:'有 QUIC 规则。',miss:'没有 QUIC 规则。'},
+  {id:'dns-sys',fam:['shadowrocket'],re:/^dns-fallback-system *= *false/m,ok:'dns-fallback-system = false：DNS 失败不会悄悄回落到运营商 DNS。',miss:'没有关闭系统 DNS 回落。'},
+  {id:'dns-sys',fam:['qx'],re:/^no-system/m,ok:'[dns] 有 no-system：不用系统 DNS。',miss:'没有 no-system。'},
+  {id:'real-ip',fam:['surge','shadowrocket'],re:/^always-real-ip *=.*captive\.apple\.com/m,ok:'always-real-ip 已覆盖连通性检测 / 校时 / 局域网域名。',miss:'没有 always-real-ip。'},
+];
+const EXTRA:Record<string,{group:LeakItem['group'];title:string;fam:string[]}>={
+  'dns-sys':{group:'DNS',title:'DNS 失败时不回落到系统 / 运营商 DNS',fam:['shadowrocket','qx']},
+  'real-ip':{group:'其他',title:'校时 / 连通性检测 / 局域网域名返回真实 IP',fam:['surge','shadowrocket']},
+};
+const WEIGHT:Record<string,number>={'dns-hijack':14,'dns-enc':10,'dns-proxy':12,'dns-mode':8,'dns-policy':4,'dns-sys':6,'ecs':3,'ipv6':10,'tun-strict':6,'sniffer':4,'geoip':3,'webrtc-stun':8,'webrtc-browser':4,'quic':4,'lan':3,'process':1,'captive':3,'real-ip':3,'sub-dl':2};
+export interface LeakScore{score:number;applicable:number;note:string;items:{id:string;weight:number;credit:number}[]}
+export function applyProbes(s:State,text:string,items:LeakItem[]):LeakItem[]{
+  const f=CLIENTS.find(x=>x.id===s.client)!.family as string;
+  const out=items.map(i=>({...i}));
+  for(const pr of PROBES.filter(p=>p.fam.includes(f))){
+    let it=out.find(i=>i.id===pr.id);
+    const hit=pr.re.test(text);
+    if(!it){const e=EXTRA[pr.id];if(!e||!e.fam.includes(f))continue;it={id:pr.id,group:e.group,title:e.title,status:'ok',why:''};out.push(it)}
+    if(it.status==='na'&&!hit)continue;
+    if(hit){if(it.status==='off'&&pr.id==='ipv6'){/* 用户开启 IPv6 时由选项决定 */}
+      else if(it.status!=='manual'){if(it.status==='partial'||it.status==='na')it.status='ok'}
+      it.why='【配置取证】'+pr.ok+' '+it.why}
+    else{ if(it.status==='ok')it.status='off'; it.why='【配置取证】'+pr.miss+' '+it.why}
+  }
+  return out;
+}
+export function leakScore(items:LeakItem[]):LeakScore{
+  let got=0,tot=0;const det:LeakScore['items']=[];
+  for(const i of items){if(i.status==='na')continue;const w=WEIGHT[i.id]??2;const c=i.status==='ok'?1:i.status==='partial'?0.5:i.status==='manual'?0.5:0;tot+=w;got+=w*c;det.push({id:i.id,weight:w,credit:c})}
+  const score=tot?Math.round(got/tot*100):0;
+  return{score,applicable:det.length,items:det,note:'分数 = 适用项加权得分 / 适用项总权重；已防护 1 分、部分与「需你手动」各 0.5 分、未开启 0 分，不适用的项不计入。每项状态来自生成出的配置文本里能否找到对应字段。'};
 }

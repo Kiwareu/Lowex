@@ -11,7 +11,7 @@ import {RESEARCH} from '../src/data/research';
 import {VERSION} from '../src/version';
 import {has,CAPS} from '../src/data/caps';
 import {makePlan} from '../src/engine/plan';
-import {leakChecklist,STATUS_TEXT} from '../src/engine/leak';
+import {leakChecklist,leakScore,STATUS_TEXT} from '../src/engine/leak';
 import {CARRIERS} from '../src/data/carriers';
 import {parseModule,safety,KIND_NAME,supportsModules} from '../src/engine/modules';
 import {PRESETS} from '../src/engine/tools';
@@ -28,7 +28,7 @@ const J=(x:unknown)=>JSON.stringify(x);
     regions:REGIONS.map(r=>({id:r.id,name:r.name,icon:ICONS['r:'+r.id]||null})),cats:CATS,
     apps:APPDB.map(a=>({n:a.n,en:a.en||null,pkg:a.pkg||null,exe:a.exe||null,bid:a.bid||null,dom:a.dom||[],g:a.g||null})),
     shared:SHARED}),
-  leak:(sj:string)=>{try{return J({items:leakChecklist(JSON.parse(sj)),status:STATUS_TEXT})}catch(e:any){return J({items:[],status:{}})}},
+  leak:(sj:string)=>{try{const s=JSON.parse(sj);let text='';try{text=generate(s).text||''}catch(e){}const items=leakChecklist(s,text);return J({items,status:STATUS_TEXT,score:leakScore(items)})}catch(e:any){return J({items:[],status:{}})}},
   carriers:()=>J(CARRIERS),
   sharedList:()=>J(SHARED),
   modInfo:(name:string,url:string,content:string)=>{try{const P=content.trim()?parseModule(content):null;const S=safety({name,url,content},P);return J({fmt:P?P.fmt:'unknown',name:P?P.name:'',rw:P?P.rewrites.length:0,sc:P?P.scripts.length:0,blocked:S.blocked,warns:S.warns})}catch(e:any){return J({error:String(e)})}},

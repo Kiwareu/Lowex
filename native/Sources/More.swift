@@ -331,11 +331,19 @@ struct PolicyPicker: View {
 struct LeakView: View {
     @EnvironmentObject var store: Store
     @State private var items: [LeakItem] = []
+    @State private var leakScore: (Int, String)? = nil
     var body: some View {
         PageChrome(title: "防泄漏检查") {
             PlainCard {
                 Text("根据当前客户端与选项检查 IP / DNS / WebRTC 等风险。")
                     .font(.footnote).foregroundStyle(.secondary)
+                if let sc = leakScore {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(sc.0)").font(.system(size: 44, weight: .bold, design: .rounded)).foregroundStyle(Brand.pink)
+                        Text("/ 100  综合防泄漏分").font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    Text(sc.1).font(.caption2).foregroundStyle(.secondary)
+                }
             }
             ForEach(items) { it in
                 PlainCard {
@@ -360,7 +368,7 @@ struct LeakView: View {
                 Link("ipleak.net", destination: URL(string: "https://ipleak.net")!)
             }
         }
-        .onAppear { items = store.engine.leak(state: store.state) }
+        .onAppear { items = store.engine.leak(state: store.state); leakScore = store.engine.leakScore(state: store.state) }
     }
 }
 
