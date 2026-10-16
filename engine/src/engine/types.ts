@@ -20,7 +20,7 @@ export interface Opts{
 }
 export interface State{
   client:string;platform:Platform;location:Location;network:Network;
-  subs:SubItem[];nodesText:string;
+  subs:SubItem[];nodesText:string;manualNodes?:import('./manual').ManualNode[];
   regions:string[];
   groups:Record<string,{on:boolean;policy:Policy}>;
   apps:AppRoute[];customDomains:{domain:string;policy:Policy}[];

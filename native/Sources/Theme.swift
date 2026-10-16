@@ -118,6 +118,7 @@ struct PressableStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.spring(response: 0.28, dampingFraction: 0.62), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, p in if p { Haptics.light() } }
     }
 }
 

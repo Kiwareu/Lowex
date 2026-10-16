@@ -62,6 +62,9 @@ final class Store: ObservableObject {
             var o = (base["opts"] as? [String: Any]) ?? [:]
             for (k, v) in (merged["opts"] as? [String: Any]) ?? [:] { o[k] = v }
             merged["opts"] = o
+            if let ml = merged["manualNodes"] as? [[String: Any]] {
+                merged["manualNodes"] = ml.map { var m = $0; m["pass"] = SecretStore.get(m["id"] as? String ?? ""); return m }
+            }
             state = merged
             reconcile(silent: true)
         } else {
@@ -85,10 +88,12 @@ final class Store: ObservableObject {
     // MARK: 读写
     func str(_ k: String) -> String { state[k] as? String ?? "" }
     func set(_ k: String, _ v: Any) {
+        Haptics.selection()
         var s = state; s[k] = v; state = s; save()
     }
     var opts: [String: Any] { state["opts"] as? [String: Any] ?? [:] }
     func setOpt(_ k: String, _ v: Any) {
+        Haptics.selection()
         var o = opts; o[k] = v
         var s = state; s["opts"] = o; state = s; save()
     }
@@ -96,6 +101,10 @@ final class Store: ObservableObject {
         var s = state
         s["subs"] = []
         s["nodesText"] = ""
+        // 手动节点密码不进 UserDefaults：单独存钥匙串（见 SecretStore）
+        if let ml = s["manualNodes"] as? [[String: Any]] {
+            s["manualNodes"] = ml.map { var m = $0; m["pass"] = nil; return m }
+        }
         if let d = try? JSONSerialization.data(withJSONObject: s) {
             UserDefaults.standard.set(d, forKey: key)
         }
@@ -199,6 +208,7 @@ final class Store: ObservableObject {
     func isOn(_ g: Catalog.Group) -> Bool { (groupState[g.id]?["on"] as? Bool) ?? g.defOn }
     func policy(_ g: Catalog.Group) -> String { (groupState[g.id]?["policy"] as? String) ?? g.def }
     func setGroup(_ g: Catalog.Group, on: Bool? = nil, policy: String? = nil) {
+        Haptics.selection()
         var gs = groupState
         gs[g.id] = ["on": on ?? isOn(g), "policy": policy ?? self.policy(g)]
         var s = state; s["groups"] = gs; state = s; save()
@@ -336,6 +346,7 @@ final class Store: ObservableObject {
         let c = client
         var fresh = engine.initialState(client: c, platform: platform)
         fresh["profileName"] = str("profileName")
+        fresh["manualNodes"] = state["manualNodes"] ?? []
         fresh["profileNameCustom"] = state["profileNameCustom"] ?? false
         state = fresh
         result = GenResult(text: "", name: "", warnings: [])
@@ -353,6 +364,7 @@ final class Store: ObservableObject {
         var s = patched
         s["subs"] = state["subs"] ?? []
         s["nodesText"] = state["nodesText"] ?? ""
+        s["manualNodes"] = state["manualNodes"] ?? []
         s["platform"] = state["platform"] ?? "ios"
         state = s
         reconcile(silent: true)
@@ -405,8 +417,49 @@ final class Store: ObservableObject {
         return f.joined(separator: " · ")
     }
 
+    // MARK: 手动节点（SOCKS5 / HTTP / HTTPS）
+    var manualNodes: [[String: Any]] { state["manualNodes"] as? [[String: Any]] ?? [] }
+    private func commitManual(_ list: [[String: Any]]) {
+        var s = state; s["manualNodes"] = list; state = s; save()
+    }
+    func upsertManual(_ n: [String: Any]) {
+        var list = manualNodes
+        let id = n["id"] as? String ?? UUID().uuidString
+        var m = n; m["id"] = id
+        SecretStore.set(m["pass"] as? String ?? "", id: id)
+        if let i = list.firstIndex(where: { ($0["id"] as? String) == id }) { list[i] = m } else { list.append(m) }
+        commitManual(list)
+    }
+    func removeManual(_ id: String) {
+        SecretStore.remove(id)
+        commitManual(manualNodes.filter { ($0["id"] as? String) != id })
+    }
+    func toggleManual(_ id: String) {
+        commitManual(manualNodes.map { var m = $0; if (m["id"] as? String) == id { m["on"] = !((m["on"] as? Bool) ?? true) }; return m })
+    }
+    func manualIssue(_ n: [String: Any]) -> String? { engine.manualIssue(client: client, node: n) }
+    var manualActiveCount: Int { manualNodes.filter { (($0["on"] as? Bool) ?? true) && manualIssue($0) == nil }.count }
+    var manualBlockedCount: Int { manualNodes.filter { (($0["on"] as? Bool) ?? true) && manualIssue($0) != nil }.count }
+    var manualCaps: Engine.ManualCap? { engine.manualMatrix().first { $0.id == client } }
+
+    /// 只收订阅 URL（A 区）
+    func addSubscriptions(_ raw: String) {
+        let lines = raw.split(whereSeparator: \.isNewline).map { String($0).trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        let urls = lines.filter { $0.lowercased().hasPrefix("http://") || $0.lowercased().hasPrefix("https://") }
+        let other = lines.count - urls.count
+        if urls.isEmpty { pasteNote = "没有识别到 http(s):// 订阅 URL" + (other > 0 ? "；节点链接请粘贴到下面的「节点链接」区。" : "。"); return }
+        applyPaste(urls.joined(separator: "\n"))
+        if other > 0 { pasteNote += "（另有 \(other) 行不是订阅 URL，已忽略，节点链接请放到「节点链接」区。）" }
+    }
+    func removeSub(_ i: Int) {
+        var s = state; var cur = (s["subs"] as? [[String: Any]]) ?? []
+        guard cur.indices.contains(i) else { return }
+        cur.remove(at: i); s["subs"] = cur; state = s
+    }
+    func clearNodeText() { var s = state; s["nodesText"] = ""; state = s; pasteNote = "已清空节点链接。" }
+
     // MARK: 流程进度
-    var hasNodes: Bool { !nodesText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !subs.isEmpty }
+    var hasNodes: Bool { !nodesText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !subs.isEmpty || manualActiveCount > 0 }
     var stepClientDone: Bool { clientInfo != nil && (clientInfo?.platforms.contains(platform) ?? false) }
     /// 小火箭的节点在 App 内添加，这一步对本 App 视为「无需」，计为完成
     var stepNodesDone: Bool { family == "shadowrocket" ? true : hasNodes }

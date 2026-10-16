@@ -1,5 +1,6 @@
 // 原生 SwiftUI 版用：把生成引擎打成单个 IIFE，由 JavaScriptCore 加载。界面全部是原生 SwiftUI，引擎沿用网页版（同一份逻辑，不重写）。
 import {generate} from '../src/engine';
+import {manualMatrix,manualIssue} from '../src/engine/manual';
 import {defaultOpts,recommend} from '../src/engine/recommend';
 import {CLIENTS,PLATFORMS} from '../src/data/clients';
 import {GROUPS,REGIONS,CATS} from '../src/data/groups';
@@ -19,6 +20,8 @@ const J=(x:unknown)=>JSON.stringify(x);
   version:VERSION,
   /** 初始方案（JSON 字符串） */
   initial:(client:string,platform:string)=>J({client,platform,location:'cn',network:'other',subs:[],nodesText:'',regions:['HK','TW','JP','SG','US'],groups:{},apps:[],customDomains:[],opts:defaultOpts()}),
+  manualMatrix:()=>J(manualMatrix()),
+  manualIssue:(client:string,json:string)=>{try{return J({issue:manualIssue(client,JSON.parse(json))})}catch(e:any){return J({issue:String(e)})}},
   catalog:()=>J({clients:CLIENTS.map(c=>({id:c.id,name:c.name,family:c.family,platforms:c.platforms,blurb:c.blurb,ext:c.ext,subInConfig:c.subInConfig,processRules:c.processRules,importHint:c.importHint,caps:(Object.keys(CAPS) as any[]).filter(f=>has(c.id,f))})),platforms:PLATFORMS,capList:Object.entries(CAPS).map(([k,v])=>({id:k,label:(v as any).label})),
     groups:GROUPS.map(g=>({id:g.id,name:g.name,cat:g.cat,def:g.def,defOn:g.defOn,risk:g.risk,notes:g.notes,icon:ICONS['g:'+g.id]||null})),
     regions:REGIONS.map(r=>({id:r.id,name:r.name,icon:ICONS['r:'+r.id]||null})),cats:CATS,

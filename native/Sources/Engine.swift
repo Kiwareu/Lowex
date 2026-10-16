@@ -62,6 +62,14 @@ final class Engine {
     func supportsModules(client: String) -> Bool {
         api.objectForKeyedSubscript("supportsModules").call(withArguments: [client])?.toBool() ?? false
     }
+    struct ManualCap: Decodable { let id: String; let socks5: Bool; let socks5tls: Bool; let http: Bool; let https: Bool }
+    func manualMatrix() -> [ManualCap] {
+        (try? JSONDecoder().decode([ManualCap].self, from: Data(call("manualMatrix", []).utf8))) ?? []
+    }
+    func manualIssue(client: String, node: [String: Any]) -> String? {
+        guard let d = try? JSONSerialization.data(withJSONObject: node), let s = String(data: d, encoding: .utf8) else { return "无法序列化" }
+        return json(call("manualIssue", [client, s]))["issue"] as? String
+    }
     func presets() -> [[String: Any]] {
         (try? JSONSerialization.jsonObject(with: Data(call("presets", []).utf8))) as? [[String: Any]] ?? []
     }

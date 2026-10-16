@@ -3,6 +3,7 @@ import {APPS} from '../data/apps';
 import {GROUPS,CORE,DIRECT_EXC,REGIONS,GROUP_BY_ID,type RuleGroup,type Region} from '../data/groups';
 import type {State,Policy} from './types';
 import {parseNodes,type Node} from './nodes';
+import {manualToNode,manualIssue} from './manual';
 
 export type Rule=
  |{st?:string}&(
@@ -62,7 +63,16 @@ export function makePlan(s:State):Plan{
   const parsed0=parseNodes(s.nodesText);const bad=parsed0.bad;
   const reOf=(x:string)=>{try{return x.trim()?new RegExp(x.trim(),'i'):null}catch{return null}};
   const inc=reOf(o.nodeInclude||''),exc=reOf(o.nodeExclude||'');
-  const nodes=parsed0.nodes.filter(n=>(!inc||inc.test(n.name))&&(!exc||!exc.test(n.name)));
+  const parsedOk=parsed0.nodes.filter(n=>(!inc||inc.test(n.name))&&(!exc||!exc.test(n.name)));
+  // 手动节点：不受包含 / 排除过滤；客户端写不出的会被剔除并给出原因
+  const manualWarn:string[]=[];const taken=new Set(parsedOk.map(n=>n.name));const manualNodes:Node[]=[];
+  for(const m of (s.manualNodes||[])){
+    if(m.on===false)continue;
+    const why=manualIssue(s.client,m);
+    if(why){manualWarn.push(`手动节点「${m.name||m.host}」未写入：${why}。`);continue}
+    const nn=manualToNode(m);let base=nn.name,i=1;while(taken.has(nn.name)){i++;nn.name=`${base} ${i}`}taken.add(nn.name);manualNodes.push(nn);
+  }
+  const nodes=[...parsedOk,...manualNodes];
   const subs=s.subs.filter(x=>x.url.trim());
   const fam=CLIENTS.find(c=>c.id===s.client)?.family;
   const norm=(p:Policy):Policy=>{
@@ -152,8 +162,9 @@ export function makePlan(s:State):Plan{
   push({t:'final',p:o.unknown==='proxy'?'PROXY':'DIRECT'});
   if(overseas&&!subs.length&&!nodes.length)warnings.push('海外模式需要订阅里有「回国」线路节点；没有的话「回国」组只会指向直连。');
   if(!subs.length&&!nodes.length&&client.subInConfig)warnings.push('还没有填订阅或节点：配置里使用了占位符 {{SUB_URL_1}}，导入前请替换。');
+  warnings.push(...manualWarn);
   if(client.family==='shadowrocket'){
-    if(subs.length||nodes.length)warnings.push('小火箭：本配置不会写入节点或订阅 URL。请在 Shadowrocket 首页单独添加节点/订阅；策略组用正则从 App 内节点自动收纳。');
+    if(subs.length||parsedOk.length)warnings.push('小火箭：本配置不会写入节点链接或订阅 URL（只会写入手动添加的 SOCKS5/HTTP 节点）。请在 Shadowrocket 首页单独添加节点/订阅；策略组用正则从 App 内节点自动收纳。');
     else warnings.push('小火箭：请先在 App 首页添加节点或订阅，再导入本配置（只含规则与策略组）。');
   }
   if(client.family==='singbox'&&!nodes.length)warnings.push('sing-box / Karing 没有订阅字段：请粘贴节点链接或订阅正文（ss://、vmess://、vless:// 等），单独的订阅 URL 无法写进 JSON。');

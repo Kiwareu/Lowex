@@ -34,7 +34,10 @@ struct RootContainer: View {
         }
         .preferredColorScheme(appearance.scheme)
         .fontDesign(appearance.fontStyle.design)
-        .sensoryFeedback(.success, trigger: store.celebrate)
+        .onChange(of: store.celebrate) { _, _ in Haptics.success() }
+        .submitLabel(.done)
+        .onSubmit { KeyboardHelper.shared.dismissKeyboard() }
+        .onAppear { KeyboardHelper.shared.install() }
         .task {
             try? await Task.sleep(nanoseconds: 1_700_000_000)
             store.finishSplash()

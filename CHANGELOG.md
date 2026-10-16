@@ -14,4 +14,6 @@
 
 **build 7**：系统 / 客户端改为平铺大按钮（原菜单与分段控件易误触或无反馈）；首页与「关于」显示版本与 build；配置名带「自动 / 自定义」标记，未聚焦时始终显示当前自动名；升级时丢弃一切 `Lowex-<客户端名>` 形式的旧名称。
 
+**build 8**：节点页拆为「订阅 URL / 节点链接与 Base64 / 手动节点」三块并按客户端说明行为；新增手动 SOCKS5 / HTTP / HTTPS 节点（可编辑 / 删除 / 开关，密码存钥匙串；Clash、sing-box、Surge、Shadowrocket、Loon、QX、Egern、Stash 各按官方写法输出，写不出的给出原因）；键盘「完成」按钮、点空白收起、滚动收起、Return 收起；全局触感反馈及设置开关。
+
 内部版本映射 / Internal mapping: 3.5.x（Apple-only 预览）→ 3.6.0（多平台）= public v1.0.0。

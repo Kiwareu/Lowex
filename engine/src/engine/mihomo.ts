@@ -15,6 +15,7 @@ export function mihomoProxy(n:Node):Record<string,any>{
       if(n.network==='httpupgrade')o['http-opts']={method:'GET',path:[n.path||'/'],...(n.host?{headers:{Host:[n.host]}}:{})};}
   };
   switch(n.type){
+    case'socks5':case'http':if(n.username)o.username=n.username;if(n.password)o.password=n.password;if(n.tls)o.tls=true;if(n.type==='socks5')o.udp=true;break;
     case'ss':o.cipher=n.cipher;o.password=n.password;o.udp=true;if(n.plugin){o.plugin=n.plugin;o['plugin-opts']=n.pluginOpts}break;
     case'vmess':o.uuid=n.uuid;o.alterId=n.alterId||0;o.cipher=n.cipher||'auto';o.udp=true;tlsCommon();trans();break;
     case'vless':o.uuid=n.uuid;o.udp=true;if(n.flow)o.flow=n.flow;tlsCommon();trans();if(n.pbk)o['reality-opts']={'public-key':n.pbk,'short-id':n.sid||''};break;

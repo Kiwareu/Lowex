@@ -50,6 +50,21 @@ function svcGroupLines(p:Plan,c:ReturnType<typeof common>,sep:string){
 }
 export function nodeLine(n:Node,fmt:Fmt):string|null{
   const name=nm(n.name);
+  if(n.type==='socks5'||n.type==='http'){
+    const u=n.username||'',pw=n.password||'';const auth=u||pw;
+    if(fmt==='surge'||fmt==='shadowrocket'){
+      const proto=n.type==='socks5'?(n.tls?'socks5-tls':'socks5'):(n.tls?'https':'http');
+      return`${name} = ${proto}, ${n.server}, ${n.port}${auth?`, ${u}, ${pw}`:''}`;
+    }
+    if(fmt==='loon'){
+      if(n.type==='socks5'&&n.tls)return null;
+      const proto=n.type==='socks5'?'socks5':(n.tls?'https':'http');
+      return`${name} = ${proto},${n.server},${n.port}${auth?`,"${u}","${pw}"`:''}${n.type==='socks5'?',udp=true':''}`;
+    }
+    if(fmt==='qx'){
+      return`${n.type}=${n.server}:${n.port}${u?`, username=${u}`:''}${pw?`, password=${pw}`:''}${n.tls?', over-tls=true, tls-verification=true':''}${n.type==='socks5'?', udp-relay=true':''}, fast-open=false, tag=${name}`;
+    }
+  }
   if(fmt==='surge'){
     if(n.type==='ss')return`${name} = ss, ${n.server}, ${n.port}, encrypt-method=${n.cipher}, password=${n.password}, udp-relay=true`;
     if(n.type==='trojan')return`${name} = trojan, ${n.server}, ${n.port}, password=${n.password}${n.sni?`, sni=${n.sni}`:''}${n.insecure?', skip-cert-verify=true':''}${n.network==='ws'?`, ws=true, ws-path=${n.path||'/'}${n.host?`, ws-headers=Host:${n.host}`:''}`:''}`;
@@ -203,7 +218,7 @@ export function genShadowrocket(s:State,plan?:Plan):string{
   const L:string[]=[`# Lowex 生成 · Shadowrocket（已对照社区手册 LOWERTOP/Shadowrocket 与配置样例核对，未用真机导入）· ${new Date().toISOString().slice(0,10)}`,'# 节点/订阅请在 App 首页里添加；下面的分组用正则自动收纳节点。全部在浏览器本地生成。','','[General]',
    `skip-proxy = ${COMMON_SKIP}`,'tun-excluded-routes = 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 255.255.255.255/32',
    `dns-server = ${o.dnsCn.join(', ')}`,'fallback-dns-server = https://dns.alidns.com/dns-query, https://doh.pub/dns-query',`ipv6 = ${o.ipv6}`,'private-ip-answer = true','dns-direct-fallback-proxy = true','udp-policy-not-supported-behaviour = REJECT',
-   `block-quic = ${o.blockQuic==='foreign'?'all-proxy':'always-allow'}`,'','[Proxy Group]'];
+   `block-quic = ${o.blockQuic==='foreign'?'all-proxy':'always-allow'}`,'',...(()=>{const ml=p.nodes.filter(n=>n.manual).map(n=>nodeLine(n,'shadowrocket')).filter(Boolean) as string[];return ml.length?['[Proxy]',...ml,'']:[]})(),'[Proxy Group]'];
   for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=${regionFilter(p,r)}`);L.push(`${regionGroup(r,'手动')} = select,policy-regex-filter=${regionFilter(p,r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,${regionGroup(r,'手动')},${regionGroup(r,'自动')},url=${o.testUrl},interval=${o.urlTestInterval}`)}
   L.push(`全部-自动 = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=.*`);
   L.push(`${N.proxy} = select,${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'].join(',')}`);
@@ -224,7 +239,7 @@ export function genShadowrocket(s:State,plan?:Plan):string{
     }
   }
   if(c.skipped.length)L.push('',`# 以下分组没有可用的 Shadowrocket 规则集，已跳过：${c.skipped.join('、')}`);
-  if(p.nodes.length||p.subs.length)L.unshift('# 提示：已填的节点/订阅不会写进 Shadowrocket 配置，请在 App 里单独添加。');
+  if(p.nodes.some(n=>!n.manual)||p.subs.length)L.unshift('# 提示：已填的节点链接/订阅不会写进 Shadowrocket 配置，请在 App 里单独添加（手动添加的 SOCKS5/HTTP 节点会写在 [Proxy]）。');
   return L.join('\n')+'\n';
 }
 /** Egern 节点 → 官方配置示例（egernapp.com/docs/configuration/example）里的写法；文档没写的传输（reality/grpc 等）跳过 */
@@ -232,6 +247,8 @@ export function egernProxy(n:Node):Record<string,any>|null{
   const base={name:n.name,server:n.server,port:n.port};
   const tr=()=>{if(n.network==='ws')return n.tls?{wss:{path:n.path||'/',sni:n.sni||n.host||n.server}}:{ws:{path:n.path||'/'}};return undefined};
   switch(n.type){
+    case'socks5':if(n.tls)return null;return{socks5:{...base,...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{}),udp_relay:true}};
+    case'http':return{[n.tls?'https':'http']:{...base,...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{}),...(n.tls?{sni:n.server}:{})}};
     case'ss':if(n.plugin)return null;return{shadowsocks:{...base,method:n.cipher,password:n.password,udp_relay:true}};
     case'trojan':if(n.network&&n.network!=='tcp')return null;return{trojan:{...base,password:n.password,sni:n.sni,...(n.insecure?{skip_tls_verify:true}:{}),udp_relay:true}};
     case'vmess':{if(n.network&&n.network!=='tcp'&&n.network!=='ws')return null;const t=tr();return{vmess:{...base,user_id:n.uuid,security:n.cipher||'auto',legacy:!!n.alterId,...(t?{transport:t}:{}),udp_relay:true}}}

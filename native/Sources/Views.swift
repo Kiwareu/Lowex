@@ -243,97 +243,258 @@ struct OptToggle: View {
 // MARK: - 节点
 struct NodesView: View {
     @EnvironmentObject var store: Store
-    @State private var draft = ""
+    @State private var subDraft = ""
+    @State private var linkDraft = ""
+    @State private var editing: ManualNodeDraft?
+
+    private var isSR: Bool { store.family == "shadowrocket" }
+    private var isSB: Bool { store.family == "singbox" }
 
     var body: some View {
         PageChrome(title: "节点") {
             HeroCard {
-                Text(store.family == "shadowrocket" ? "小火箭：节点在 App 内添加" : "粘贴即可，按客户端写入")
-                    .font(.title3.weight(.semibold))
-                Text(store.nodeModeHint)
+                Text("三种来源，可同时使用").font(.title3.weight(.semibold))
+                Text("① 订阅 URL　② 节点链接 / Base64　③ 手动添加 SOCKS5 / HTTP(S)。当前客户端：\(store.clientInfo?.name ?? "")")
                     .font(.footnote).foregroundStyle(.secondary)
+                Text(store.nodeModeHint).font(.caption).foregroundStyle(.secondary)
             }
 
-            if store.family == "shadowrocket" {
-                PlainCard {
-                    Text("推荐流程").font(.headline)
-                    Text("1. 打开 Shadowrocket → 首页 → + → 添加订阅或节点\n2. 回到 Lowex 调规则并生成 conf\n3. 用「分享 → 用 Shadowrocket 打开」导入 conf\n4. 策略组会按香港/日本等名称正则收纳你已添加的节点")
-                        .font(.footnote).foregroundStyle(.secondary)
-                    Text("下方粘贴区仅用于把 URL/节点复制到剪贴板，方便你粘到小火箭；不会写入本配置。")
-                        .font(.caption2).foregroundStyle(Brand.pink)
-                }
-            }
-
+            // A. 订阅 URL
             PlainCard {
-                Text(store.family == "shadowrocket" ? "复制到剪贴板" : "粘贴区").font(.headline)
-                TextEditor(text: $draft)
-                    .frame(minHeight: 140)
-                    .scrollContentBackground(.hidden)
-                    .font(.system(.footnote, design: .monospaced))
-                    .padding(8)
-                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                Label("订阅 URL", systemImage: "link").font(.headline)
+                Text(subHelper).font(.caption).foregroundStyle(.secondary)
+                inputBox($subDraft, placeholder: "https://example.com/sub?token=…\n可一行一个，多个订阅")
                 HStack {
                     Button {
-                        store.applyPaste(draft)
-                        if store.family != "shadowrocket" { draft = "" }
+                        store.addSubscriptions(subDraft)
+                        if !isSR { subDraft = "" }
                     } label: {
-                        Label(store.family == "shadowrocket" ? "复制并提示" : "写入方案",
-                              systemImage: store.family == "shadowrocket" ? "doc.on.clipboard" : "plus.circle.fill")
+                        Label(isSR ? "复制到剪贴板" : "添加订阅", systemImage: isSR ? "doc.on.clipboard" : "plus.circle.fill")
                     }
                     .buttonStyle(.borderedProminent).tint(Brand.pink)
-                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                    if store.family != "shadowrocket" {
-                        Button("清空全部", role: .destructive) { store.clearNodes() }
-                            .buttonStyle(.bordered)
+                    .disabled(subDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if !store.subs.isEmpty {
+                        Button("清空订阅", role: .destructive) { var s = store.state; s["subs"] = []; store.state = s }.buttonStyle(.bordered)
                     }
                 }
-                if !store.pasteNote.isEmpty {
-                    Text(store.pasteNote).font(.footnote).foregroundStyle(Brand.pink)
-                }
-            }
-
-            if store.family != "shadowrocket", !store.nodesText.isEmpty || !store.subs.isEmpty {
-                PlainCard {
-                    Text("当前方案").font(.headline)
-                    if !store.subs.isEmpty {
-                        Text("订阅 URL · \(store.subs.count) 条").font(.subheadline.weight(.medium))
-                        ForEach(Array(store.subs.enumerated()), id: \.offset) { _, s in
-                            Text(s["url"] as? String ?? "").font(.caption2).lineLimit(1)
-                                .foregroundStyle(.secondary)
+                if !store.subs.isEmpty && !isSR {
+                    ForEach(Array(store.subs.enumerated()), id: \.offset) { i, sub in
+                        HStack {
+                            Text(sub["url"] as? String ?? "").font(.caption2).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                            Spacer()
+                            Button { store.removeSub(i) } label: { Image(systemName: "trash").font(.caption) }.buttonStyle(.plain).foregroundStyle(.red)
                         }
                     }
-                    if !store.nodesText.isEmpty {
-                        let lines = store.nodesText.split(whereSeparator: \.isNewline)
-                        let n = lines.filter { $0.contains("://") }.count
-                        Text("节点正文 · \(lines.count) 行" + (n > 0 ? "（约 \(n) 条链接）" : ""))
-                            .font(.subheadline.weight(.medium))
-                    }
                 }
             }
+
+            // B. 节点链接
+            PlainCard {
+                Label("节点链接 / Base64 订阅正文", systemImage: "text.alignleft").font(.headline)
+                Text(linkHelper).font(.caption).foregroundStyle(.secondary)
+                inputBox($linkDraft, placeholder: "ss://… vmess://… vless://… trojan://… hysteria2://… tuic://…\n每行一条，或整段 Base64")
+                HStack {
+                    Button {
+                        store.applyPaste(linkDraft)
+                        if !isSR { linkDraft = "" }
+                    } label: {
+                        Label(isSR ? "复制到剪贴板" : "写入方案", systemImage: isSR ? "doc.on.clipboard" : "plus.circle.fill")
+                    }
+                    .buttonStyle(.borderedProminent).tint(Brand.pink)
+                    .disabled(linkDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if !store.nodesText.isEmpty && !isSR {
+                        Button("清空链接", role: .destructive) { store.clearNodeText() }.buttonStyle(.bordered)
+                    }
+                }
+                if !store.nodesText.isEmpty && !isSR {
+                    let lines = store.nodesText.split(whereSeparator: \.isNewline)
+                    let n = lines.filter { $0.contains("://") }.count
+                    Text("已写入 \(lines.count) 行" + (n > 0 ? "（约 \(n) 条链接）" : "")).font(.caption.weight(.medium))
+                }
+                if !store.pasteNote.isEmpty { Text(store.pasteNote).font(.footnote).foregroundStyle(Brand.pink) }
+            }
+
+            // C. 手动节点
+            manualCard
 
             PlainCard {
                 Text("地区分组").font(.headline)
-                Text("打开的地区会出现在规则出口与策略组里（含故转/自动/手动）。").font(.caption).foregroundStyle(.secondary)
+                Text("打开的地区会出现在规则出口与策略组里（含故转/自动/手动）。手动节点按名称里的地区关键词（如「香港」「日本」）归入对应地区。").font(.caption).foregroundStyle(.secondary)
                 ForEach(store.catalog.regions) { r in
-                    Toggle(isOn: Binding(
-                        get: { store.regions.contains(r.id) },
-                        set: { _ in store.toggleRegion(r.id) }
-                    )) {
-                        HStack(spacing: 8) {
-                            RemoteIcon(url: r.icon, name: r.name, size: 22)
-                            Text(r.name)
-                        }
-                    }
-                    .tint(Brand.pink)
+                    Toggle(isOn: Binding(get: { store.regions.contains(r.id) }, set: { _ in store.toggleRegion(r.id) })) {
+                        HStack(spacing: 8) { RemoteIcon(url: r.icon, name: r.name, size: 22); Text(r.name) }
+                    }.tint(Brand.pink)
                 }
             }
 
             Button { store.tab = .rules } label: {
                 Label("下一步：规则", systemImage: "arrow.right").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent).tint(Brand.pink)
+            }.buttonStyle(.borderedProminent).tint(Brand.pink)
         }
+        .scrollDismissesKeyboard(.interactively)
+        .sheet(item: $editing) { d in
+            ManualNodeForm(draft: d).environmentObject(store)
+        }
+    }
+
+    private var subHelper: String {
+        switch store.family {
+        case "shadowrocket": return "小火箭的订阅保存在 App 首页，conf 不能携带。这里的按钮只把 URL 复制到剪贴板，方便去 App 里添加（右上角 + → 类型 Subscribe）。"
+        case "singbox": return "sing-box / Karing 没有订阅字段：订阅 URL 不会写进 JSON，会被忽略。请先在别处下载订阅，把节点链接或 Base64 正文粘贴到下面的「节点链接」区。"
+        default: return "\(store.clientInfo?.name ?? "该客户端")：订阅 URL 会写进配置（\(store.family == "stash" || store.family == "mihomo" ? "proxy-providers" : "订阅/外部策略组")），由客户端自行更新。"
+        }
+    }
+    private var linkHelper: String {
+        switch store.family {
+        case "shadowrocket": return "小火箭节点在 App 里添加，conf 不含这些节点。这里只是复制到剪贴板（App 首页 → + 会识别剪贴板里的链接）。"
+        case "singbox": return "会解析成 outbounds 展开进 JSON。支持 ss / vmess / vless / trojan / hysteria2 / tuic / anytls，也支持整段 Base64。"
+        default: return "支持 ss / vmess / vless / trojan / hysteria2 / tuic / anytls 链接及整段 Base64 订阅正文；该客户端不支持的协议会被跳过并提示。"
+        }
+    }
+
+    @ViewBuilder private var manualCard: some View {
+        PlainCard {
+            HStack {
+                Label("手动节点（SOCKS5 / HTTP / HTTPS）", systemImage: "network").font(.headline)
+                Spacer()
+            }
+            Text("适合家宽 / 住宅代理套餐：填主机、端口、账号密码即可。密码保存在本机钥匙串，不写进日志，也不会上传。")
+                .font(.caption).foregroundStyle(.secondary)
+            if let c = store.manualCaps {
+                Text("当前客户端支持：SOCKS5 \(c.socks5 ? "✓" : "✗") · SOCKS5-TLS \(c.socks5tls ? "✓" : "✗") · HTTP \(c.http ? "✓" : "✗") · HTTPS \(c.https ? "✓" : "✗")")
+                    .font(.caption2).foregroundStyle(Brand.pink)
+            }
+            if isSR { Text("小火箭：手动节点会写在 conf 的 [Proxy] 区（社区手册格式），不需要在 App 里再加。").font(.caption2).foregroundStyle(.secondary) }
+            ForEach(Array(store.manualNodes.enumerated()), id: \.offset) { _, m in
+                let id = m["id"] as? String ?? ""
+                let on = (m["on"] as? Bool) ?? true
+                let issue = store.manualIssue(m)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(m["name"] as? String ?? "").font(.subheadline.weight(.semibold))
+                            Text("\(kindLabel(m)) · \(m["host"] as? String ?? ""):\(String(describing: m["port"] ?? 0))" + (((m["user"] as? String) ?? "").isEmpty ? "" : " · 有账号"))
+                                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                        Spacer()
+                        Toggle("", isOn: Binding(get: { on }, set: { _ in store.toggleManual(id) })).labelsHidden().tint(Brand.pink)
+                    }
+                    if let issue, on { Label("当前客户端不会写入：\(issue)", systemImage: "exclamationmark.triangle.fill").font(.caption2).foregroundStyle(.orange) }
+                    HStack(spacing: 14) {
+                        Button("编辑") { editing = ManualNodeDraft(m) }
+                        Button("删除", role: .destructive) { store.removeManual(id) }
+                    }.font(.caption).buttonStyle(.plain).foregroundStyle(Brand.pink)
+                }
+                .padding(10).background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            Button { editing = ManualNodeDraft(nil) } label: {
+                Label("添加节点", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
+            }.buttonStyle(.borderedProminent).tint(Brand.pink)
+            if store.manualBlockedCount > 0 {
+                Text("有 \(store.manualBlockedCount) 个手动节点当前客户端写不出，生成时会跳过并在结果里提示。").font(.caption2).foregroundStyle(.orange)
+            }
+        }
+    }
+
+    private func kindLabel(_ m: [String: Any]) -> String {
+        let tls = (m["tls"] as? Bool) ?? false
+        return (m["kind"] as? String) == "http" ? (tls ? "HTTPS" : "HTTP") : (tls ? "SOCKS5-TLS" : "SOCKS5")
+    }
+
+    private func inputBox(_ text: Binding<String>, placeholder: String) -> some View {
+        ZStack(alignment: .topLeading) {
+            TextEditor(text: text)
+                .frame(minHeight: 96)
+                .scrollContentBackground(.hidden)
+                .font(.system(.footnote, design: .monospaced))
+                .autocorrectionDisabled().textInputAutocapitalization(.never)
+                .padding(8)
+                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            if text.wrappedValue.isEmpty {
+                Text(placeholder).font(.system(.footnote, design: .monospaced)).foregroundStyle(.tertiary)
+                    .padding(.horizontal, 13).padding(.vertical, 16).allowsHitTesting(false)
+            }
+        }
+    }
+}
+
+struct ManualNodeDraft: Identifiable {
+    let id: String
+    var name = ""; var kind = "socks5"; var tls = false; var host = ""; var port = ""; var user = ""; var pass = ""; var on = true
+    let isNew: Bool
+    init(_ m: [String: Any]?) {
+        isNew = m == nil
+        id = (m?["id"] as? String) ?? UUID().uuidString
+        guard let m else { return }
+        name = m["name"] as? String ?? ""; kind = m["kind"] as? String ?? "socks5"; tls = (m["tls"] as? Bool) ?? false
+        host = m["host"] as? String ?? ""; port = String(describing: m["port"] ?? ""); user = m["user"] as? String ?? ""
+        pass = m["pass"] as? String ?? ""; on = (m["on"] as? Bool) ?? true
+    }
+    var dict: [String: Any] {
+        ["id": id, "name": name.trimmingCharacters(in: .whitespaces), "kind": kind, "tls": tls, "host": host.trimmingCharacters(in: .whitespaces),
+         "port": Int(port.trimmingCharacters(in: .whitespaces)) ?? 0, "user": user, "pass": pass, "on": on]
+    }
+}
+
+struct ManualNodeForm: View {
+    @EnvironmentObject var store: Store
+    @Environment(\.dismiss) private var dismiss
+    @State var draft: ManualNodeDraft
+    @State private var showPass = false
+    @State private var type = 0   // 0 SOCKS5, 1 HTTP, 2 HTTPS
+    init(draft: ManualNodeDraft) {
+        _draft = State(initialValue: draft)
+        _type = State(initialValue: draft.kind == "http" ? (draft.tls ? 2 : 1) : 0)
+    }
+    private var issue: String? { store.manualIssue(draft.dict) }
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("名称（决定归入哪个地区）") {
+                    TextField("例如 香港-住宅 / 日本-家宽", text: $draft.name)
+                }
+                Section("类型") {
+                    Picker("类型", selection: $type) { Text("SOCKS5").tag(0); Text("HTTP").tag(1); Text("HTTPS").tag(2) }.pickerStyle(.segmented)
+                    if type == 0 { Toggle("SOCKS5 over TLS", isOn: $draft.tls).tint(Brand.pink) }
+                }
+                Section("服务器") {
+                    TextField("主机（域名或 IP）", text: $draft.host).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                    TextField("端口", text: $draft.port).keyboardType(.numberPad)
+                }
+                Section("账号（可留空）") {
+                    TextField("用户名", text: $draft.user).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    HStack {
+                        Group { if showPass { TextField("密码", text: $draft.pass) } else { SecureField("密码", text: $draft.pass) } }
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        Button { showPass.toggle() } label: { Image(systemName: showPass ? "eye.slash" : "eye") }.buttonStyle(.plain)
+                    }
+                }
+                Section {
+                    if let issue { Label(issue, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(.footnote) }
+                    else { Label("当前客户端可以写入这个节点", systemImage: "checkmark.circle.fill").foregroundStyle(.green).font(.footnote) }
+                    Text("密码保存在本机钥匙串（不可用时回退到 App 沙盒私有文件），不会上传。").font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .navigationTitle(draft.isNew ? "添加节点" : "编辑节点").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") { save() }.disabled(!canSave)
+                }
+            }
+            .onChange(of: type) { _, t in draft.kind = t == 0 ? "socks5" : "http"; draft.tls = t == 2 ? true : (t == 1 ? false : draft.tls) }
+        }
+    }
+    /// 基础字段齐全即可保存；客户端写不出的会在列表里提示，不阻止保存
+    private var canSave: Bool {
+        !draft.name.trimmingCharacters(in: .whitespaces).isEmpty && !draft.host.trimmingCharacters(in: .whitespaces).isEmpty
+            && (Int(draft.port.trimmingCharacters(in: .whitespaces)).map { (1...65535).contains($0) } ?? false)
+    }
+    private func save() {
+        var d = draft; d.kind = type == 0 ? "socks5" : "http"
+        if type == 1 { d.tls = false }; if type == 2 { d.tls = true }
+        store.upsertManual(d.dict); Haptics.success(); dismiss()
     }
 }
 
@@ -509,7 +670,6 @@ struct PlatformSelector: View {
                 .buttonStyle(PressableStyle())
             }
         }
-        .sensoryFeedback(.selection, trigger: store.platform)
     }
 }
 
@@ -541,7 +701,6 @@ struct ClientGrid: View {
                 }
             }
         }
-        .sensoryFeedback(.selection, trigger: store.client)
     }
     private var platformLabel: String { store.platform == "windows" ? "Windows" : (store.platform == "android" ? "Android" : "iOS") }
 }

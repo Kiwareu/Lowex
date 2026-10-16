@@ -1,5 +1,6 @@
 export interface Node{
-  type:'ss'|'vmess'|'vless'|'trojan'|'hysteria2'|'tuic'|'anytls';
+  type:'ss'|'vmess'|'vless'|'trojan'|'hysteria2'|'tuic'|'anytls'|'socks5'|'http';
+  username?:string;manual?:boolean;
   name:string;server:string;port:number;
   uuid?:string;password?:string;cipher?:string;alterId?:number;
   tls?:boolean;sni?:string;alpn?:string[];insecure?:boolean;fp?:string;

@@ -30,6 +30,7 @@ final class Appearance: ObservableObject {
     var glassIntensity: Double { didSet { d.set(glassIntensity, forKey: "ap.glass"); bump() } }
     var gradientSpeed: Double { didSet { d.set(gradientSpeed, forKey: "ap.speed"); bump() } }
     var fontStyle: FontStyle { didSet { d.set(fontStyle.rawValue, forKey: "ap.font"); bump() } }
+    var haptics: Bool { didSet { d.set(haptics, forKey: "ap.haptics") } }
     private(set) var wallpaper: UIImage?
 
     var accent: Color { Self.swatches[min(max(accentIndex, 0), Self.swatches.count - 1)].1 }
@@ -43,6 +44,7 @@ final class Appearance: ObservableObject {
         glassIntensity = d.object(forKey: "ap.glass") as? Double ?? 0.6
         gradientSpeed = d.object(forKey: "ap.speed") as? Double ?? 0.6
         fontStyle = FontStyle(rawValue: d.string(forKey: "ap.font") ?? "") ?? .rounded
+        haptics = d.object(forKey: "ap.haptics") as? Bool ?? true
         wallpaper = UIImage(contentsOfFile: Self.wallpaperURL.path)
     }
     private func bump() { revision += 1 }
@@ -65,7 +67,7 @@ final class Appearance: ObservableObject {
         wallpaper = nil; bump()
     }
     func resetAll() {
-        mode = .system; accentIndex = 0; cornerRadius = 20; glassIntensity = 0.6; gradientSpeed = 0.6; fontStyle = .rounded
+        haptics = true; mode = .system; accentIndex = 0; cornerRadius = 20; glassIntensity = 0.6; gradientSpeed = 0.6; fontStyle = .rounded
         clearWallpaper()
     }
 }
@@ -101,6 +103,10 @@ struct AppearanceView: View {
                                     }.buttonStyle(PressableStyle())
                                 }
                             }
+                        }
+                        PlainCard {
+                            Toggle("触感反馈", isOn: Binding(get: { ap.haptics }, set: { ap.haptics = $0; if $0 { Haptics.light() } })).tint(Brand.pink)
+                            Text("按钮、开关、选择与生成成功时的轻微震动。").font(.caption2).foregroundStyle(.secondary)
                         }
                         PlainCard {
                             Text("字体").font(.headline)

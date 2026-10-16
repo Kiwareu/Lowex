@@ -265,6 +265,7 @@ struct GenerateView: View {
                   : (store.stepNodesDone ? "已含节点 / 订阅" : "未粘贴节点（仍可生成）"),
                   systemImage: store.stepNodesDone ? "checkmark.circle" : "info.circle")
             Label(store.stepRulesHint, systemImage: "list.bullet")
+            if !store.manualNodes.isEmpty { Label("手动节点 \(store.manualActiveCount) 个可写入" + (store.manualBlockedCount > 0 ? "，\(store.manualBlockedCount) 个当前客户端写不出" : ""), systemImage: "network") }
             if store.supports("failover"), (store.opts["failover"] as? Bool) ?? true { Label("故障转移（故转）已开", systemImage: "arrow.triangle.branch") }
             if (store.opts["wifiCalling"] as? Bool) == true, store.supports("wifi") { Label("Wi-Fi 通话已开", systemImage: "phone.connection") }
             if !store.blockFlags.isEmpty { Label("拦截：" + store.blockFlags, systemImage: "hand.raised") }
@@ -273,7 +274,7 @@ struct GenerateView: View {
     }
 
     private func actionBtn(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button(action: { Haptics.light(); action() }) {
             Label(title, systemImage: icon).font(.caption.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 10)
         }
         .buttonStyle(.bordered)
