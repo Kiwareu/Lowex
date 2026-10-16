@@ -421,7 +421,8 @@ final class Store: ObservableObject {
 
     /// 同时支持「写入配置」与「在客户端 App 内自己添加」的客户端（QX、小火箭）
     var nodeModeChoice: Bool { family == "qx" || family == "shadowrocket" }
-    var appMode: Bool { nodeModeChoice && str("nodeMode") == "app" }
+    var nodeMode: String { nodeModeChoice && str("nodeMode") == "app" ? "app" : "config" }
+    var appMode: Bool { nodeMode == "app" }
     func setNodeMode(_ m: String) {
         Haptics.selection()
         var s = state; s["nodeMode"] = m; state = s
