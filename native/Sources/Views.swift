@@ -22,10 +22,10 @@ struct HomeView: View {
                 Text("Windows / iOS / Android · 选系统与客户端 → 节点 → 规则 → 生成。全部本机完成。")
                     .font(.footnote).foregroundStyle(.secondary)
                 HStack(spacing: 10) {
-                    StepBadge(n: 1, label: "客户端", done: store.stepClientDone, active: true)
-                    StepBadge(n: 2, label: "节点", done: store.stepNodesDone, active: false)
-                    StepBadge(n: 3, label: "规则", done: false, active: false)
-                    StepBadge(n: 4, label: "生成", done: !store.result.text.isEmpty, active: false)
+                    StepBadge(n: 1, label: "客户端", done: store.stepClientDone, active: store.activeStep == 1)
+                    StepBadge(n: 2, label: "节点", done: store.stepNodesDone, active: store.activeStep == 2)
+                    StepBadge(n: 3, label: "规则", done: store.stepRulesDone, active: store.activeStep == 3)
+                    StepBadge(n: 4, label: "生成", done: store.stepGenerateDone, active: store.activeStep == 4)
                 }
                 .padding(.top, 4)
             }
@@ -61,12 +61,7 @@ struct HomeView: View {
 
             PlainCard {
                 Text("配置名称").font(.headline)
-                TextField("例如 Lowex-日常", text: Binding(
-                    get: { store.str("profileName").isEmpty ? store.profileName : store.str("profileName") },
-                    set: { store.set("profileName", $0) }
-                ))
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
+                ProfileNameField()
             }
 
             PlainCard {
@@ -223,7 +218,7 @@ struct PresetButtons: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
-                .background(Color.white.opacity(0.45), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
         }
@@ -283,7 +278,7 @@ struct NodesView: View {
                     .scrollContentBackground(.hidden)
                     .font(.system(.footnote, design: .monospaced))
                     .padding(8)
-                    .background(Color.white.opacity(0.4), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 HStack {
                     Button {
                         store.applyPaste(draft)
@@ -345,9 +340,6 @@ struct NodesView: View {
                 Label("下一步：规则", systemImage: "arrow.right").frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent).tint(Brand.pink)
-        }
-        .onAppear {
-            if draft.isEmpty, store.family != "shadowrocket" { draft = store.nodesText }
         }
     }
 }
@@ -467,3 +459,34 @@ struct RulesView: View {
 }
 
 // MARK: - 生成
+
+
+struct ProfileNameField: View {
+    @EnvironmentObject var store: Store
+    @State private var text = ""
+    @FocusState private var focused: Bool
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            TextField("配置名称", text: $text)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .focused($focused)
+                .submitLabel(.done)
+                .onSubmit { commit() }
+                .onChange(of: focused) { _, f in if !f { commit() } }
+                .onAppear { text = store.profileName }
+                .onChange(of: store.autoProfileName) { _, n in if !store.profileNameIsCustom { text = n } }
+            if store.profileNameIsCustom {
+                Button("恢复自动名称（\(store.autoProfileName)）") { store.profileName = ""; text = store.profileName }
+                    .font(.caption).buttonStyle(.plain).foregroundStyle(Brand.pink)
+            } else {
+                Text("名称会随所选客户端自动变化；手动修改后保持不变。").font(.caption2).foregroundStyle(.secondary)
+            }
+        }
+    }
+    private func commit() {
+        let v = text.trimmingCharacters(in: .whitespaces)
+        store.profileName = v
+        text = store.profileName
+    }
+}

@@ -6,7 +6,9 @@ import UIKit
 final class Store: ObservableObject {
     let engine = Engine.shared
     let catalog: Catalog
-    @Published var state: [String: Any]
+    @Published var state: [String: Any] {
+        didSet { if !result.text.isEmpty || result.error != nil { result = GenResult(text: "", name: "", warnings: []) } }
+    }
     @Published var result = GenResult(text: "", name: "", warnings: [])
     @Published var recommendNote = ""
     @Published var tab: AppTab = .home
@@ -17,6 +19,7 @@ final class Store: ObservableObject {
     @Published var showAppearance = false
     @Published var celebrate = 0
     @Published var remoteURL = ""
+    @Published var qrNote = ""
     private var needsDisclaimer = false
 
     private let key = "lowex.native.state.v3"
@@ -37,10 +40,19 @@ final class Store: ObservableObject {
             if merged["platform"] == nil { merged["platform"] = "ios" }
             let pf = merged["platform"] as? String ?? "ios"
             if let c = merged["client"] as? String,
-               cat.clients.first(where: { $0.id == c })?.platforms.contains(pf) != true {
+               cat.clients.first(where: { $0.id == c })?.platforms.contains(pf) == true {
+            } else {
                 merged["client"] = cat.clients.first(where: { $0.platforms.contains(pf) })?.id ?? "shadowrocket"
             }
+            // 旧版本把自动生成的名字也存了下来：没有「手动改过」标记就丢弃，改回跟随客户端
+            if (merged["profileNameCustom"] as? Bool) != true { merged["profileName"] = "" }
+            // 缺失的选项补默认值（旧版本升级）
+            let base = Engine.shared.initialState(client: merged["client"] as? String ?? "shadowrocket", platform: pf)
+            var o = (base["opts"] as? [String: Any]) ?? [:]
+            for (k, v) in (merged["opts"] as? [String: Any]) ?? [:] { o[k] = v }
+            merged["opts"] = o
             state = merged
+            reconcile(silent: true)
         } else {
             let first = cat.clients.first(where: { $0.id == "shadowrocket" })?.id
                 ?? cat.clients.first?.id ?? "shadowrocket"
@@ -93,12 +105,53 @@ final class Store: ObservableObject {
         if clientInfo?.platforms.contains(p) != true,
            let c = catalog.clients.first(where: { $0.platforms.contains(p) }) { s["client"] = c.id }
         state = s
-        result = GenResult(text: "", name: "", warnings: [])
-        save()
+        reconcile()
     }
     func setClient(_ id: String) {
+        guard id != client else { return }
         var s = state; s["client"] = id; state = s
+        reconcile()
+    }
+
+    /// 切换系统 / 客户端后：把依赖它们的状态重新对齐（不支持的选项回默认、不适用的按应用规则移除、清空旧结果）。
+    func reconcile(silent: Bool = false) {
+        var notes: [String] = []
+        var s = state
+        let base = engine.initialState(client: client, platform: platform)
+        let defOpts = (base["opts"] as? [String: Any]) ?? [:]
+        var o = (s["opts"] as? [String: Any]) ?? [:]
+        let map: [(String, String)] = [("failover", "failover"), ("ads", "ads"), ("trackers", "trackers"), ("telemetry", "telemetry"),
+            ("icons", "icons"), ("ipv6", "ipv6"), ("tun", "tun"), ("fakeIp", "fakeIp"), ("blockQuic", "quic"), ("stun", "stun"),
+            ("allowLan", "allowLan"), ("wifiCalling", "wifi")]
+        var reset: [String] = []
+        for (k, f) in map where !supports(f) {
+            if let d = defOpts[k], "\(o[k] ?? "")" != "\(d)" { o[k] = d; reset.append(k) }
+            else if o[k] == nil, let d = defOpts[k] { o[k] = d }
+        }
+        if !supports("wifi") { o["wifiCalling"] = false }
+        s["opts"] = o
+        if !reset.isEmpty { notes.append("\(reset.count) 个当前客户端不支持的选项已恢复默认") }
+        // 按应用规则：进程名只属于 Windows，包名只属于 Android
+        let apps = (s["apps"] as? [[String: Any]]) ?? []
+        let kept = apps.filter { a in
+            switch a["kind"] as? String {
+            case "process": return platform == "windows" && (clientInfo?.processRules ?? false)
+            case "package": return platform == "android" && (clientInfo?.processRules ?? false)
+            default: return true
+            }
+        }
+        if kept.count != apps.count { s["apps"] = kept; notes.append("\(apps.count - kept.count) 条不适用本系统的按应用规则已移除") }
+        // 模块只属于支持模块的客户端
+        if !engine.supportsModules(client: client), let m = s["modules"] as? [Any], !m.isEmpty {
+            s["modules"] = []; notes.append("模块已清空（当前客户端不支持）")
+        }
+        state = s
         result = GenResult(text: "", name: "", warnings: [])
+        pasteNote = ""
+        qrNote = ""
+        if !silent {
+            recommendNote = notes.isEmpty ? "" : "已按「\(clientInfo?.name ?? client)」调整：" + notes.joined(separator: "；") + "。"
+        }
         save()
     }
     var appVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "3.6.0" }
@@ -157,12 +210,25 @@ final class Store: ObservableObject {
     }
 
     // MARK: 配置名称
-    var profileName: String {
-        get {
-            let n = str("profileName")
-            return n.isEmpty ? "Lowex-\(clientInfo?.name ?? client)" : n
+    /// 自动名：Lowex-客户端名（去掉括号注释与空格，适合作文件名）
+    var autoProfileName: String {
+        var n = clientInfo?.name ?? client
+        for (l, r) in [("(", ")"), ("（", "）")] {
+            while let a = n.range(of: l), let b = n.range(of: r, range: a.upperBound..<n.endIndex) { n.removeSubrange(a.lowerBound..<b.upperBound) }
         }
-        set { set("profileName", newValue) }
+        n = n.replacingOccurrences(of: " ", with: "")
+        return "Lowex-" + n
+    }
+    var profileNameIsCustom: Bool { (state["profileNameCustom"] as? Bool) == true && !str("profileName").isEmpty }
+    var profileName: String {
+        get { profileNameIsCustom ? str("profileName") : autoProfileName }
+        set {
+            let v = newValue.trimmingCharacters(in: .whitespaces)
+            var s = state
+            if v.isEmpty || v == autoProfileName { s["profileName"] = ""; s["profileNameCustom"] = false }
+            else { s["profileName"] = newValue; s["profileNameCustom"] = true }
+            state = s; save()
+        }
     }
 
     // MARK: 节点 / 订阅
@@ -221,13 +287,16 @@ final class Store: ObservableObject {
             }
             s["subs"] = []
             state = s
+            if !urls.isEmpty { pasteNote = "其中 \(urls.count) 条订阅 URL 已忽略（sing-box / Karing 不能写订阅 URL）。"; return }
             let nLinks = ((s["nodesText"] as? String) ?? "").split(whereSeparator: \.isNewline).filter { $0.contains("://") }.count
             pasteNote = "已写入节点正文" + (nLinks > 0 ? "（约 \(nLinks) 条链接）" : "") + "，生成时展开进 outbounds。"
             return
         }
 
         if embedsSub && !urls.isEmpty {
-            s["subs"] = urls.map { ["name": "", "url": $0] }
+            var cur = (s["subs"] as? [[String: Any]]) ?? []
+            for u in urls where !cur.contains(where: { ($0["url"] as? String) == u }) { cur.append(["name": "", "url": u]) }
+            s["subs"] = cur
         }
         if !body.isEmpty {
             let joined = body.joined(separator: "\n")
@@ -254,6 +323,7 @@ final class Store: ObservableObject {
         let c = client
         var fresh = engine.initialState(client: c, platform: platform)
         fresh["profileName"] = str("profileName")
+        fresh["profileNameCustom"] = state["profileNameCustom"] ?? false
         state = fresh
         result = GenResult(text: "", name: "", warnings: [])
         pasteNote = ""
@@ -272,9 +342,8 @@ final class Store: ObservableObject {
         s["nodesText"] = state["nodesText"] ?? ""
         s["platform"] = state["platform"] ?? "ios"
         state = s
+        reconcile(silent: true)
         recommendNote = "已应用预设。"
-        result = GenResult(text: "", name: "", warnings: [])
-        save()
     }
 
     func applyRecommend() {
@@ -296,7 +365,7 @@ final class Store: ObservableObject {
         generating = true
         defer { generating = false }
         // 文件名用配置名
-        let pn = profileName.replacingOccurrences(of: "/", with: "-")
+        let pn = profileName.components(separatedBy: CharacterSet(charactersIn: "/\\:*?\"<>|")).joined(separator: "-")
         if let ext = clientInfo?.fileExt {
             // engine names from client; we rename after
             _ = ext
@@ -324,11 +393,13 @@ final class Store: ObservableObject {
     }
 
     // MARK: 流程进度
-    var stepClientDone: Bool { !client.isEmpty }
-    var stepNodesDone: Bool {
-        if family == "shadowrocket" { return true } // 节点在 App 内，本页可选
-        return !nodesText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !subs.isEmpty
-    }
+    var hasNodes: Bool { !nodesText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !subs.isEmpty }
+    var stepClientDone: Bool { clientInfo != nil && (clientInfo?.platforms.contains(platform) ?? false) }
+    /// 小火箭的节点在 App 内添加，这一步对本 App 视为「无需」，计为完成
+    var stepNodesDone: Bool { family == "shadowrocket" ? true : hasNodes }
+    var stepRulesDone: Bool { catalog.groups.contains { isOn($0) } }
+    var stepGenerateDone: Bool { !result.text.isEmpty }
+    var activeStep: Int { !stepClientDone ? 1 : (!stepNodesDone ? 2 : (!stepRulesDone ? 3 : 4)) }
     var stepRulesHint: String {
         let on = catalog.groups.filter { isOn($0) }.count
         return "\(on)/\(catalog.groups.count) 分组开"

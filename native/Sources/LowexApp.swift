@@ -6,6 +6,9 @@ struct LowexApp: App {
     init() {
         UIScrollView.appearance().bounces = false
         UITableView.appearance().bounces = false
+        let tb = UITabBarAppearance(); tb.configureWithDefaultBackground()
+        UITabBar.appearance().standardAppearance = tb
+        UITabBar.appearance().scrollEdgeAppearance = tb
     }
     @StateObject private var store = Store()
     @StateObject private var appearance = Appearance.shared

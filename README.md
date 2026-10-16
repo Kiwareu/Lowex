@@ -17,6 +17,13 @@
 - **外观**：浅色 / 深色 / 跟随系统、强调色、圆角、玻璃强度、渐变速度、字体、自定义壁纸；启动动画和生成成功烟花（遵守「减弱动态效果」）。
 - **隐私**：全部在本机运行，无服务器、无统计。
 
+## 截图 / Screenshots
+| 首页 Home | 规则 Rules |
+|---|---|
+| <img src="docs/screenshots/home.png" width="260"> | <img src="docs/screenshots/rules.png" width="260"> |
+
+> 截图来自早期构建；当时配置名称未跟随客户端自动变化，v1.0.0 已修复。
+
 ## 安装 / Install
 从 [Releases](../../releases) 下载 `Lowex-native.ipa`（**未签名**）。
 - **TrollStore**：用 TrollStore 打开 / 分享 IPA 安装（需要受支持的 iOS 版本）。

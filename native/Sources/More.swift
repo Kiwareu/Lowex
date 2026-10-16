@@ -40,6 +40,8 @@ struct MoreView: View {
                     .padding(.bottom, 28)
                 }
                 .scrollBounceBehavior(.basedOnSize)
+                .contentMargins(.bottom, 56, for: .scrollContent)
+                BottomFade()
             }
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -341,7 +343,7 @@ struct LeakView: View {
                         Spacer()
                         Text(it.status).font(.caption2)
                             .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(.white.opacity(0.5), in: Capsule())
+                            .background(Color.primary.opacity(0.08), in: Capsule())
                     }
                     Text(it.group).font(.caption2).foregroundStyle(.secondary)
                     Text(it.why).font(.footnote)

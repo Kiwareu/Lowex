@@ -144,6 +144,7 @@ struct GenerateView: View {
             }
             if !toast.isEmpty { Text(toast).font(.footnote).foregroundStyle(Brand.pink) }
         }
+        .onChange(of: store.result.text) { _, n in if n.isEmpty { toast = ; showPreview = false } }
         .sheet(item: $shareFile) { ActivityView(items: [$0.url]) }
         .sheet(isPresented: $showQR) {
             VStack(spacing: 14) {

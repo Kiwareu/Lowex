@@ -171,6 +171,8 @@ struct PageChrome<Content: View>: View {
                 .padding(.bottom, 28)
             }
             .scrollBounceBehavior(.basedOnSize)
+            .contentMargins(.bottom, 56, for: .scrollContent)
+            BottomFade()
         }
         .toolbar(.hidden, for: .navigationBar)
     }
@@ -213,5 +215,19 @@ struct StepBadge: View {
             Text(label).font(.caption.weight(active ? .semibold : .regular))
                 .foregroundStyle(active || done ? Brand.ink : .secondary)
         }
+    }
+}
+
+/// 标签栏上方的渐隐衬底：内容滚到底栏下时不再「糊」在文字上（单层静态材质，XS 友好）
+struct BottomFade: View {
+    var body: some View {
+        Rectangle()
+            .fill(.regularMaterial)
+            .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black.opacity(0.85), location: 0.55), .init(color: .black, location: 1)],
+                                 startPoint: .top, endPoint: .bottom))
+            .frame(height: 110)
+            .frame(maxHeight: .infinity, alignment: .bottom)
+            .ignoresSafeArea(edges: .bottom)
+            .allowsHitTesting(false)
     }
 }
