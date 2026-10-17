@@ -232,9 +232,7 @@ struct SplashView: View {
     }
 
     private var wordmark: some View {
-        Text("Lowex")
-            .font(BrandFont.script(112))
-            .lineLimit(1).minimumScaleFactor(0.5)
+        WordmarkShape().frame(height: 96)
     }
 
     private func run() async {

@@ -223,21 +223,24 @@ struct SectionHeader: View {
     }
 }
 
-/// 手写签名风格字标（Great Vibes，SIL OFL 1.1，见 docs/brand/）。字体没注册成功时退回衬线斜体。
-enum BrandFont {
-    static let name = "GreatVibes-Regular"
-    static func script(_ size: CGFloat) -> Font {
-        UIFont(name: name, size: size) != nil ? .custom(name, fixedSize: size) : .system(size: size * 0.78, weight: .semibold, design: .serif).italic()
+/// 手写签名风格字标：直接用矢量素材 WordmarkScript（Great Vibes 的 "Lowex" 轮廓，SIL OFL 1.1，生成脚本见 tools/brand/make_wordmark.py）。
+/// 不依赖运行时字体注册，也不会被「字体风格」之类的全局设置改成无衬线。
+struct WordmarkShape: View {
+    static let aspect: CGFloat = 2.008
+    var body: some View {
+        Image("WordmarkScript")
+            .renderingMode(.template)
+            .resizable()
+            .aspectRatio(Self.aspect, contentMode: .fit)
     }
 }
 struct ScriptWordmark: View {
-    var size: CGFloat = 100
     var body: some View {
-        Text("Lowex")
-            .font(BrandFont.script(size))
-            .lineLimit(1).minimumScaleFactor(0.7)
-            .foregroundStyle(LinearGradient(colors: [Brand.pink, Brand.lilac, Color(red: 1.0, green: 0.52, blue: 0.46)], startPoint: .leading, endPoint: .trailing))
+        LinearGradient(colors: [Brand.pink, Brand.lilac, Color(red: 1.0, green: 0.52, blue: 0.46)], startPoint: .leading, endPoint: .trailing)
+            .mask(WordmarkShape())
+            .aspectRatio(WordmarkShape.aspect, contentMode: .fit)
             .shadow(color: Brand.pink.opacity(0.22), radius: 8, y: 3)
+            .accessibilityElement()
             .accessibilityLabel("Lowex")
     }
 }
@@ -246,19 +249,10 @@ struct BrandHeader: View {
     var subtitle: String? = nil
     private static let logoSize: CGFloat = 50
 
-    /// "Lowex" 在 1pt 字号下的排版宽度，用来把字标正好铺满剩余宽度。
-    private static let advance: CGFloat = {
-        if let f = UIFont(name: BrandFont.name, size: 100) {
-            return ("Lowex" as NSString).size(withAttributes: [.font: f]).width / 100
-        }
-        return 1.7
-    }()
-
     var body: some View {
-        // 标题区宽度 = 屏幕宽 - 两侧页边距 - Logo；字号按宽度反推，字标左右贴边铺满
+        // 字标区宽度 = 屏幕宽 - 两侧页边距 - Logo；高度由矢量宽高比决定（上限 128），尽量铺满
         let availW = max(min(UIScreen.main.bounds.width, 560) - Space.l * 2 - Self.logoSize - Space.s, 120)
-        let size = min(availW / Self.advance, 150)
-        let h = size * 0.80
+        let h = min(availW / WordmarkShape.aspect, 128)
         VStack(alignment: .trailing, spacing: 0) {
             HStack(alignment: .center, spacing: Space.s) {
                 Image("BrandMark")
@@ -266,8 +260,8 @@ struct BrandHeader: View {
                     .frame(width: Self.logoSize, height: Self.logoSize)
                     .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                     .shadow(color: Brand.pink.opacity(0.35), radius: 7, y: 3)
-                ScriptWordmark(size: size)
-                    .frame(width: availW, height: h, alignment: .center)
+                ScriptWordmark()
+                    .frame(width: availW, height: h, alignment: .trailing)
             }
             // 副标题靠右、紧贴字标下沿；"L" 的尾巴在左侧，不会与它重叠
             Text(subtitle ?? L("本机生成 · 不上传"))
