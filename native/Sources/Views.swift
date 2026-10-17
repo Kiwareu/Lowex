@@ -279,7 +279,7 @@ struct DnsCard: View {
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
                             .keyboardType(.numbersAndPunctuation)
                             .focused($bootFocus)
-                            .onChange(of: bootFocus) { _, f in
+                            .onChangeValue(of: bootFocus) { f in
                                 if f { boot = ((store.opts["dnsBootstrap"] as? [String]) ?? []).joined(separator: ", ") }
                                 else {
                                     let list = boot.split(whereSeparator: { ", ，\n".contains($0) }).map(String.init)
@@ -458,7 +458,7 @@ struct NodesView: View {
                 Label(L("下一步：规则"), systemImage: "arrow.right").frame(maxWidth: .infinity)
             }.buttonStyle(.borderedProminent).tint(Brand.pink)
         }
-        .scrollDismissesKeyboard(.interactively)
+        .dismissKeyboardOnScroll()
         .sheet(item: $editing) { d in
             ManualNodeForm(draft: d).environmentObject(store)
         }
@@ -523,7 +523,7 @@ struct NodesView: View {
         ZStack(alignment: .topLeading) {
             TextEditor(text: text)
                 .frame(minHeight: 96)
-                .scrollContentBackground(.hidden)
+                .hideScrollBG()
                 .font(.system(.footnote, design: .monospaced))
                 .autocorrectionDisabled().textInputAutocapitalization(.never)
                 .padding(8)
@@ -566,7 +566,7 @@ struct ManualNodeForm: View {
     }
     private var issue: String? { store.manualIssue(draft.dict) }
     var body: some View {
-        NavigationStack {
+        NavStack {
             Form {
                 Section(L("名称（决定归入哪个地区）")) {
                     TextField(L("例如 香港-住宅 / 日本-家宽"), text: $draft.name)
@@ -593,7 +593,7 @@ struct ManualNodeForm: View {
                     Text(L("密码保存在本机钥匙串（不可用时回退到 App 沙盒私有文件），不会上传。")).font(.caption2).foregroundStyle(.secondary)
                 }
             }
-            .scrollDismissesKeyboard(.interactively)
+            .dismissKeyboardOnScroll()
             .navigationTitle(draft.isNew ? L("添加节点") : L("编辑节点")).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(L("取消")) { dismiss() } }
@@ -601,7 +601,7 @@ struct ManualNodeForm: View {
                     Button(L("保存")) { save() }.disabled(!canSave)
                 }
             }
-            .onChange(of: type) { _, t in draft.kind = t == 0 ? "socks5" : "http"; draft.tls = t == 2 ? true : (t == 1 ? false : draft.tls) }
+            .onChangeValue(of: type) { t in draft.kind = t == 0 ? "socks5" : "http"; draft.tls = t == 2 ? true : (t == 1 ? false : draft.tls) }
         }
     }
     /// 基础字段齐全即可保存；客户端写不出的会在列表里提示，不阻止保存
@@ -777,7 +777,7 @@ struct ProfileNameField: View {
                 .focused($focused)
                 .submitLabel(.done)
                 .onSubmit { focused = false }
-                .onChange(of: focused) { _, f in
+                .onChangeValue(of: focused) { f in
                     if f { text = store.profileName } else { store.profileName = text }
                 }
             if store.profileNameIsCustom {

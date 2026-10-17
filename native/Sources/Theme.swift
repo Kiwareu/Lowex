@@ -40,7 +40,7 @@ struct PinkBackground: View {
     }
 }
 
-/// 3×3 网格渐变（iOS 18 MeshGradient，GPU 渲染）。只有内部 5 个控制点做缓慢的李萨如漂移，约 20fps；
+/// 3×3 网格渐变（iOS 18+ 用 MeshGradient，GPU 渲染；更早的系统回退为漂移的径向渐变）。只有内部 5 个控制点做缓慢的李萨如漂移，约 20fps；
 /// 角点固定，所以边缘不会露底。
 struct MeshBackdrop: View {
     let dark: Bool; let speed: Double; let paused: Bool
@@ -66,8 +66,30 @@ struct MeshBackdrop: View {
         let base = dark ? Color(red: 0.08, green: 0.05, blue: 0.13) : Color(red: 1, green: 0.95, blue: 0.97)
         TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: paused || speed <= 0.01)) { ctx in
             let t = Float(ctx.date.timeIntervalSinceReferenceDate * speed * 0.22)
-            MeshGradient(width: 3, height: 3, points: points(t), colors: colors, background: base, smoothsColors: true)
+            if #available(iOS 18.0, *) {
+                MeshGradient(width: 3, height: 3, points: points(t), colors: colors, background: base, smoothsColors: true)
+            } else {
+                legacy(Double(t), base)
+            }
         }
+    }
+
+    /// iOS 18 之前没有 MeshGradient：用四团缓慢漂移的径向渐变叠出相近的效果。
+    private func legacy(_ t: Double, _ base: Color) -> some View {
+        GeometryReader { g in
+            let w = g.size.width, h = g.size.height, m = max(w, h)
+            ZStack {
+                base
+                blob(colors[1], r: m * 0.75).position(x: w * (0.85 + 0.06 * sin(t)), y: h * (0.10 + 0.05 * cos(t * 0.8)))
+                blob(colors[3], r: m * 0.80).position(x: w * (0.10 + 0.06 * cos(t * 0.7)), y: h * (0.45 + 0.06 * sin(t * 0.6 + 1)))
+                blob(colors[6], r: m * 0.80).position(x: w * (0.15 + 0.05 * sin(t * 0.9)), y: h * 0.98)
+                blob(colors[8], r: m * 0.70).position(x: w * (0.90 + 0.05 * cos(t * 0.5)), y: h * (0.85 + 0.04 * sin(t)))
+            }
+        }
+    }
+    private func blob(_ c: Color, r: CGFloat) -> some View {
+        RadialGradient(colors: [c, c.opacity(0)], center: .center, startRadius: 0, endRadius: r / 2)
+            .frame(width: r, height: r)
     }
 }
 
@@ -139,7 +161,7 @@ struct PressableStyle: ButtonStyle {
             .contentShape(Rectangle())
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.spring(response: 0.28, dampingFraction: 0.62), value: configuration.isPressed)
-            .onChange(of: configuration.isPressed) { _, p in if p { Haptics.light() } }
+            .onChangeValue(of: configuration.isPressed) { p in if p { Haptics.light() } }
     }
 }
 
@@ -266,11 +288,10 @@ struct PageChrome<Content: View>: View {
                 .padding(.horizontal, Space.l)
                 .padding(.bottom, Space.xl)
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .contentMargins(.bottom, 56, for: .scrollContent)
+            .scrollTailCompat()
             BottomFade()
         }
-        .toolbar(.hidden, for: .navigationBar)
+        .hideNavBar()
     }
 }
 

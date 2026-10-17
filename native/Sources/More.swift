@@ -5,7 +5,7 @@ struct MoreView: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var lang: Lang
     var body: some View {
-        NavigationStack {
+        NavStack {
             ZStack {
                 PinkBackground()
                 ScrollView(showsIndicators: false) {
@@ -61,11 +61,10 @@ struct MoreView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 28)
                 }
-                .scrollBounceBehavior(.basedOnSize)
-                .contentMargins(.bottom, 56, for: .scrollContent)
+                .scrollTailCompat()
                 BottomFade()
             }
-            .toolbar(.hidden, for: .navigationBar)
+            .hideNavBar()
         }
     }
 
@@ -229,7 +228,7 @@ struct DomainsInline: View {
             Text(L("每行一个域名（example.com 匹配自身与子域名）。")).font(.caption).foregroundStyle(.secondary)
             TextEditor(text: $text)
                 .frame(minHeight: 80)
-                .scrollContentBackground(.hidden)
+                .hideScrollBG()
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
             PolicyPicker(policy: $policy)
             Button(L("添加")) {

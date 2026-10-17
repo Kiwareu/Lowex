@@ -151,7 +151,7 @@ struct GenerateView: View {
             }
             if !toast.isEmpty { Text(toast).font(.footnote).foregroundStyle(Brand.pink) }
         }
-        .onChange(of: store.result.text) { _, n in if n.isEmpty { toast = ""; showPreview = false } }
+        .onChangeValue(of: store.result.text) { n in if n.isEmpty { toast = ""; showPreview = false } }
         .confirmationDialog(L("清除配置"), isPresented: $confirmClear, titleVisibility: .visible) {
             Button(L("只清除生成结果")) { withAnimation { store.clearResult(); toast = L("已清除生成结果") } }
             Button(L("清除并重置规则 / 分组选项（保留节点与订阅）"), role: .destructive) { withAnimation { store.resetSelections(); toast = L("已重置选项，节点与订阅保留") } }
@@ -167,7 +167,7 @@ struct GenerateView: View {
                 Text(qrCaption).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal)
                 Button(L("关闭")) { showQR = false }.buttonStyle(.bordered)
             }
-            .padding(24).presentationDetents([.medium, .large])
+            .padding(24).detentsCompat()
         }
         .fileExporter(isPresented: $exporting, document: ConfigDocument(text: store.result.text),
                       contentType: exportType, defaultFilename: baseName) { r in

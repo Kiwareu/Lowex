@@ -8,6 +8,7 @@ struct LowexApp: App {
         // 默认滚动视图会把触摸延迟约 150ms 才交给按钮，快速点按 chevron 时像「没反应」
         UIScrollView.appearance().delaysContentTouches = false
         UITableView.appearance().bounces = false
+        UITextView.appearance().backgroundColor = .clear   // iOS 15：TextEditor 背景透明
         let tb = UITabBarAppearance(); tb.configureWithDefaultBackground()
         UITabBar.appearance().standardAppearance = tb
         UITabBar.appearance().scrollEdgeAppearance = tb
@@ -63,7 +64,7 @@ struct RootGate: View {
             }
         }
         .preferredColorScheme(appearance.scheme)
-        .fontDesign(appearance.fontStyle.design)
+        .fontDesignCompat(appearance.fontStyle.design)
     }
 }
 
@@ -77,14 +78,14 @@ struct RootContainer: View {
             ConfettiView(trigger: store.celebrate)
         }
         .preferredColorScheme(appearance.scheme)
-        .fontDesign(appearance.fontStyle.design)
-        .onChange(of: lang.revision) { _, _ in store.reloadLanguage() }
-        .onChange(of: store.celebrate) { _, _ in Haptics.success() }
+        .fontDesignCompat(appearance.fontStyle.design)
+        .onChangeValue(of: lang.revision) { _ in store.reloadLanguage() }
+        .onChangeValue(of: store.celebrate) { _ in Haptics.success() }
         .submitLabel(.done)
         .onSubmit { KeyboardHelper.shared.dismissKeyboard() }
         .onAppear { KeyboardHelper.shared.install() }
         .sheet(isPresented: $store.showDisclaimer) {
-            NavigationStack {
+            NavStack {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         Text(L("免责声明")).font(.title2.weight(.bold))
@@ -104,7 +105,7 @@ struct RootContainer: View {
         .sheet(isPresented: $store.showAppearance) {
             AppearanceView().id(appearance.revision)
                 .preferredColorScheme(appearance.scheme)
-                .fontDesign(appearance.fontStyle.design)
+                .fontDesignCompat(appearance.fontStyle.design)
                 .tint(appearance.accent)
         }
     }

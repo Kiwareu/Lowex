@@ -76,13 +76,13 @@ final class Appearance: ObservableObject {
 struct AppearanceView: View {
     @ObservedObject private var ap = Appearance.shared
     @Environment(\.dismiss) private var dismiss
-    @State private var pick: PhotosPickerItem?
+    @State private var showPicker = false
     @State private var radius = Double(Appearance.shared.cornerRadius)
     @State private var glass = Appearance.shared.glassIntensity
     @State private var speed = Appearance.shared.gradientSpeed
 
     var body: some View {
-        NavigationStack {
+        NavStack {
             ZStack {
                 PinkBackground()
                 ScrollView(showsIndicators: false) {
@@ -123,7 +123,7 @@ struct AppearanceView: View {
                         PlainCard {
                             Text(L("自定义壁纸")).font(.headline)
                             HStack {
-                                PhotosPicker(selection: $pick, matching: .images) {
+                                Button { showPicker = true } label: {
                                     Label(L("从相册选择"), systemImage: "photo.on.rectangle").frame(maxWidth: .infinity)
                                 }.buttonStyle(.borderedProminent).tint(Brand.pink)
                                 if ap.wallpaper != nil {
@@ -144,13 +144,8 @@ struct AppearanceView: View {
             .navigationTitle(L("外观与主题"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("完成")) { dismiss() } } }
-            .onChange(of: pick) { _, item in
-                guard let item else { return }
-                Task {
-                    if let data = try? await item.loadTransferable(type: Data.self) {
-                        await MainActor.run { ap.setWallpaper(data: data) }
-                    }
-                }
+            .sheet(isPresented: $showPicker) {
+                ImagePicker { data in ap.setWallpaper(data: data) }
             }
         }
     }
@@ -301,7 +296,7 @@ struct ConfettiView: View {
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
-        .onChange(of: trigger) { _, _ in fire() }
+        .onChangeValue(of: trigger) { _ in fire() }
     }
 
     private func fire() {

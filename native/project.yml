@@ -1,7 +1,7 @@
 name: LowexNative
 options:
   bundleIdPrefix: com.wenx
-  deploymentTarget: {iOS: "18.0"}
+  deploymentTarget: {iOS: "15.0"}
   createIntermediateGroups: true
 settings:
   base:
