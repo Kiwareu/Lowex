@@ -31,6 +31,8 @@ final class Appearance: ObservableObject {
     var gradientSpeed: Double { didSet { d.set(gradientSpeed, forKey: "ap.speed"); bump() } }
     var fontStyle: FontStyle { didSet { d.set(fontStyle.rawValue, forKey: "ap.font"); bump() } }
     var haptics: Bool { didSet { d.set(haptics, forKey: "ap.haptics") } }
+    /// 性能模式：静态背景 + 实心半透明卡片。未设置过时，较旧机型默认开启。
+    var performanceMode: Bool { didSet { d.set(performanceMode, forKey: "ap.perf"); bump() } }
     private(set) var wallpaper: UIImage?
 
     var accent: Color { Self.swatches[min(max(accentIndex, 0), Self.swatches.count - 1)].1 }
@@ -45,6 +47,7 @@ final class Appearance: ObservableObject {
         gradientSpeed = d.object(forKey: "ap.speed") as? Double ?? 0.6
         fontStyle = FontStyle(rawValue: d.string(forKey: "ap.font") ?? "") ?? .rounded
         haptics = d.object(forKey: "ap.haptics") as? Bool ?? true
+        performanceMode = d.object(forKey: "ap.perf") as? Bool ?? DeviceInfo.isLowEnd
         wallpaper = UIImage(contentsOfFile: Self.wallpaperURL.path)
     }
     private func bump() { revision += 1 }
@@ -67,7 +70,7 @@ final class Appearance: ObservableObject {
         wallpaper = nil; bump()
     }
     func resetAll() {
-        haptics = true; mode = .system; accentIndex = 0; cornerRadius = 20; glassIntensity = 0.6; gradientSpeed = 0.6; fontStyle = .rounded
+        haptics = true; performanceMode = DeviceInfo.isLowEnd; mode = .system; accentIndex = 0; cornerRadius = 20; glassIntensity = 0.6; gradientSpeed = 0.6; fontStyle = .rounded
         clearWallpaper()
     }
 }
@@ -134,6 +137,10 @@ struct AppearanceView: View {
                         PlainCard {
                             Toggle(L("触感反馈"), isOn: Binding(get: { ap.haptics }, set: { ap.haptics = $0; if $0 { Haptics.light() } })).tint(Brand.pink)
                             Text(L("按钮、开关、选择与生成成功时的轻微震动。")).font(.caption2).foregroundStyle(.secondary)
+                        }
+                        PlainCard {
+                            Toggle(L("性能模式"), isOn: Binding(get: { ap.performanceMode }, set: { ap.performanceMode = $0 })).tint(Brand.pink)
+                            Text(L("关闭背景动画与实时模糊，改用实心半透明卡片，滚动更流畅。iPhone XS 等较旧机型默认开启。")).font(.caption2).foregroundStyle(.secondary)
                         }
                         PlainCard {
                             Text(L("字体")).font(.headline)

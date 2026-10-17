@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import ImageIO
 
 /// Disk + memory cache for remote rule/region icons. Falls back to SF Symbols so XS never shows a blank tile.
 enum IconCache {
@@ -15,12 +16,36 @@ enum IconCache {
     static let iconBase = "https://raw.githubusercontent.com/Kiwareu/Lowex-Icons/main/icons/"
     static func bundled(_ url: String?) -> UIImage? {
         guard let url, url.hasPrefix(iconBase) else { return nil }
-        let name = String(url.dropFirst(iconBase.count))
-        if let m = mem.object(forKey: ("b:" + name) as NSString) { return m }
+        return bundledNamed(String(url.dropFirst(iconBase.count)))
+    }
+    private static func bundledNamed(_ name: String) -> UIImage? {
+        let key = ("b:" + name) as NSString
+        if let m = mem.object(forKey: key) { return m }
         let p = Bundle.main.bundleURL.appendingPathComponent("BundledIcons/" + name).path
-        guard let img = UIImage(contentsOfFile: p) else { return nil }
-        mem.setObject(img, forKey: ("b:" + name) as NSString)
+        guard let img = thumb(path: p) else { return nil }
+        mem.setObject(img, forKey: key)
         return img
+    }
+    /// 缩到 120px、预先解码、烘焙圆角：列表里不再有逐帧解码，也不用给每个图标再套一层 clipShape 遮罩。
+    private static func thumb(path: String) -> UIImage? {
+        guard let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil) else { return nil }
+        let opts: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 120,
+                                     kCGImageSourceCreateThumbnailWithTransform: true, kCGImageSourceShouldCacheImmediately: true]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
+        let size = CGSize(width: cg.width, height: cg.height)
+        let fmt = UIGraphicsImageRendererFormat(); fmt.scale = 1; fmt.opaque = false
+        return UIGraphicsImageRenderer(size: size, format: fmt).image { _ in
+            UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: min(size.width, size.height) * 0.22).addClip()
+            UIImage(cgImage: cg).draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+    /// 启动时在后台线程把全部内置图标预解码进缓存（约 100 个，几十毫秒），之后列表滚动时只取缓存。
+    static func warm() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let dir = Bundle.main.bundleURL.appendingPathComponent("BundledIcons")
+            let names = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
+            for n in names where n.hasSuffix(".png") { _ = bundledNamed(n) }
+        }
     }
 
     /// 升级后清掉旧版本留下的图标缓存（含旧的占位图 / 失败记录）
@@ -99,11 +124,18 @@ struct RemoteIcon: View {
     @State private var failed = false
 
     var body: some View {
+        if let b = IconCache.bundled(url) {
+            // 内置图标：已缩放 + 预解码 + 圆角，直接画，没有遮罩、没有 task
+            Image(uiImage: b).resizable().scaledToFit().frame(width: size, height: size)
+        } else {
+            remote
+        }
+    }
+
+    private var remote: some View {
         Group {
-            if let image = IconCache.bundled(url) ?? image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
+            if let image {
+                Image(uiImage: image).resizable().scaledToFit()
             } else if failed || url == nil || (url?.isEmpty ?? true) {
                 Image(systemName: IconCache.symbol(for: name, url: url))
                     .font(.system(size: size * 0.55))
@@ -127,7 +159,7 @@ struct RemoteIcon: View {
         guard let url, !url.isEmpty, let u = URL(string: url) else {
             failed = true; return
         }
-        if let b = IconCache.bundled(url) { image = b; return }
+        if IconCache.bundled(url) != nil { return }
         if let c = IconCache.cached(url) {
             image = c; return
         }

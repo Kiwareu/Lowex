@@ -671,15 +671,18 @@ struct RulesView: View {
                     DensityBar()
                 }
                 // 三种模式各自是「全部同一种行」：单列 / 紧凑 = 每项一行；双列 = 每两项一行（奇数时最后一格留空，尺寸相同）
+                // 每次渲染只取一次分组状态 / 收藏 / 分类（以前每行都各自从 [String: Any] 里重新转换一遍）
+                let gs = store.groupState, favs = Set(store.favoriteIds), cats = store.catalog.cats
+                let list = filteredGroups
                 if ap.density == .dual {
-                    ForEach(pairs(filteredGroups), id: \.0.id) { pair in
+                    ForEach(pairs(list), id: \.0.id) { pair in
                         HStack(alignment: .top, spacing: Space.s) {
-                            row(pair.0)
-                            if let b = pair.1 { row(b) } else { Color.clear.frame(maxWidth: .infinity) }
+                            row(pair.0, gs, favs, cats)
+                            if let b = pair.1 { row(b, gs, favs, cats) } else { Color.clear.frame(maxWidth: .infinity) }
                         }
                     }
                 } else {
-                    ForEach(filteredGroups) { g in row(g) }
+                    ForEach(list) { g in row(g, gs, favs, cats) }
                 }
             case .apps:
                 AppsInline()
@@ -726,11 +729,11 @@ struct RulesView: View {
         }
     }
     /// 一行服务分组：只吃值类型，不依赖 EnvironmentObject，用 equatable 避免无关状态变化时整列重绘。
-    private func row(_ g: Catalog.Group) -> some View {
+    private func row(_ g: Catalog.Group, _ gs: [String: [String: Any]], _ favs: Set<String>, _ cats: [String: String]) -> some View {
         let detail = [g.notes, g.risk.map { L("误判拦截风险：{}", $0) }].compactMap { $0 }.filter { !$0.isEmpty }
         return GroupRow(
-            name: g.name, icon: g.icon, cat: store.catalog.cats[g.cat] ?? g.cat, detail: detail,
-            on: store.isOn(g), policy: policyText(store.policy(g)), fav: store.favoriteIds.contains(g.id),
+            name: g.name, icon: g.icon, cat: cats[g.cat] ?? g.cat, detail: detail,
+            on: (gs[g.id]?["on"] as? Bool) ?? g.defOn, policy: policyText((gs[g.id]?["policy"] as? String) ?? g.def), fav: favs.contains(g.id),
             density: ap.density, open: expanded.contains(g.id),
             onOpen: {
                 Haptics.light()
@@ -774,9 +777,11 @@ struct GroupRow: View, Equatable {
         }
         .padding(.horizontal, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Color.white.opacity(0.28)))
-        .background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Brand.pink.opacity(on ? 0.12 : 0)))
-        .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(on ? Brand.pink.opacity(0.55) : Color.white.opacity(0.4), lineWidth: on ? 1.2 : 0.6))
+        .background(
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .fill(on ? Brand.pink.opacity(0.16) : Color.white.opacity(0.28))
+                .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(on ? Brand.pink.opacity(0.55) : Color.white.opacity(0.4), lineWidth: on ? 1.2 : 0.6)))
     }
 
     /// 单列 / 紧凑：图标 + 名称（单列多一行分类）+ 出口 + 收藏 + 开关，一行
@@ -837,8 +842,7 @@ struct GroupRow: View, Equatable {
         }.buttonStyle(.plain)
     }
     private var toggle: some View {
-        Toggle("", isOn: Binding(get: { on }, set: onOn)).labelsHidden().tint(Brand.pink)
-            .scaleEffect(0.82, anchor: .trailing).frame(width: 46)
+        MiniSwitch(on: on, action: onOn)
     }
     private var policyChip: some View {
         Button(action: onPolicy) {

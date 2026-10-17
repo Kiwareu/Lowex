@@ -24,7 +24,12 @@ enum Space {
 struct PinkBackground: View {
     @Environment(\.colorScheme) private var cs
     @Environment(\.accessibilityReduceMotion) private var reduce
+    @Environment(\.pageTab) private var pageTab
+    @ObservedObject private var active = ActiveTab.shared
     var body: some View {
+        // 只有可见的标签页才允许背景动画；性能模式下背景始终静止
+        let visible = pageTab == nil || active.tab == pageTab
+        let still = reduce || Appearance.shared.performanceMode || !visible
         ZStack {
             // 不透明底色（与 LaunchBackground 同色）：网格渐变的色块带透明度，没有底色时会透出下层页面
             (cs == .dark ? Color(red: 0.082, green: 0.051, blue: 0.129) : Color(red: 1, green: 0.949, blue: 0.969))
@@ -32,7 +37,7 @@ struct PinkBackground: View {
                 Color.clear.overlay { Image(uiImage: img).resizable().scaledToFill() }.clipped()
                 Color.black.opacity(cs == .dark ? 0.45 : 0.12)
             } else {
-                MeshBackdrop(dark: cs == .dark, speed: Appearance.shared.gradientSpeed, paused: reduce)
+                MeshBackdrop(dark: cs == .dark, speed: Appearance.shared.gradientSpeed, paused: still)
             }
         }
         .ignoresSafeArea()
@@ -44,13 +49,19 @@ struct PinkBackground: View {
 final class ScrollActivity: ObservableObject {
     static let shared = ScrollActivity()
     @Published private(set) var active = false
-    private var work: DispatchWorkItem?
+    private var last: CFTimeInterval = 0
+    private var timer: Timer?
+    /// contentOffset 每帧都会调用：这里只记一个时间戳，不再每帧创建 / 取消定时任务。
     func ping() {
-        if !active { active = true }
-        work?.cancel()
-        let w = DispatchWorkItem { [weak self] in self?.active = false }
-        work = w
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: w)
+        last = CACurrentMediaTime()
+        guard !active else { return }
+        active = true
+        let t = Timer(timeInterval: 0.1, repeats: true) { [weak self] t in
+            guard let self else { t.invalidate(); return }
+            if CACurrentMediaTime() - self.last > 0.25 { self.active = false; t.invalidate(); self.timer = nil }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
     }
 }
 
@@ -135,7 +146,7 @@ struct GlassCard: ViewModifier {
     private var r: CGFloat { radius ?? (Brand.radius + 4) }
     func body(content: Content) -> some View {
         #if compiler(>=6.2)
-        if #available(iOS 26.0, *), heavy {
+        if #available(iOS 26.0, *), heavy, !Appearance.shared.performanceMode {
             content.glassEffect(.regular, in: .rect(cornerRadius: r))
         } else {
             fallback(content)
@@ -146,18 +157,24 @@ struct GlassCard: ViewModifier {
     }
     private func fallback(_ content: Content) -> some View {
         content
-            .background {
-                RoundedRectangle(cornerRadius: r, style: .continuous)
-                    .fill(.ultraThinMaterial.opacity(0.45 + 0.55 * Brand.glass))
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: r, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(colors: [.white.opacity(0.55), .white.opacity(0.08)],
-                                       startPoint: .top, endPoint: .bottom),
-                        lineWidth: 0.8)
-            }
-            .shadow(color: .black.opacity(heavy ? 0.10 : 0.05), radius: heavy ? 12 : 6, y: heavy ? 5 : 2)
+            .background { GlassSurface(r: r) }
+    }
+}
+
+/// 卡片底：性能模式 = 实心半透明（无模糊 / 无阴影）；否则 = 一层材质 + 描边。无阴影（模糊半径的阴影每帧都要离屏渲染）。
+private struct GlassSurface: View {
+    let r: CGFloat
+    @Environment(\.colorScheme) private var cs
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: r, style: .continuous)
+        let edge = LinearGradient(colors: [.white.opacity(cs == .dark ? 0.25 : 0.6), .white.opacity(0.08)], startPoint: .top, endPoint: .bottom)
+        if Appearance.shared.performanceMode {
+            shape.fill(cs == .dark ? Color.white.opacity(0.10) : Color.white.opacity(0.62))
+                .overlay(shape.strokeBorder(edge, lineWidth: 0.8))
+        } else {
+            shape.fill(.ultraThinMaterial.opacity(0.45 + 0.55 * Brand.glass))
+                .overlay(shape.strokeBorder(edge, lineWidth: 0.8))
+        }
     }
 }
 
@@ -375,17 +392,18 @@ struct StepBadge: View {
     }
 }
 
-/// 标签栏上方的渐隐衬底：内容滚到底栏下时不再「糊」在文字上（单层静态材质，XS 友好）
+/// 标签栏上方的渐隐衬底：纯渐变（不再用实时模糊材质——整条 110pt 的模糊在每一帧滚动里都要重算）。
 struct BottomFade: View {
+    @Environment(\.colorScheme) private var cs
     var body: some View {
-        Rectangle()
-            .fill(.regularMaterial)
-            .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black.opacity(0.85), location: 0.55), .init(color: .black, location: 1)],
-                                 startPoint: .top, endPoint: .bottom))
-            .frame(height: 110)
-            .frame(maxHeight: .infinity, alignment: .bottom)
-            .ignoresSafeArea(edges: .bottom)
-            .allowsHitTesting(false)
+        if Appearance.shared.wallpaper == nil {
+            let base = cs == .dark ? Color(red: 0.082, green: 0.051, blue: 0.129) : Color(red: 1, green: 0.949, blue: 0.969)
+            LinearGradient(colors: [base.opacity(0), base.opacity(0.9)], startPoint: .top, endPoint: .bottom)
+                .frame(height: 80)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .ignoresSafeArea(edges: .bottom)
+                .allowsHitTesting(false)
+        }
     }
 }
 

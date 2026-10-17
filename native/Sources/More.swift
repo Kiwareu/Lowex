@@ -59,7 +59,7 @@ struct MoreView: View {
 
                         VStack(spacing: 2) {
                             Text(L("本机生成 · 不上传")).font(.caption2).foregroundStyle(.secondary)
-                            Text(store.versionLabel).font(.caption2.monospaced()).foregroundStyle(.secondary.opacity(0.7))
+                            Text(store.versionLabel).font(.caption2.monospaced()).foregroundStyle(.secondary.opacity(0.7)).padding(8).fpsSecret()
                         }
                         .frame(maxWidth: .infinity).padding(.top, Space.m)
                     }
@@ -567,7 +567,7 @@ struct AboutView: View {
             }
             PlainCard {
                 Text(L("版本")).font(.headline)
-                Text(L("{} · 引擎 {}", store.versionLabel, store.engine.version))
+                Text(L("{} · 引擎 {}", store.versionLabel, store.engine.version)).fpsSecret()
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }

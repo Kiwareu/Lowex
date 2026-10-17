@@ -12,6 +12,7 @@ struct LowexApp: App {
         let tb = UITabBarAppearance(); tb.configureWithDefaultBackground()
         UITabBar.appearance().standardAppearance = tb
         UITabBar.appearance().scrollEdgeAppearance = tb
+        IconCache.warm()
     }
     @StateObject private var boot = Boot()
     @StateObject private var appearance = Appearance.shared
@@ -115,18 +116,20 @@ struct RootView: View {
     @EnvironmentObject var store: Store
     var body: some View {
         TabView(selection: $store.tab) {
-            HomeView().tag(AppTab.home)
+            HomeView().environment(\.pageTab, .home).tag(AppTab.home)
                 .tabItem { Label(L("首页"), systemImage: "house.fill") }
-            NodesView().tag(AppTab.nodes)
+            NodesView().environment(\.pageTab, .nodes).tag(AppTab.nodes)
                 .tabItem { Label(L("节点"), systemImage: "server.rack") }
-            RulesView().tag(AppTab.rules)
+            RulesView().environment(\.pageTab, .rules).tag(AppTab.rules)
                 .tabItem { Label(L("规则"), systemImage: "list.bullet.rectangle") }
-            GenerateView().tag(AppTab.generate)
+            GenerateView().environment(\.pageTab, .generate).tag(AppTab.generate)
                 .tabItem { Label(L("生成"), systemImage: "sparkles") }
-            MoreView().tag(AppTab.more)
+            MoreView().environment(\.pageTab, .more).tag(AppTab.more)
                 .tabItem { Label(L("更多"), systemImage: "ellipsis.circle") }
         }
         .tint(Brand.pink)
+        .onChangeValue(of: store.tab) { ActiveTab.shared.tab = $0 }
+        .overlay(FPSOverlay())
     }
 }
 
