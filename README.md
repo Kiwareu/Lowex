@@ -56,7 +56,7 @@ xcodebuild -project LowexNative.xcodeproj -scheme LowexNative -configuration Rel
 或直接运行 GitHub Actions 的 *Build Lowex IPA*（macOS runner，输出未签名 IPA）。
 
 ## 版本 / Versioning
-版本号与 GitHub tag 一致：当前 **v1.8.0**（App 首页显示 `v1.8 (build 19)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
+版本号与 GitHub tag 一致：当前 **v1.8.1**（App 首页显示 `v1.8 (build 20)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## FAQ
 - **为什么没有节点 / 订阅？** 本工具不提供任何节点，只整理你自己的。

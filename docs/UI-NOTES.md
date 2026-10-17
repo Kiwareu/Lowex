@@ -21,7 +21,7 @@
 `Lowex` 使用 Great Vibes（Robert Leuschke / The Great Vibes Pro Project Authors，SIL OFL 1.1，随 App 以 `UIAppFonts` 注册；许可证全文 `docs/brand/OFL-GreatVibes.txt`）。仅用于 Latin 字标 "Lowex"，名称不随语言变化。字体不可用时退回系统衬线斜体。
 
 ## Logo
-地球形 O（经纬网格，玻璃质感）+ 网络节点式 W + X 形星光，居中，网格渐变底（粉 / 紫 / 橙）；源文件 `docs/brand/lowex-icon.svg`；`AppIcon` 为 1024 全出血方图（系统自动套圆角），`BrandMark` 为 120 / 180 / 512 圆角版。由 SVG 经 cairosvg 渲染（`tools/render-icon.py`）。
+圆润粗线条手写风 W（中间连接处为小圆环，白→淡粉玻璃渐变）+ 淡淡的地球经纬网格 + 小星光，居中，网格渐变底（粉 / 紫 / 橙）；源文件 `docs/brand/lowex-icon.svg`；`AppIcon` 为 1024 全出血方图（系统自动套圆角），`BrandMark` 为 120 / 180 / 512 圆角版。由 SVG 经 cairosvg 渲染（`tools/render-icon.py`）。
 
 ## 未验证
 没有在模拟器或真机运行过，以上动画、点击手感、帧率均未实测；背景在 iPhone XS 上的实际帧率也未测。

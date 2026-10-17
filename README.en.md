@@ -34,7 +34,7 @@ python3 tools/check-i18n.py                     # localization tables sanity che
 Or run the *Build Lowex IPA* GitHub Action.
 
 ## Versioning
-Current **v1.8.0** (the Home screen shows `v1.8 (build 19)`). See [CHANGELOG.md](CHANGELOG.md).
+Current **v1.8.1** (the Home screen shows `v1.8 (build 20)`). See [CHANGELOG.md](CHANGELOG.md).
 
 ## Credits
 Generated configs only *reference* public resources by URL (MetaCubeX/meta-rules-dat, blackmatrix7/ios_rule_script, SagerNet, ACL4SSR, various icon repos); follow their licenses. Client and service names and trademarks belong to their owners.
