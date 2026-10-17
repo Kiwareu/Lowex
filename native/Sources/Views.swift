@@ -57,7 +57,7 @@ struct HomeView: View {
             }
 
             PlainCard {
-                SectionHeader(title: L("网络环境与所在地"), subtitle: L("选网络类型与所在地，一键套用带依据的推荐（DNS、IPv6、MTU、QUIC…）。每一项都可以再改。"))
+                SectionHeader(title: L("网络环境与所在地"), subtitle: L("告诉 Lowex 你现在用的网络和所在地，点「按环境智能推荐」会据此给出 DNS、IPv6、MTU、QUIC 等建议。只是建议，每一项都能再改。"))
                 Picker(L("网络"), selection: Binding(get: { store.str("network") }, set: { store.set("network", $0) })) {
                     ForEach(networks, id: \.0) { Text($0.1).tag($0.0) }
                 }.pickerStyle(.menu)
@@ -250,44 +250,30 @@ struct PresetButtons: View {
     }
 }
 
-/// DNS 与网络：常用服务器多选 + 自定义地址；Bootstrap / 系统 DNS。只显示当前客户端支持的项。
+/// DNS：国内 / 海外各一行（点开选择）、可选「用当前网络自带 DNS」、高级折叠区（自定义地址、Bootstrap）。
 struct DnsCard: View {
     @EnvironmentObject var store: Store
-    @State private var boot = ""
-    @FocusState private var bootFocus: Bool
+    @State private var advanced = false
     var body: some View {
         if store.supports("dnsCn") {
             PlainCard {
-                SectionHeader(title: L("DNS 与网络"), subtitle: L("勾选常用服务器，或添加自己的地址（DoH 地址 / IP / 域名，按当前客户端能用的写法校验）。依据见 docs/NETWORK-ENV.md。"))
-                DnsListEditor(title: L("国内 DNS（直连）"), key: "dnsCn", catalog: DnsCatalog.cn)
+                SectionHeader(title: L("DNS"), subtitle: L("决定域名由谁来解析。默认已选好，一般不用改。依据见 docs/NETWORK-ENV.md。"))
+                DnsRow(title: L("国内域名"), hint: L("国内网站直连时用的公共 DNS"), key: "dnsCn", catalog: DnsCatalog.cn)
                 if store.supports("dnsRemote") {
                     Divider().opacity(0.4)
-                    DnsListEditor(title: L("海外 DNS（经代理）"), key: "dnsRemote", catalog: DnsCatalog.remote)
+                    DnsRow(title: L("海外域名"), hint: L("国外网站经代理解析时用的公共 DNS"), key: "dnsRemote", catalog: DnsCatalog.remote)
                 }
-                if store.supports("dnsBootstrap") {
-                    VStack(alignment: .leading, spacing: Space.xs) {
-                        Text(L("Bootstrap DNS（纯 IP，逗号分隔）")).font(.subheadline)
-                        TextField("223.5.5.5, 119.29.29.29", text: Binding(
-                            get: { bootFocus ? boot : ((store.opts["dnsBootstrap"] as? [String]) ?? []).joined(separator: ", ") },
-                            set: { boot = $0 }))
-                            .textInputAutocapitalization(.never).autocorrectionDisabled()
-                            .keyboardType(.numbersAndPunctuation)
-                            .focused($bootFocus)
-                            .onChangeValue(of: bootFocus) { f in
-                                if f { boot = ((store.opts["dnsBootstrap"] as? [String]) ?? []).joined(separator: ", ") }
-                                else {
-                                    let list = boot.split(whereSeparator: { ", ，\n".contains($0) }).map(String.init)
-                                        .filter { $0.range(of: "^[0-9a-fA-F:.]+$", options: .regularExpression) != nil }
-                                    if !list.isEmpty { store.setOpts(["dnsBootstrap": list]) }
-                                }
-                            }
-                        Text(L("用来解析 DoH 地址里的域名（如 doh.pub）。只能写 IP。")).font(.caption2).foregroundStyle(.secondary)
-                    }
-                }
-                OptToggle(title: L("国内域名用系统 DNS（运营商 / 校园 / 公司）"), key: "cnDnsMode", feature: "cnDnsMode", systemMode: true)
                 if store.supports("cnDnsMode") {
-                    Text(L("DoH 被拦、或需要解析内网域名时再开。系统 DNS 是明文，节点域名仍走 DoH。")).font(.caption2).foregroundStyle(.secondary)
+                    Divider().opacity(0.4)
+                    OptToggle(title: L("国内域名改用当前网络自带的 DNS"), key: "cnDnsMode", feature: "cnDnsMode", systemMode: true)
+                    Text(L("即运营商 / 校园网 / 公司网络分配给你的 DNS。DoH 被拦、或要解析内网域名时再开；它是明文 DNS，节点域名仍走 DoH。开启后「国内域名」那一行不再生效。"))
+                        .font(.caption2).foregroundStyle(.secondary)
                 }
+                Divider().opacity(0.4)
+                ExpandHeader(open: $advanced) {
+                    Text(L("高级（自定义服务器 / Bootstrap）")).font(.subheadline.weight(.medium)).foregroundStyle(Brand.ink)
+                }
+                if advanced { DnsAdvanced() }
             }
         }
     }
@@ -326,7 +312,7 @@ struct NodesView: View {
     @State private var subDraft = ""
     @State private var linkDraft = ""
     @State private var editing: ManualNodeDraft?
-    @ObservedObject private var ap = Appearance.shared
+    @ObservedObject private var ap = LayoutPrefs.shared
 
     private var isSR: Bool { store.family == "shadowrocket" }
     private var isSB: Bool { store.family == "singbox" }
@@ -438,33 +424,24 @@ struct NodesView: View {
             if showManual { manualCard }
 
             PlainCard {
-                HStack { Text(L("地区分组")).font(.headline); Spacer() }
-                DensityBar()
+                Text(L("地区分组")).font(.headline)
                 Text(L("打开的地区会出现在规则出口与策略组里（含故转/自动/手动）。手动节点按名称里的地区关键词（如「香港」「日本」）归入对应地区。")).font(.caption).foregroundStyle(.secondary)
-                if ap.density == .single {
+                // 地区只有十来个：自适应宽度的胶囊网格，不跟随规则页的显示模式
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 6)], spacing: 6) {
                     ForEach(store.catalog.regions) { r in
-                        Toggle(isOn: Binding(get: { store.regions.contains(r.id) }, set: { _ in store.toggleRegion(r.id) })) {
-                            HStack(spacing: 8) { RemoteIcon(url: r.icon, name: r.name, size: 22); Text(r.name) }
-                        }.tint(Brand.pink)
-                    }
-                } else {
-                    let cols = ap.density == .dual ? 2 : 3
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: cols), spacing: 6) {
-                        ForEach(store.catalog.regions) { r in
-                            let on = store.regions.contains(r.id)
-                            Button { Haptics.selection(); store.toggleRegion(r.id) } label: {
-                                HStack(spacing: 5) {
-                                    RemoteIcon(url: r.icon, name: r.name, size: 18)
-                                    Text(r.name).font(.caption.weight(on ? .semibold : .regular)).lineLimit(1).minimumScaleFactor(0.8)
-                                    Spacer(minLength: 0)
-                                    if on { Image(systemName: "checkmark").font(.caption2.weight(.bold)).foregroundStyle(Brand.pink) }
-                                }
-                                .foregroundStyle(Brand.ink)
-                                .padding(.horizontal, 8).padding(.vertical, 7)
-                                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(on ? Brand.pink.opacity(0.14) : Color.primary.opacity(0.06)))
-                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Brand.pink.opacity(on ? 0.55 : 0), lineWidth: 1))
-                            }.buttonStyle(.plain)
-                        }
+                        let on = store.regions.contains(r.id)
+                        Button { Haptics.selection(); store.toggleRegion(r.id) } label: {
+                            HStack(spacing: 5) {
+                                RemoteIcon(url: r.icon, name: r.name, size: 18)
+                                Text(r.name).font(.footnote.weight(on ? .semibold : .regular)).lineLimit(1).minimumScaleFactor(0.8)
+                                Spacer(minLength: 0)
+                                if on { Image(systemName: "checkmark").font(.caption2.weight(.bold)).foregroundStyle(Brand.pink) }
+                            }
+                            .foregroundStyle(Brand.ink)
+                            .padding(.horizontal, 9).padding(.vertical, 8)
+                            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(on ? Brand.pink.opacity(0.14) : Color.primary.opacity(0.06)))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Brand.pink.opacity(on ? 0.55 : 0), lineWidth: 1))
+                        }.buttonStyle(.plain)
                     }
                 }
             }
@@ -638,7 +615,8 @@ struct RulesView: View {
     @State private var section: RuleSection = .groups
     @State private var onlyFav = false
     @State private var expanded: Set<String> = []
-    @ObservedObject private var ap = Appearance.shared
+    @State private var policyTarget: Catalog.Group?
+    @ObservedObject private var ap = LayoutPrefs.shared
 
     enum RuleSection: String, CaseIterable, Identifiable {
         case groups = "服务分组"
@@ -680,11 +658,15 @@ struct RulesView: View {
                     DensityBar()
                 }
                 if ap.density == .dual {
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: Space.s), GridItem(.flexible(), spacing: Space.s)], spacing: Space.s) {
-                        ForEach(filteredGroups) { g in groupRow(g) }
+                    // 两列：按对分行放进同一个 LazyVStack（不嵌套 LazyVGrid），滚动时只实例化可见行
+                    ForEach(pairs(filteredGroups), id: \.0.id) { pair in
+                        HStack(alignment: .top, spacing: Space.s) {
+                            row(pair.0)
+                            if let b = pair.1 { row(b) } else { Color.clear.frame(maxWidth: .infinity) }
+                        }
                     }
                 } else {
-                    ForEach(filteredGroups) { g in groupRow(g) }
+                    ForEach(filteredGroups) { g in row(g) }
                 }
             case .apps:
                 AppsInline()
@@ -706,80 +688,129 @@ struct RulesView: View {
             }
             .buttonStyle(.borderedProminent).tint(Brand.pink)
         }
+        .confirmationDialog(L("出口"), isPresented: Binding(get: { policyTarget != nil }, set: { if !$0 { policyTarget = nil } }), titleVisibility: .visible, presenting: policyTarget) { g in
+            Button(L("代理")) { store.setGroup(g, policy: "PROXY") }
+            Button(L("直连")) { store.setGroup(g, policy: "DIRECT") }
+            Button(L("拦截")) { store.setGroup(g, policy: "REJECT") }
+            ForEach(store.catalog.regions.filter { store.regions.contains($0.id) }) { r in
+                Button(L("{} 节点", r.name)) { store.setGroup(g, policy: "R:" + r.id) }
+            }
+        } message: { g in Text(g.name) }
     }
 
-    @ViewBuilder
-    private func groupRow(_ g: Catalog.Group) -> some View {
-        let isOpen = expanded.contains(g.id)
-        let on = store.isOn(g)
-        let d = ap.density
+    private func pairs(_ l: [Catalog.Group]) -> [(Catalog.Group, Catalog.Group?)] {
+        stride(from: 0, to: l.count, by: 2).map { (l[$0], $0 + 1 < l.count ? l[$0 + 1] : nil) }
+    }
+    private func policyText(_ p: String) -> String {
+        switch p {
+        case "PROXY": return L("代理")
+        case "DIRECT": return L("直连")
+        case "REJECT": return L("拦截")
+        default:
+            if p.hasPrefix("R:"), let r = store.catalog.regions.first(where: { "R:" + $0.id == p }) { return L("{} 节点", r.name) }
+            return p
+        }
+    }
+    /// 一行服务分组：只吃值类型，不依赖 EnvironmentObject，用 equatable 避免无关状态变化时整列重绘。
+    private func row(_ g: Catalog.Group) -> some View {
         let detail = [g.notes, g.risk.map { L("误判拦截风险：{}", $0) }].compactMap { $0 }.filter { !$0.isEmpty }
-        let iconSize: CGFloat = d == .single ? 28 : 22
-        let toggle = Toggle("", isOn: Binding(get: { store.isOn(g) }, set: { store.setGroup(g, on: $0) }))
-            .labelsHidden().tint(Brand.pink)
-            .scaleEffect(d == .single ? 1 : 0.82, anchor: .trailing)
-        let star = Button { store.toggleFavorite(g.id) } label: {
-            Image(systemName: store.favoriteIds.contains(g.id) ? "star.fill" : "star").foregroundStyle(Brand.pink)
-                .font(d == .single ? .body : .footnote)
-        }.buttonStyle(IconTapStyle())
-        let policy = Picker("", selection: Binding(get: { store.policy(g) }, set: { store.setGroup(g, policy: $0) })) {
-            Text(L("代理")).tag("PROXY")
-            Text(L("直连")).tag("DIRECT")
-            Text(L("拦截")).tag("REJECT")
-            ForEach(store.catalog.regions.filter { store.regions.contains($0.id) }) {
-                Text(L("{} 节点", $0.name)).tag("R:\($0.id)")
-            }
-        }.pickerStyle(.menu).labelsHidden().tint(Brand.pink)
-        let title = Button {
-            Haptics.light()
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                if isOpen { expanded.remove(g.id) } else { expanded.insert(g.id) }
-            }
-        } label: {
-            HStack(spacing: Space.s) {
-                RemoteIcon(url: g.icon, name: g.name, size: iconSize)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(g.name).font(d == .single ? .subheadline.weight(.semibold) : .footnote.weight(.semibold)).foregroundStyle(Brand.ink)
-                        .lineLimit(d == .dual ? 2 : 1)
-                    if d == .single { Text(store.catalog.cats[g.cat] ?? g.cat).font(.caption2).foregroundStyle(.secondary) }
+        return GroupRow(
+            name: g.name, icon: g.icon, cat: store.catalog.cats[g.cat] ?? g.cat, detail: detail,
+            on: store.isOn(g), policy: policyText(store.policy(g)), fav: store.favoriteIds.contains(g.id),
+            density: ap.density, open: expanded.contains(g.id),
+            onOpen: {
+                Haptics.light()
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if expanded.contains(g.id) { expanded.remove(g.id) } else { expanded.insert(g.id) }
                 }
-                if d != .dual { Spacer(minLength: 0) }
-                if !detail.isEmpty && d != .dual { ChevronBadge(open: isOpen) }
-            }
-            .frame(maxWidth: .infinity, minHeight: d == .single ? Space.tap : 32, alignment: .leading)
-            .contentShape(Rectangle())
-        }.buttonStyle(.plain)
+            },
+            onFav: { store.toggleFavorite(g.id) },
+            onOn: { store.setGroup(g, on: $0) },
+            onPolicy: { policyTarget = g }
+        ).equatable()
+    }
+}
 
-        VStack(alignment: .leading, spacing: d == .single ? Space.s : 2) {
+/// 服务分组行（三种密度）。已开启的项有品牌色底色 + 描边。
+struct GroupRow: View, Equatable {
+    let name: String, icon: String?, cat: String, detail: [String]
+    let on: Bool, policy: String, fav: Bool, density: LayoutDensity, open: Bool
+    var onOpen: () -> Void, onFav: () -> Void, onOn: (Bool) -> Void, onPolicy: () -> Void
+    static func == (a: GroupRow, b: GroupRow) -> Bool {
+        a.name == b.name && a.icon == b.icon && a.cat == b.cat && a.detail == b.detail && a.on == b.on
+            && a.policy == b.policy && a.fav == b.fav && a.density == b.density && a.open == b.open
+    }
+    private var radius: CGFloat { max(8, Brand.radius * 0.7) }
+
+    var body: some View {
+        let d = density
+        VStack(alignment: .leading, spacing: 2) {
             if d == .dual {
-                HStack(spacing: 4) { title; star }
-                HStack(spacing: 2) {
-                    if on { policy.font(.caption2) } else { Text(L("未启用")).font(.caption2).foregroundStyle(.secondary) }
+                HStack(spacing: 4) { title; starButton }
+                HStack(spacing: 4) {
+                    if on { policyChip } else { Text(L("未启用")).font(.caption2).foregroundStyle(.secondary) }
                     Spacer(minLength: 0)
                     toggle
                 }
             } else {
                 HStack(spacing: Space.s) {
                     title
-                    if d == .compact && on { policy.font(.caption2) }
-                    star
+                    if d == .compact && on { policyChip }
+                    starButton
                     toggle
                 }
+                if d == .single && on { HStack { policyChip; Spacer() } }
             }
-            if isOpen && !detail.isEmpty {
-                VStack(alignment: .leading, spacing: Space.xs) {
-                    ForEach(detail, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary) }
+            if open && !detail.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(detail, id: \.self) { Text($0).font(.caption2).foregroundStyle(.secondary) }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-            if d == .single && on {
-                policy.font(.callout)
+                .padding(.top, 2)
             }
         }
-        .padding(.horizontal, d == .single ? Space.m : Space.s).padding(.vertical, d == .single ? Space.s : 4)
-        .background(RoundedRectangle(cornerRadius: max(8, Brand.radius * 0.8), style: .continuous).fill(Brand.pink.opacity(on ? 0.10 : 0)))
-        .softCard()
-        .overlay(RoundedRectangle(cornerRadius: max(8, Brand.radius * 0.8), style: .continuous).strokeBorder(Brand.pink.opacity(on ? 0.55 : 0), lineWidth: 1.2))
+        .padding(.horizontal, Space.s + 2).padding(.vertical, d == .single ? 6 : 3)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Color.white.opacity(0.28)))
+        .background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Brand.pink.opacity(on ? 0.12 : 0)))
+        .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(on ? Brand.pink.opacity(0.55) : Color.white.opacity(0.4), lineWidth: on ? 1.2 : 0.6))
+    }
+
+    private var title: some View {
+        Button(action: onOpen) {
+            HStack(spacing: 6) {
+                RemoteIcon(url: icon, name: name, size: density == .single ? 26 : 22)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(name).font(density == .single ? .subheadline.weight(.semibold) : .footnote.weight(.semibold))
+                        .foregroundStyle(Brand.ink).lineLimit(density == .dual ? 2 : 1)
+                    if density == .single { Text(cat).font(.caption2).foregroundStyle(.secondary) }
+                }
+                if density != .dual { Spacer(minLength: 0) }
+                if !detail.isEmpty && density != .dual { ChevronBadge(open: open) }
+            }
+            .frame(maxWidth: .infinity, minHeight: density == .single ? 38 : 30, alignment: .leading)
+            .contentShape(Rectangle())
+        }.buttonStyle(.plain)
+    }
+    private var starButton: some View {
+        Button(action: onFav) {
+            Image(systemName: fav ? "star.fill" : "star").foregroundStyle(Brand.pink).font(.footnote)
+                .frame(width: 26, height: 30)
+        }.buttonStyle(.plain)
+    }
+    private var toggle: some View {
+        Toggle("", isOn: Binding(get: { on }, set: onOn)).labelsHidden().tint(Brand.pink)
+            .scaleEffect(0.82, anchor: .trailing).frame(width: 46)
+    }
+    private var policyChip: some View {
+        Button(action: onPolicy) {
+            HStack(spacing: 2) {
+                Text(policy).lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .bold))
+            }
+            .font(.caption2.weight(.semibold)).foregroundStyle(Brand.pink)
+            .padding(.horizontal, 7).padding(.vertical, 3)
+            .background(Brand.pink.opacity(0.12), in: Capsule())
+        }.buttonStyle(.plain)
     }
 }
 

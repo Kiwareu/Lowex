@@ -40,10 +40,45 @@ struct PinkBackground: View {
     }
 }
 
+/// 滚动状态：滚动期间暂停背景网格渐变的逐帧更新，把 GPU / 主线程让给列表。
+final class ScrollActivity: ObservableObject {
+    static let shared = ScrollActivity()
+    @Published private(set) var active = false
+    private var work: DispatchWorkItem?
+    func ping() {
+        if !active { active = true }
+        work?.cancel()
+        let w = DispatchWorkItem { [weak self] in self?.active = false }
+        work = w
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: w)
+    }
+}
+
+/// 放在 ScrollView 内容背景里，找到外层 UIScrollView 并监听 contentOffset。
+struct ScrollWatcher: UIViewRepresentable {
+    final class Probe: UIView {
+        private var obs: NSKeyValueObservation?
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            obs = nil
+            guard window != nil else { return }
+            DispatchQueue.main.async { [weak self] in
+                var v: UIView? = self?.superview
+                while let c = v, !(c is UIScrollView) { v = c.superview }
+                guard let sv = v as? UIScrollView else { return }
+                self?.obs = sv.observe(\.contentOffset, options: [.new]) { _, _ in ScrollActivity.shared.ping() }
+            }
+        }
+    }
+    func makeUIView(context: Context) -> Probe { let p = Probe(); p.isUserInteractionEnabled = false; return p }
+    func updateUIView(_ uiView: Probe, context: Context) {}
+}
+
 /// 3×3 网格渐变（iOS 18+ 用 MeshGradient，GPU 渲染；更早的系统回退为漂移的径向渐变）。只有内部 5 个控制点做缓慢的李萨如漂移，约 20fps；
 /// 角点固定，所以边缘不会露底。
 struct MeshBackdrop: View {
     let dark: Bool; let speed: Double; let paused: Bool
+    @ObservedObject private var scroll = ScrollActivity.shared
     private var colors: [Color] {
         let a = Brand.pinkSoft, l = Brand.lilac, p = Brand.peach
         if dark {
@@ -64,7 +99,7 @@ struct MeshBackdrop: View {
     }
     var body: some View {
         let base = dark ? Color(red: 0.08, green: 0.05, blue: 0.13) : Color(red: 1, green: 0.95, blue: 0.97)
-        TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: paused || speed <= 0.01)) { ctx in
+        TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: paused || scroll.active || speed <= 0.01)) { ctx in
             let t = Float(ctx.date.timeIntervalSinceReferenceDate * speed * 0.22)
             if #available(iOS 18.0, *) {
                 MeshGradient(width: 3, height: 3, points: points(t), colors: colors, background: base, smoothsColors: true)
@@ -277,7 +312,7 @@ struct PageChrome<Content: View>: View {
         ZStack(alignment: .top) {
             PinkBackground()
             ScrollView(.vertical, showsIndicators: false) {
-                LazyVStack(alignment: .leading, spacing: Space.m) {
+                LazyVStack(alignment: .leading, spacing: 10) {
                     if showBrand {
                         BrandHeader()
                     } else if let title {
@@ -290,6 +325,7 @@ struct PageChrome<Content: View>: View {
                 }
                 .padding(.horizontal, Space.l)
                 .padding(.bottom, Space.xl)
+                .background(ScrollWatcher())
             }
             .scrollTailCompat()
             BottomFade()
@@ -310,11 +346,10 @@ struct HeroCard<Content: View>: View {
 
 struct PlainCard<Content: View>: View {
     @ViewBuilder var content: Content
-    @ObservedObject private var ap = Appearance.shared
     var body: some View {
-        VStack(alignment: .leading, spacing: ap.density == .compact ? 6 : Space.s) { content }
+        VStack(alignment: .leading, spacing: 6) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(ap.density == .compact ? Space.m : Space.l)
+            .padding(Space.m)
             .softCard()
     }
 }
@@ -414,7 +449,7 @@ struct ChipTabs<T: Hashable>: View {
 
 /// 列表密度切换：规则 / 节点页顶栏右侧用。
 struct DensityBar: View {
-    @ObservedObject private var ap = Appearance.shared
+    @ObservedObject private var ap = LayoutPrefs.shared
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: "rectangle.grid.1x2").font(.caption2).foregroundStyle(.secondary)

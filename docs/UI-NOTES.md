@@ -34,3 +34,10 @@
 - **「更多」页**：外观与偏好（外观、语言、列表密度）/ 工具（防泄漏、模块、作者规则、备份）/ 关于（关于、免责声明、GitHub）。
 - **首页「一键预设」与「生成选项」的顺序**：保持预设在前。`applyPreset` 会整体改写 `opts`，若放在生成选项之后，用户逐项调好的选择会被预设覆盖；先套预设、再微调才不会丢选择。预设卡片上加了一行提示说明这一点。
 - **DNS**：`DnsListEditor` 提供常用服务器多选与自定义地址；`DnsValidator` 按客户端放行写法——mihomo / Stash / sing-box 可用 DoH、`tls://`（DoT）、纯 IP；Surge / Loon / Quantumult X / Egern / Shadowrocket 只接受 DoH（裸域名按 `https://域名/dns-query` 处理，IP 会提示改用 DoH）。海外 DNS 只在引擎声明支持 `dnsRemote` 的客户端显示。
+
+## v1.4.1 调整
+
+- 列表密度只在规则页切换（`LayoutPrefs`，独立小对象）；从「更多」与外观设置移除。之前它挂在 `Appearance.revision` 上，每次切换都会 `.id()` 重建整个界面树，是滚动卡顿的一个来源。
+- 规则页性能：行 `GroupRow` 只吃值类型并 `.equatable()`；出口选择用一个 `confirmationDialog` 代替每行一个 `Picker(.menu)`；双列按对分行放进同一个 `LazyVStack`（不嵌套 `LazyVGrid`）；滚动期间 `ScrollActivity` 暂停背景网格渐变（15fps）。未做 Instruments 实测。
+- 节点页地区分组：自适应宽度的胶囊网格，与规则页显示模式无关。
+- DNS：国内 / 海外各一行摘要，点开弹层多选；自定义地址与 Bootstrap 在折叠的「高级」里，文案区分「服务器列表」「当前网络自带 DNS」「Bootstrap」三个概念。

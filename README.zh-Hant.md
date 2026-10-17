@@ -37,7 +37,7 @@ Lowex 是一款執行在 iPhone / iPad 上的配置生成器：選好目標客�
 - **手動節點**：SOCKS5 / HTTP / HTTPS（住宅 / 家寬代理），密碼存系統鑰匙串，按客戶端語法輸出（見 [docs/MANUAL-NODES.md](docs/MANUAL-NODES.md)）。
 - **一鍵預設、備份與恢復**：數字遊民、加密貨幣、通用防洩漏等預設；設定可匯出為 JSON 並恢復。
 - **匯出**：複製、系統分享、儲存到「檔案」、二維碼；多數客戶端支援 URL scheme 匯入（見 [docs/IMPORT-SCHEMES.md](docs/IMPORT-SCHEMES.md)）。
-- **介面**：手寫簽名風格的字標、淺色 / 深色、強調色、圓角、玻璃強度、漸變速度、字型、自定義桌布、觸感反饋、列表密度（單列 / 雙列 / 緊湊）；尊重「減弱動態效果」。
+- **介面**：手寫簽名風格的字標、淺色 / 深色、強調色、圓角、玻璃強度、漸變速度、字型、自定義桌布、觸感反饋、規則頁列表密度（單列 / 雙列 / 緊湊）；尊重「減弱動態效果」。
 - **多語言**：簡體中文 / 繁體中文（臺灣、香港）/ English，預設跟隨系統，可在 App 內切換（見 [docs/LOCALIZATION.md](docs/LOCALIZATION.md)）。
 
 ## 截圖
@@ -46,7 +46,7 @@ Lowex 是一款執行在 iPhone / iPad 上的配置生成器：選好目標客�
 |---|---|
 | <img src="docs/screenshots/home.png" width="260"> | <img src="docs/screenshots/rules.png" width="260"> |
 
-> 截圖為 v1.3 介面，v1.4 起規則 / 節點頁新增列表密度，細節以實際版本為準。
+> 截圖為 v1.3 介面，v1.4 起規則頁新增列表密度，細節以實際版本為準。
 
 ## 支援的客戶端
 

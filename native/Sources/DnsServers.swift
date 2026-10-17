@@ -83,17 +83,48 @@ enum DnsValidator {
     }
 }
 
-/// 一组 DNS 地址的编辑器：常用服务器多选 + 自定义地址（带校验）。
-struct DnsListEditor: View {
+/// 一组 DNS 的「摘要行」：只显示最有代表性的一项，点开后在弹层里多选其他常用服务器。
+struct DnsRow: View {
     @EnvironmentObject var store: Store
-    let title: String
-    let key: String                 // "dnsCn" | "dnsRemote"
-    let catalog: [DnsServer]
-    @State private var draft = ""
-    @State private var error = ""
-
+    let title: String, hint: String, key: String, catalog: [DnsServer]
+    @State private var showPicker = false
     private var list: [String] { (store.opts[key] as? [String]) ?? [] }
+    private var summary: String {
+        let picked = catalog.filter { list.contains($0.url) }
+        let extra = list.filter { u in !catalog.contains { $0.url == u } }.count
+        let n = picked.count + extra
+        guard let first = picked.first else { return extra > 0 ? L("自定义 {} 项", extra) : L("未选择") }
+        return n > 1 ? L("{} 等 {} 项", first.name, n) : first.name
+    }
+    var body: some View {
+        Button { showPicker = true } label: {
+            HStack(spacing: Space.s) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink)
+                    Text(hint).font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: Space.s)
+                Text(summary).font(.footnote).foregroundStyle(Brand.pink).lineLimit(1).minimumScaleFactor(0.8)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(Brand.pink.opacity(0.8))
+            }
+            .frame(minHeight: 40).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showPicker) {
+            DnsPickerSheet(title: title, key: key, catalog: catalog).environmentObject(store)
+        }
+    }
+}
+
+/// 弹层：多选常用服务器（至少保留一项）；自己添加的地址可在这里删除。
+struct DnsPickerSheet: View {
+    @EnvironmentObject var store: Store
+    @Environment(\.presentationMode) private var pm
+    let title: String, key: String, catalog: [DnsServer]
+    private var list: [String] { (store.opts[key] as? [String]) ?? [] }
+    private var custom: [String] { list.filter { u in !catalog.contains { $0.url == u } } }
     private func write(_ l: [String]) {
+        guard !l.isEmpty else { return }
         var patch: [String: Any] = [key: l]
         if key == "dnsCn" {
             let known: [(String, [String])] = [("ali-dnspod", ["https://223.5.5.5/dns-query", "https://doh.pub/dns-query"]),
@@ -103,61 +134,121 @@ struct DnsListEditor: View {
         }
         store.setOpts(patch)
     }
-    private var custom: [String] { list.filter { u in !catalog.contains { $0.url == u } } }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.s) {
-            Text(title).font(.subheadline.weight(.semibold))
-            ForEach(catalog) { s in
-                let on = list.contains(s.url)
-                Button {
-                    Haptics.selection()
-                    var l = list
-                    if on { l.removeAll { $0 == s.url } } else { l.append(s.url) }
-                    if l.isEmpty { return }                       // 至少保留一个
-                    write(l)
-                } label: {
-                    HStack(spacing: Space.s) {
-                        Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Brand.pink : .secondary)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(s.name).font(.footnote.weight(.medium)).foregroundStyle(Brand.ink)
-                            Text(s.note).font(.caption2).foregroundStyle(.secondary)
-                        }
-                        Spacer(minLength: 0)
-                        Text(s.overseas ? L("海外") : L("国内")).font(.caption2.weight(.bold))
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background((s.overseas ? Brand.lilac : Brand.pink).opacity(0.18), in: Capsule())
-                            .foregroundStyle(s.overseas ? Brand.lilac : Brand.pink)
+        NavStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    Text(L("可多选，至少保留一项。生成时按勾选顺序使用。")).font(.caption).foregroundStyle(.secondary)
+                    ForEach(catalog) { s in
+                        let on = list.contains(s.url)
+                        Button {
+                            Haptics.selection()
+                            var l = list
+                            if on { l.removeAll { $0 == s.url } } else { l.append(s.url) }
+                            write(l)
+                        } label: {
+                            HStack(spacing: Space.s) {
+                                Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Brand.pink : .secondary)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(s.name).font(.subheadline.weight(.medium)).foregroundStyle(Brand.ink)
+                                    Text(s.note).font(.caption2).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 0)
+                                Text(s.overseas ? L("海外") : L("国内")).font(.caption2.weight(.bold))
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background((s.overseas ? Brand.lilac : Brand.pink).opacity(0.18), in: Capsule())
+                                    .foregroundStyle(s.overseas ? Brand.lilac : Brand.pink)
+                            }
+                            .padding(Space.m).frame(maxWidth: .infinity, alignment: .leading)
+                            .softCard().contentShape(Rectangle())
+                        }.buttonStyle(.plain)
                     }
-                    .padding(.vertical, 4).contentShape(Rectangle())
+                    if !custom.isEmpty {
+                        Text(L("自己添加的")).font(.footnote.weight(.semibold)).foregroundStyle(.secondary).padding(.top, Space.s)
+                        ForEach(custom, id: \.self) { u in
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill").foregroundStyle(Brand.pink)
+                                Text(u).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
+                                Spacer()
+                                Button { var l = list; l.removeAll { $0 == u }; write(l) } label: { Image(systemName: "trash").font(.caption) }
+                                    .buttonStyle(.plain).foregroundStyle(.red)
+                            }
+                            .padding(Space.m).softCard()
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
+                .padding(Space.l)
             }
-            ForEach(custom, id: \.self) { u in
+            .background(PinkBackground())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("完成")) { pm.wrappedValue.dismiss() } } }
+        }
+    }
+}
+
+/// 高级：自定义 DNS 地址 + Bootstrap。默认折叠。
+struct DnsAdvanced: View {
+    @EnvironmentObject var store: Store
+    @State private var target = "dnsCn"
+    @State private var draft = ""
+    @State private var error = ""
+    @State private var boot = ""
+    @FocusState private var bootFocus: Bool
+
+    private func add() {
+        let r = DnsValidator.normalize(draft, family: store.family)
+        guard let v = r.value else { error = r.error ?? ""; return }
+        error = ""; draft = ""
+        var l = (store.opts[target] as? [String]) ?? []
+        if !l.contains(v) { l.append(v) }
+        var patch: [String: Any] = [target: l]
+        if target == "dnsCn" { patch["dnsPreset"] = "custom" }
+        store.setOpts(patch)
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.m) {
+            VStack(alignment: .leading, spacing: Space.xs) {
+                Text(L("自定义 DNS 服务器")).font(.subheadline.weight(.semibold))
+                Text(L("填你自己的 DNS 服务器，例如自建或公司提供的 DoH 地址（https://…）、DoT 地址（tls://…）或 IP。它会和上面勾选的服务器一起使用，不会替换它们；想只用自己的，请先在列表里取消其他项。"))
+                    .font(.caption2).foregroundStyle(.secondary)
+                if store.supports("dnsRemote") {
+                    ChoiceTabs(options: [("dnsCn", L("用于国内域名")), ("dnsRemote", L("用于海外域名"))], selection: $target)
+                }
                 HStack {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Brand.pink)
-                    Text(u).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
-                    Spacer()
-                    Button { var l = list; l.removeAll { $0 == u }; if !l.isEmpty { write(l) } } label: { Image(systemName: "trash").font(.caption) }
-                        .buttonStyle(.plain).foregroundStyle(.red)
+                    TextField("https://dns.example.com/dns-query", text: $draft)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                        .padding(.horizontal, 10).padding(.vertical, 8)
+                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    Button(L("添加"), action: add)
+                        .buttonStyle(.borderedProminent).tint(Brand.pink)
+                        .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+                if !error.isEmpty { Text(error).font(.caption2).foregroundStyle(.red) }
+            }
+            if store.supports("dnsBootstrap") {
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    Text(L("Bootstrap DNS")).font(.subheadline.weight(.semibold))
+                    Text(L("只用来解析 DoH / DoT 服务器自己的域名（例如 doh.pub）的普通 IP DNS，和你用什么网络、选了哪个 DNS 都无关，一般保持默认即可。只能写 IP，逗号分隔。"))
+                        .font(.caption2).foregroundStyle(.secondary)
+                    TextField("223.5.5.5, 119.29.29.29", text: Binding(
+                        get: { bootFocus ? boot : ((store.opts["dnsBootstrap"] as? [String]) ?? []).joined(separator: ", ") },
+                        set: { boot = $0 }))
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .keyboardType(.numbersAndPunctuation)
+                        .focused($bootFocus)
+                        .padding(.horizontal, 10).padding(.vertical, 8)
+                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .onChangeValue(of: bootFocus) { f in
+                            if f { boot = ((store.opts["dnsBootstrap"] as? [String]) ?? []).joined(separator: ", ") }
+                            else {
+                                let list = boot.split(whereSeparator: { ", ，\n".contains($0) }).map(String.init)
+                                    .filter { $0.range(of: "^[0-9a-fA-F:.]+$", options: .regularExpression) != nil }
+                                if !list.isEmpty { store.setOpts(["dnsBootstrap": list]) }
+                            }
+                        }
                 }
             }
-            HStack {
-                TextField(L("自定义 DNS 地址"), text: $draft)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-                    .padding(.horizontal, 10).padding(.vertical, 8)
-                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                Button(L("添加")) {
-                    let r = DnsValidator.normalize(draft, family: store.family)
-                    if let v = r.value {
-                        error = ""; draft = ""
-                        if !list.contains(v) { write(list + [v]) }
-                    } else { error = r.error ?? "" }
-                }
-                .buttonStyle(.borderedProminent).tint(Brand.pink)
-                .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-            if !error.isEmpty { Text(error).font(.caption2).foregroundStyle(.red) }
         }
     }
 }

@@ -31,8 +31,6 @@ final class Appearance: ObservableObject {
     var gradientSpeed: Double { didSet { d.set(gradientSpeed, forKey: "ap.speed"); bump() } }
     var fontStyle: FontStyle { didSet { d.set(fontStyle.rawValue, forKey: "ap.font"); bump() } }
     var haptics: Bool { didSet { d.set(haptics, forKey: "ap.haptics") } }
-    /// 规则 / 节点列表密度：单列平铺 / 双列 / 紧凑
-    var density: LayoutDensity { didSet { d.set(density.rawValue, forKey: "ap.density"); bump() } }
     private(set) var wallpaper: UIImage?
 
     var accent: Color { Self.swatches[min(max(accentIndex, 0), Self.swatches.count - 1)].1 }
@@ -47,7 +45,6 @@ final class Appearance: ObservableObject {
         gradientSpeed = d.object(forKey: "ap.speed") as? Double ?? 0.6
         fontStyle = FontStyle(rawValue: d.string(forKey: "ap.font") ?? "") ?? .rounded
         haptics = d.object(forKey: "ap.haptics") as? Bool ?? true
-        density = LayoutDensity(rawValue: d.string(forKey: "ap.density") ?? "") ?? .compact
         wallpaper = UIImage(contentsOfFile: Self.wallpaperURL.path)
     }
     private func bump() { revision += 1 }
@@ -70,14 +67,25 @@ final class Appearance: ObservableObject {
         wallpaper = nil; bump()
     }
     func resetAll() {
-        haptics = true; density = .compact; mode = .system; accentIndex = 0; cornerRadius = 20; glassIntensity = 0.6; gradientSpeed = 0.6; fontStyle = .rounded
+        haptics = true; mode = .system; accentIndex = 0; cornerRadius = 20; glassIntensity = 0.6; gradientSpeed = 0.6; fontStyle = .rounded
         clearWallpaper()
     }
 }
 
 // MARK: - 设置页
 
-/// 规则 / 节点列表的显示密度
+/// 规则页列表密度：独立的小对象，改它只刷新规则页，不会像 Appearance.revision 那样重建整个界面树。
+final class LayoutPrefs: ObservableObject {
+    static let shared = LayoutPrefs()
+    @Published var density: LayoutDensity {
+        didSet { UserDefaults.standard.set(density.rawValue, forKey: "ap.density") }
+    }
+    private init() {
+        density = LayoutDensity(rawValue: UserDefaults.standard.string(forKey: "ap.density") ?? "") ?? .compact
+    }
+}
+
+/// 规则页列表的显示密度
 enum LayoutDensity: String, CaseIterable, Identifiable {
     case single = "single"
     case dual = "dual"
@@ -125,9 +133,6 @@ struct AppearanceView: View {
                         }
                         PlainCard {
                             Toggle(L("触感反馈"), isOn: Binding(get: { ap.haptics }, set: { ap.haptics = $0; if $0 { Haptics.light() } })).tint(Brand.pink)
-                            SectionHeader(title: L("列表密度"), subtitle: L("规则与节点页的卡片大小。紧凑可同时看到更多选项。"))
-                            ChoiceTabs(options: LayoutDensity.allCases.map { ($0, $0.label) },
-                                       selection: Binding(get: { ap.density }, set: { ap.density = $0 }))
                             Text(L("按钮、开关、选择与生成成功时的轻微震动。")).font(.caption2).foregroundStyle(.secondary)
                         }
                         PlainCard {

@@ -4,7 +4,6 @@ import SwiftUI
 struct MoreView: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var lang: Lang
-    @ObservedObject private var ap = Appearance.shared
     var body: some View {
         NavStack {
             ZStack {
@@ -36,15 +35,6 @@ struct MoreView: View {
                             .pickerStyle(.menu).tint(Brand.pink)
                         }
                         .padding(.horizontal, Space.l).padding(.vertical, 6).frame(minHeight: Space.tap).softCard()
-                        VStack(alignment: .leading, spacing: Space.s) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "rectangle.grid.1x2").foregroundStyle(Brand.pink).frame(width: 28)
-                                Text(L("列表密度（规则 / 节点页）")).foregroundStyle(Brand.ink)
-                            }
-                            ChoiceTabs(options: LayoutDensity.allCases.map { ($0, $0.label) },
-                                       selection: Binding(get: { ap.density }, set: { ap.density = $0 }))
-                        }
-                        .padding(Space.l).softCard()
 
                         moreSection(L("工具"))
                         navCard(L("防泄漏检查清单"), icon: "shield.lefthalf.filled", dest: LeakView())
