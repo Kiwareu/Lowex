@@ -39,16 +39,16 @@ export const ICON_AUDIT:Record<string,IconAudit>={
 };
 /** 已上传到 Lowex-Icons 的组 id（运行时由 App 通过 GitHub API 列出仓库文件更新；这里是内置默认值） */
 /** v1.5：这些组的图标已画好并上传到 Lowex-Icons（512×512 圆角方块），App 内置此列表，不依赖联网也直接引用仓库路径 */
-export const NEW_ICONS:string[]=["ai-more", "bank-eu", "bank-hk", "bank-overseas", "bank-sg", "bitget-wallet", "biz-banking", "blackcat", "blizzard", "brokers", "bunq", "bybit-eu", "cn-bank-direct", "fintech", "hsbc", "krak", "maya", "meta", "mexc", "nomad-tools", "nomad-work", "privacy", "shop-more", "social-more", "sumup", "twitter", "whatsapp"];
+export const NEW_ICONS:string[]=["ads", "ai", "ai-more", "amazon", "apple", "bank-eu", "bank-hk", "bank-overseas", "bank-sg", "bilibili", "bitget-wallet", "biz-banking", "blackcat", "blizzard", "brokers", "bunq", "bybit-eu", "cloud-dev", "cloudflare", "cn", "cn-bank-direct", "crypto", "crypto-more", "discord", "disney", "docker", "dropbox", "ebay", "epic", "fintech", "games-cn", "games-more", "github", "gitlab", "google", "hsbc", "krak", "linkedin", "maya", "media-more", "meta", "mexc", "microsoft", "netflix", "nintendo", "nomad-tools", "nomad-work", "notion", "npm", "onedrive", "paypal", "playstation", "primevideo", "privacy", "private", "proxy-fallback", "pt", "reddit", "region-DE", "region-EU", "region-FR", "region-HK", "region-JP", "region-KR", "region-OT", "region-SG", "region-TW", "region-UK", "region-US", "s-autoAll", "s-direct", "s-final", "s-home", "s-lb", "s-manAll", "s-proxy", "s-update", "scholar", "shop-more", "signal", "slack", "social-more", "spotify", "steam", "sumup", "telegram", "telemetry", "tiktok", "trackers", "travel", "twitch", "twitter", "whatsapp", "wikimedia", "xbox", "youtube", "zoom"];
 let READY:string[]=[];
 export const setIconsReady=(l:string[])=>{READY=Array.isArray(l)?l.filter(x=>typeof x==='string'):[]};
 export const iconsReady=()=>READY;
 /** key 形如 'g:bunq' / 'r:HK' / 's:proxy'。返回要用的图标 URL：Lowex-Icons 已上传 → 它；错图/断链/单品牌 → 占位图；否则沿用原图。 */
 export function resolveIcon(key:string,orig:string|undefined):string|undefined{
-  if(!key.startsWith('g:'))return orig;
-  const id=key.slice(2);
-  if(NEW_ICONS.includes(id)||READY.includes(id))return `${ICON_BASE}/${id}.png`;
-  const a=ICON_AUDIT[id];
-  if(a&&(a.s==='wrong'||a.s==='single'||a.s==='broken'))return ICON_PLACEHOLDER;
+  // g:<组 id> → <组 id>.png；s:<名> → s-<名>.png；r:<地区> → region-<地区>.png
+  const f=key.startsWith('g:')?key.slice(2):key.startsWith('s:')?'s-'+key.slice(2):key.startsWith('r:')?'region-'+key.slice(2):'';
+  if(key.startsWith('r:')&&!NEW_ICONS.includes(f))return `${ICON_BASE}/region-OT.png`;
+  if(f&&(NEW_ICONS.includes(f)||READY.includes(f)))return `${ICON_BASE}/${f}.png`;
+  if(key.startsWith('g:')){const a=ICON_AUDIT[key.slice(2)];if(a&&(a.s==='wrong'||a.s==='single'||a.s==='broken'))return ICON_PLACEHOLDER}
   return orig;
 }

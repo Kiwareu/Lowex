@@ -11,6 +11,30 @@ enum IconCache {
         return u
     }()
 
+    /// 内置图标：Lowex-Icons 的 PNG 已打包进 App（BundledIcons/<文件名>），离线、即时显示，优先于网络与磁盘缓存。
+    static let iconBase = "https://raw.githubusercontent.com/wenxu184/Lowex-Icons/main/icons/"
+    static func bundled(_ url: String?) -> UIImage? {
+        guard let url, url.hasPrefix(iconBase) else { return nil }
+        let name = String(url.dropFirst(iconBase.count))
+        if let m = mem.object(forKey: ("b:" + name) as NSString) { return m }
+        let p = Bundle.main.bundleURL.appendingPathComponent("BundledIcons/" + name).path
+        guard let img = UIImage(contentsOfFile: p) else { return nil }
+        mem.setObject(img, forKey: ("b:" + name) as NSString)
+        return img
+    }
+
+    /// 升级后清掉旧版本留下的图标缓存（含旧的占位图 / 失败记录）
+    static func purgeIfUpgraded() {
+        let k = "lowex.icons.cacheBuild"
+        let cur = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") + "." + (Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "")
+        guard UserDefaults.standard.string(forKey: k) != cur else { return }
+        mem.removeAllObjects()
+        try? FileManager.default.removeItem(at: dir)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        URLCache.shared.removeAllCachedResponses()
+        UserDefaults.standard.set(cur, forKey: k)
+    }
+
     static func fileURL(for key: String) -> URL {
         let safe = key.data(using: .utf8)!.base64EncodedString()
             .replacingOccurrences(of: "/", with: "_")
@@ -76,7 +100,7 @@ struct RemoteIcon: View {
 
     var body: some View {
         Group {
-            if let image {
+            if let image = IconCache.bundled(url) ?? image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
@@ -103,6 +127,7 @@ struct RemoteIcon: View {
         guard let url, !url.isEmpty, let u = URL(string: url) else {
             failed = true; return
         }
+        if let b = IconCache.bundled(url) { image = b; return }
         if let c = IconCache.cached(url) {
             image = c; return
         }

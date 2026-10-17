@@ -26,6 +26,7 @@ final class Store: ObservableObject {
     private let disclaimerKey = "lowex.native.disclaimer.accepted.v1"
 
     init() {
+        IconCache.purgeIfUpgraded()
         Engine.shared.setIconsReady(UserDefaults.standard.stringArray(forKey: Store.iconsReadyKey) ?? [])
         let cat = Engine.shared.catalog()
         catalog = cat

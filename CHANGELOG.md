@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.5.1 (build 15)
+App 内显示 `v1.5 (build 15)`。
+- **根因**：v1.5.0 的图标只是网络地址，App 靠 raw.githubusercontent.com 下载；国内网络下容易失败或被缓存了旧的占位图 / 旧图，规则页就显示成灰色占位或旧的 ¥ 银行图标。引擎给出的组 id 和图标地址本身是对的（已逐个核对）。
+- **修复**：97 张图标（75 个服务组、3 个核心组、8 个特殊组、11 个地区旗帜）缩成 192px 打进 App（`BundledIcons/`），内置图优先、离线即时显示；升级时自动清掉旧图标缓存。
+- 剩余用上游图标的 48 个服务组（ChatGPT、YouTube、Netflix… 以及通用的加密货币、游戏、影音、学术、PT 等）全部按统一风格重绘；品牌类用 Simple Icons（CC0）矢量为底，Simple Icons 没有的品牌（AI 服务、Disney+、Prime Video、LinkedIn、Nintendo、Xbox、Microsoft、OneDrive、Slack、Amazon）为手绘简化版。
+- 所有图标统一为 `https://raw.githubusercontent.com/wenxu184/Lowex-Icons/main/icons/<文件名>.png` 并写进生成的配置（文件名：组 id；特殊组 `s-<名>`；地区 `region-<ID>`）。
+
 ## v1.5.0 (build 14)
 App 内显示 `v1.5 (build 14)`。
 - 补齐 27 个服务组图标并上传 [Lowex-Icons](https://github.com/wenxu184/Lowex-Icons)：bunq、SumUp、WhatsApp、HSBC、暴雪战网、X（Twitter 组）、Meta 以 Simple Icons（CC0）矢量为底重绘；Maya、Kraken、Bybit、MEXC、Bitget、Blackcat 为手绘简化版（非官方原图）；fintech / 远程工作 / AI 更多 / 社交更多 / 购物更多 / 隐私 / 国内银行直连及各类银行、券商、数字游民工具为分类通用图标（银行类不再带货币符号）。统一 512×512 圆角方块。

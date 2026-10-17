@@ -27,7 +27,7 @@ const J=(x:unknown)=>JSON.stringify(x);
   manualIssue:(client:string,json:string)=>{try{return J({issue:manualIssue(client,JSON.parse(json))})}catch(e:any){return J({issue:String(e)})}},
   catalog:()=>J({clients:CLIENTS.map(c=>({id:c.id,name:c.name,family:c.family,platforms:c.platforms,blurb:c.blurb,ext:c.ext,subInConfig:c.subInConfig,processRules:c.processRules,importHint:c.importHint,placement:RESEARCH[c.id]?.placement||'config',howConfig:RESEARCH[c.id]?.howConfig||'',howApp:RESEARCH[c.id]?.howApp||'',inApp:RESEARCH[c.id]?.inApp||[],conf:RESEARCH[c.id]?.conf||'low',verified:RESEARCH[c.id]?.verified||false,caps:(Object.keys(CAPS) as any[]).filter(f=>has(c.id,f))})),platforms:PLATFORMS,capList:Object.entries(CAPS).map(([k,v])=>({id:k,label:(v as any).label})),
     groups:GROUPS.map(g=>({id:g.id,name:g.name,cat:g.cat,def:g.def,defOn:g.defOn,risk:g.risk,notes:g.notes,icon:resolveIcon('g:'+g.id,ICONS['g:'+g.id])||null,iconStatus:(ICON_AUDIT[g.id]||{s:'ok'}).s})),
-    regions:REGIONS.map(r=>({id:r.id,name:r.name,icon:ICONS['r:'+r.id]||null})),cats:CATS,
+    regions:REGIONS.map(r=>({id:r.id,name:r.name,icon:resolveIcon('r:'+r.id,ICONS['r:'+r.id])||null})),cats:CATS,
     apps:APPDB.map(a=>({n:a.n,en:a.en||null,pkg:a.pkg||null,exe:a.exe||null,bid:a.bid||null,dom:a.dom||[],g:a.g||null})),
     shared:SHARED}),
   leak:(sj:string)=>{try{const s=JSON.parse(sj);let text='';try{text=generate(s).text||''}catch(e){}const items=leakChecklist(s,text);return J({items,status:STATUS_TEXT,score:leakScore(items)})}catch(e:any){return J({items:[],status:{}})}},
