@@ -8,6 +8,7 @@ import {ICONS} from '../src/data/icons';
 import {APPDB} from '../src/data/appdb';
 import {SHARED} from '../src/data/shared';
 import {RESEARCH} from '../src/data/research';
+import {resolveIcon,setIconsReady,ICON_AUDIT} from '../src/data/icon-audit';
 import {VERSION} from '../src/version';
 import {has,CAPS} from '../src/data/caps';
 import {makePlan} from '../src/engine/plan';
@@ -19,12 +20,13 @@ import {CLIENTS as CL2} from '../src/data/clients';
 const J=(x:unknown)=>JSON.stringify(x);
 (globalThis as any).Lowex={
   version:VERSION,
+  setIconsReady:(json:string)=>{try{setIconsReady(JSON.parse(json));return true}catch(e){return false}},
   /** 初始方案（JSON 字符串） */
   initial:(client:string,platform:string)=>J({client,platform,location:'cn',network:'other',subs:[],nodesText:'',regions:['HK','TW','JP','SG','US'],groups:{},apps:[],customDomains:[],opts:defaultOpts()}),
   manualMatrix:()=>J(manualMatrix()),
   manualIssue:(client:string,json:string)=>{try{return J({issue:manualIssue(client,JSON.parse(json))})}catch(e:any){return J({issue:String(e)})}},
   catalog:()=>J({clients:CLIENTS.map(c=>({id:c.id,name:c.name,family:c.family,platforms:c.platforms,blurb:c.blurb,ext:c.ext,subInConfig:c.subInConfig,processRules:c.processRules,importHint:c.importHint,placement:RESEARCH[c.id]?.placement||'config',howConfig:RESEARCH[c.id]?.howConfig||'',howApp:RESEARCH[c.id]?.howApp||'',inApp:RESEARCH[c.id]?.inApp||[],conf:RESEARCH[c.id]?.conf||'low',verified:RESEARCH[c.id]?.verified||false,caps:(Object.keys(CAPS) as any[]).filter(f=>has(c.id,f))})),platforms:PLATFORMS,capList:Object.entries(CAPS).map(([k,v])=>({id:k,label:(v as any).label})),
-    groups:GROUPS.map(g=>({id:g.id,name:g.name,cat:g.cat,def:g.def,defOn:g.defOn,risk:g.risk,notes:g.notes,icon:ICONS['g:'+g.id]||null})),
+    groups:GROUPS.map(g=>({id:g.id,name:g.name,cat:g.cat,def:g.def,defOn:g.defOn,risk:g.risk,notes:g.notes,icon:resolveIcon('g:'+g.id,ICONS['g:'+g.id])||null,iconStatus:(ICON_AUDIT[g.id]||{s:'ok'}).s})),
     regions:REGIONS.map(r=>({id:r.id,name:r.name,icon:ICONS['r:'+r.id]||null})),cats:CATS,
     apps:APPDB.map(a=>({n:a.n,en:a.en||null,pkg:a.pkg||null,exe:a.exe||null,bid:a.bid||null,dom:a.dom||[],g:a.g||null})),
     shared:SHARED}),

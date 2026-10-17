@@ -26,8 +26,10 @@ final class Store: ObservableObject {
     private let disclaimerKey = "lowex.native.disclaimer.accepted.v1"
 
     init() {
+        Engine.shared.setIconsReady(UserDefaults.standard.stringArray(forKey: Store.iconsReadyKey) ?? [])
         let cat = Engine.shared.catalog()
         catalog = cat
+        Store.refreshReadyIcons()
         let accepted = UserDefaults.standard.bool(forKey: disclaimerKey)
         needsDisclaimer = !accepted
         if let d = UserDefaults.standard.data(forKey: key),
@@ -72,6 +74,25 @@ final class Store: ObservableObject {
                 ?? cat.clients.first?.id ?? "shadowrocket"
             state = Engine.shared.initialState(client: first, platform: "ios")
         }
+    }
+
+    static let iconsReadyKey = "lowex.icons.ready.v1"
+    /// 启动时列出 github.com/wenxu184/Lowex-Icons 的 icons/ 目录，已上传的组图标会替换旧图 / 占位图（失败时静默沿用上次结果）
+    static func refreshReadyIcons() {
+        guard let url = URL(string: "https://api.github.com/repos/wenxu184/Lowex-Icons/contents/icons") else { return }
+        var req = URLRequest(url: url, timeoutInterval: 10)
+        req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        URLSession.shared.dataTask(with: req) { data, resp, _ in
+            guard (resp as? HTTPURLResponse)?.statusCode == 200, let data,
+                  let arr = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else { return }
+            let ids = arr.compactMap { $0["name"] as? String }
+                .filter { $0.hasSuffix(".png") && !$0.hasPrefix("_") }
+                .map { String($0.dropLast(4)) }
+            DispatchQueue.main.async {
+                UserDefaults.standard.set(ids, forKey: iconsReadyKey)
+                Engine.shared.setIconsReady(ids)
+            }
+        }.resume()
     }
 
     func finishSplash() {
@@ -342,6 +363,20 @@ final class Store: ObservableObject {
         var s = state; s["subs"] = []; s["nodesText"] = ""; state = s
         pasteNote = "已清空节点与订阅。"
         result = GenResult(text: "", name: "", warnings: [])
+    }
+
+    /// 只清除已生成的结果（选项、节点、订阅都保留）
+    func clearResult() {
+        result = GenResult(text: "", name: "", warnings: [])
+        remoteURL = ""
+        qrNote = ""
+    }
+
+    /// 清除结果并把规则 / 分组 / 功能选项恢复默认（保留节点、订阅、手动节点、客户端与配置名）
+    func resetSelections() {
+        restoreDefaults()
+        remoteURL = ""
+        qrNote = ""
     }
 
     func restoreDefaults() {

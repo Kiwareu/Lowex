@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.4.0 (build 13)
+App 内显示 `v1.4 (build 13)`。
+- **故障转移逐客户端核对**（官方文档，见 [`docs/CLIENTS.md`](docs/CLIENTS.md) 的「策略组类型与故障转移」）：Mihomo 系、Stash、Surge、Egern 支持 fallback；Loon 的 fallback 只能放节点 / 远程节点，已改写；小火箭、Quantumult X 改用 `policy-regex-filter` / `server-tag-regex` 成员；**sing-box 只有 selector / urltest，没有 fallback**，v1.3 及以前输出的「故转」组其实不会故障转移，现已去掉，该客户端不再显示故障转移选项。
+- 生成页：预览显示**完整**配置（UITextView，等宽、可滚动、可选择）；新增「清除配置」：只清生成结果，或重置选项（保留节点 / 订阅）。
+- 关于页（及「更多」页）加 GitHub 项目链接。
+- 图标全量核对（75 个组 + 12 个地区）：Bunq / SumUp / Maya 等错图改占位图；新建公开仓库 [Lowex-Icons](https://github.com/wenxu184/Lowex-Icons)，按 `<组 id>.png` 上传后 App 启动时自动采用。待办见 [`docs/ICONS-TODO.md`](docs/ICONS-TODO.md)。
+
 ## v1.3.0 (build 12)
 App 内显示 `v1.3 (build 12)`。
 - 对照 GitHub 高星配置、官方文档、博主文章（含 YouTube / X 公开内容）做了基准研究，来源、许可证和学到的东西见 [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)；只学结构，规则集仍以 URL 引用，不复制 GPL / CC-BY-SA 内容。

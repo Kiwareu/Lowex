@@ -1,5 +1,6 @@
-export const VERSION='1.3.0';
+export const VERSION='1.4.0';
 export const CHANGELOG:{v:string;date:string;items:string[]}[]=[
+ {v:'1.4.0',date:'2026-10-17',items:['逐个客户端按官方文档核对故障转移（fallback）支持：sing-box 只有 selector / urltest，不再生成无效的「故转」组；Loon / 小火箭 / Quantumult X 的故障转移改用各自文档支持的写法。','生成页：预览显示完整配置（可滚动、可选择、等宽）；新增「清除配置」（只清结果，或重置选项并保留节点）。','关于页增加 GitHub 项目链接。','图标全量核对：错误 / 单一品牌 / 失效的图标改用占位图；新建 Lowex-Icons 图标库，上传后自动生效。']},
  {v:'1.3.0',date:'2026-10-16',items:['基准研究（docs/BENCHMARKS.md）并按客户端补强 DNS / 防泄漏项。','防泄漏检查从生成的配置文本取证，新增综合分。','mihomo / sing-box 官方校验器通过默认与随机选项输出。']},
  {v:'1.2.0',date:'2026-10-16',items:['先调研再设计：逐个客户端核对订阅/节点的 App 内添加方式、配置导入方式、备份能力，数据见 docs/clients.research.json 与 docs/CLIENTS.md（含来源与置信度）。','纠正：Clash Mi 可以在 App 内添加订阅（添加配置链接/剪贴板/二维码/文件）；Clash Verge Rev、FlClash、Clash Meta for Android、Clash Party 同样可以。','节点放置选择扩展到所有 Mihomo 系 GUI 客户端：选「在客户端 App 内自己添加」时输出覆写 YAML（策略组 include-all + 规则，不含订阅/节点）。','按客户端和模式显示导入步骤；新增 Lowex 设置备份 / 恢复（本地 JSON，订阅链接不入备份）。']},
  {v:'3.6.0',date:'2026-10-16',items:['原生版恢复 Windows / iOS / Android 三平台与完整客户端列表；按所选系统只输出该系统有效规则（Android 仅包名、Windows 仅 .exe 进程、iOS 无进程/包名）。','新增规则组：汇丰 HSBC、香港银行/虚拟银行、新加坡银行、跨境商业账户、远程工作平台、券商、数字游民工具。','Wi-Fi 通话规则仅在 iOS / Android 生成。']},

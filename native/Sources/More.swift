@@ -36,6 +36,16 @@ struct MoreView: View {
                         navCard("备份与恢复 Lowex 设置", icon: "externaldrive.badge.icloud", dest: BackupView())
                         navCard("免责声明", icon: "exclamationmark.shield.fill", dest: DisclaimerView())
                         navCard("关于 Lowex", icon: "info.circle", dest: AboutView())
+                        Link(destination: URL(string: "https://github.com/wenxu184/Lowex")!) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "chevron.left.forwardslash.chevron.right")
+                                Text("GitHub 项目主页").font(.subheadline.weight(.medium))
+                                Spacer()
+                                Image(systemName: "arrow.up.right").font(.caption)
+                            }
+                            .padding(14).frame(maxWidth: .infinity)
+                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 28)
@@ -513,6 +523,14 @@ struct AboutView: View {
                     .font(.footnote)
                 Link(destination: URL(string: "mailto:wenx@xewol.com")!) {
                     Label("联系作者 wenx@xewol.com", systemImage: "envelope")
+                }
+                .font(.footnote)
+                Link(destination: URL(string: "https://github.com/wenxu184/Lowex")!) {
+                    Label("GitHub 项目 github.com/wenxu184/Lowex", systemImage: "chevron.left.forwardslash.chevron.right")
+                }
+                .font(.footnote)
+                Link(destination: URL(string: "https://github.com/wenxu184/Lowex-Icons")!) {
+                    Label("图标库 github.com/wenxu184/Lowex-Icons", systemImage: "photo.on.rectangle")
                 }
                 .font(.footnote)
             }

@@ -156,7 +156,7 @@ export function genLoon(s:State,plan?:Plan):string{
     if(p.overseas)L.push(`回国节点 = NameRegex,${subNames},FilterKey = "(?i)${HOME_SIMPLE}"`)}
   L.push('','[Proxy Group]');
   const rmem=(r:{id:string;regex:string})=>{const a=[...matches(p,r)];if(subNames)a.push(`${r.id}节点`);return a.length?a.join(','):'DIRECT'};
-  for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,${rmem(r)},url=${o.testUrl},interval=${o.urlTestInterval},tolerance=${o.tolerance}`);L.push(`${regionGroup(r,'手动')} = select,${rmem(r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,${regionGroup(r,'手动')},${regionGroup(r,'自动')},url=${o.testUrl},interval=${o.urlTestInterval}`)}
+  for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,${rmem(r)},url=${o.testUrl},interval=${o.urlTestInterval},tolerance=${o.tolerance}`);L.push(`${regionGroup(r,'手动')} = select,${rmem(r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,${rmem(r)},url=${o.testUrl},interval=${o.urlTestInterval},max-timeout=3000`)}
   L.push(`全部-自动 = url-test,${[...p.nodes.map(n=>nm(n.name)),...subList].join(',')||'DIRECT'},url=${o.testUrl},interval=${o.urlTestInterval},tolerance=${o.tolerance}`);
   L.push(`${N.proxy} = select,${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'].join(',')}`);
   if(p.overseas)L.push(`${N.home} = select,${subNames?'回国节点,':''}DIRECT`);
@@ -187,7 +187,7 @@ export function genQX(s:State,plan?:Plan):string{
   const drop=[...(o.blockQuic==='foreign'?['QUIC']:[]),...(o.stun==='reject'?['STUN']:[])];
   L.push('[general]',`server_check_url=${o.testUrl}`,'dns_exclusion_list=*.lan, *.local, captive.apple.com',...(drop.length?[`udp_drop_list=${drop.join(', ')}`]:[]),'','[dns]','no-system',`doh-server=${o.dnsCn.join(', ')}`,`${o.ipv6?'':'no-ipv6'}`,'');
   L.push('[policy]');
-  for(const r of c.regionsUsed){const rg=regionFilter(p,r);L.push(`url-latency-benchmark=${regionGroup(r,'自动')}, server-tag-regex=(?i)${rg}, check-interval=${o.urlTestInterval}, tolerance=${o.tolerance}, alive-checking=false`);L.push(`static=${regionGroup(r,'手动')}, server-tag-regex=(?i)${rg}`);if(c.fo)L.push(`available=${regionGroup(r,'故转')}, ${regionGroup(r,'手动')}, ${regionGroup(r,'自动')}`)}
+  for(const r of c.regionsUsed){const rg=regionFilter(p,r);L.push(`url-latency-benchmark=${regionGroup(r,'自动')}, server-tag-regex=(?i)${rg}, check-interval=${o.urlTestInterval}, tolerance=${o.tolerance}, alive-checking=false`);L.push(`static=${regionGroup(r,'手动')}, server-tag-regex=(?i)${rg}`);if(c.fo)L.push(`available=${regionGroup(r,'故转')}, server-tag-regex=(?i)${rg}`)}
   L.push(`url-latency-benchmark=全部-自动, server-tag-regex=.*, check-interval=${o.urlTestInterval}, tolerance=${o.tolerance}, alive-checking=false`);
   L.push(`static=${N.proxy}, ${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','direct'].join(', ')}`);
   if(p.overseas)L.push(`static=${N.home}, direct, server-tag-regex=(?i)${HOME_SIMPLE}`);
@@ -221,7 +221,7 @@ export function genShadowrocket(s:State,plan?:Plan):string{
    `skip-proxy = ${COMMON_SKIP}`,'tun-excluded-routes = 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 255.255.255.255/32',
    `dns-server = ${o.dnsCn.join(', ')}`,'fallback-dns-server = https://dns.alidns.com/dns-query, https://doh.pub/dns-query',`ipv6 = ${o.ipv6}`,'dns-fallback-system = false','dns-direct-system = false','prefer-ipv6 = false','private-ip-answer = true','dns-direct-fallback-proxy = true','icmp-auto-reply = true',`hijack-dns = ${HARD_DNS}`,`always-real-ip = ${REAL_IP}`,...(o.stun==='reject'?['stun-response-ip = 1.1.1.1']:[]),'udp-policy-not-supported-behaviour = REJECT',
    `block-quic = ${o.blockQuic==='foreign'?'all-proxy':'always-allow'}`,'',...(()=>{const ml=p.nodes.filter(n=>n.manual).map(n=>nodeLine(n,'shadowrocket')).filter(Boolean) as string[];return ml.length?['[Proxy]',...ml,'']:[]})(),'[Proxy Group]'];
-  for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=${regionFilter(p,r)}`);L.push(`${regionGroup(r,'手动')} = select,policy-regex-filter=${regionFilter(p,r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,${regionGroup(r,'手动')},${regionGroup(r,'自动')},url=${o.testUrl},interval=${o.urlTestInterval}`)}
+  for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=${regionFilter(p,r)}`);L.push(`${regionGroup(r,'手动')} = select,policy-regex-filter=${regionFilter(p,r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,policy-regex-filter=${regionFilter(p,r)}`)}
   L.push(`全部-自动 = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=.*`);
   L.push(`${N.proxy} = select,${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'].join(',')}`);
   if(p.overseas)L.push(`${N.home} = select,DIRECT,policy-regex-filter=${HOME_SIMPLE}`);

@@ -39,14 +39,15 @@ export function genSingbox(s:State,plan?:Plan):string{
   for(const r of p.regions){
     const re=safeRe(r.regex);const list=nodeTags.filter(t=>re.test(t));if(!list.length||placeholder)continue;
     const man=regionGroup(r,'手动'),au=regionGroup(r,'自动'),fo=regionGroup(r,'故转');
-    outs.push({type:'selector',tag:man,outbounds:list},urltest(au,list),{type:'selector',tag:fo,outbounds:[man,au],default:man});
-    regionTags.push(fo);have.add(fo);
+    // sing-box 没有 fallback / 故障转移组（官方只有 selector 与 urltest；urltest 是「选延迟最低的健康节点」，节点挂了会自动换）。不再伪造「故转」组。
+    void fo;outs.push({type:'selector',tag:man,outbounds:list},urltest(au,list));
+    regionTags.push(au);have.add(au);have.add(man);
   }
   outs.push(urltest('全部-自动',nodeTags),{type:'selector',tag:'全部-手动',outbounds:nodeTags});
   outs.push({type:'selector',tag:N.proxy,outbounds:[...regionTags,'全部-自动','全部-手动','direct'],default:regionTags[0]||'全部-自动'});
   have.add(N.proxy);
   if(p.overseas){const re=safeRe(HOME_REGEX);const l=nodeTags.filter(t=>re.test(t)&&!placeholder);outs.push({type:'selector',tag:N.home,outbounds:[...l,'direct'],default:l[0]||'direct'});have.add(N.home)}
-  const tg=(pol:string)=>{if(pol==='DIRECT')return'direct';if(pol==='REJECT')return'REJECT';const n=p.pname(pol);return have.has(n)?n:N.proxy};
+  const tg=(pol:string)=>{if(pol==='DIRECT')return'direct';if(pol==='REJECT')return'REJECT';let n=p.pname(pol);if(n.endsWith('-故转'))n=n.replace(/-故转$/,'-自动');return have.has(n)?n:N.proxy};
   const opts=[N.proxy,...regionTags,'direct'];
   for(const x of p.services){const f=tg(x.p);outs.push({type:'selector',tag:x.g.name,outbounds:[f,...opts.filter(y=>y!==f),...(p.overseas&&f!==N.home?[N.home]:[])],default:f});have.add(x.g.name)}
   outs.push({type:'selector',tag:N.final,outbounds:[o.unknown==='proxy'?N.proxy:'direct',N.proxy,'direct'],default:o.unknown==='proxy'?N.proxy:'direct'});

@@ -101,6 +101,7 @@ struct GenerateView: View {
     @State private var qrImage: UIImage?
     @State private var qrCaption = ""
     @State private var showQR = false
+    @State private var confirmClear = false
 
     var body: some View {
         PageChrome(title: "生成") {
@@ -116,6 +117,11 @@ struct GenerateView: View {
                 }
                 .buttonStyle(.borderedProminent).tint(Brand.pink)
                 .disabled(store.generating)
+                Button(role: .destructive) { confirmClear = true } label: {
+                    Label("清除配置", systemImage: "trash").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .disabled(store.generating)
 
                 if let e = store.result.error { Text(e).foregroundStyle(.red).font(.footnote) }
                 ForEach(store.result.warnings, id: \.self) { w in
@@ -128,9 +134,10 @@ struct GenerateView: View {
                 importCard
                 if showPreview {
                     PlainCard {
-                        Text("预览（前 2KB）").font(.headline)
-                        Text(String(store.result.text.prefix(2048)) + (store.result.text.count > 2048 ? "\n…" : ""))
-                            .font(.system(size: 10, design: .monospaced)).textSelection(.enabled)
+                        Text("完整预览（\(store.result.text.count) 字符，可滚动 / 长按选择 / 复制）").font(.headline)
+                        FullTextView(text: store.result.text)
+                            .frame(height: 420)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     }
                 }
             } else {
@@ -145,6 +152,13 @@ struct GenerateView: View {
             if !toast.isEmpty { Text(toast).font(.footnote).foregroundStyle(Brand.pink) }
         }
         .onChange(of: store.result.text) { _, n in if n.isEmpty { toast = ""; showPreview = false } }
+        .confirmationDialog("清除配置", isPresented: $confirmClear, titleVisibility: .visible) {
+            Button("只清除生成结果") { withAnimation { store.clearResult(); toast = "已清除生成结果" } }
+            Button("清除并重置规则 / 分组选项（保留节点与订阅）", role: .destructive) { withAnimation { store.resetSelections(); toast = "已重置选项，节点与订阅保留" } }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("「只清除生成结果」不改你的选择；「重置」会把规则、分组、功能开关恢复默认，节点、订阅、手动节点和配置名不动。")
+        }
         .sheet(item: $shareFile) { ActivityView(items: [$0.url]) }
         .sheet(isPresented: $showQR) {
             VStack(spacing: 14) {
@@ -176,7 +190,7 @@ struct GenerateView: View {
                 actionBtn("复制全部", icon: "doc.on.doc") { UIPasteboard.general.string = store.result.text; toast = "已复制到剪贴板" }
                 actionBtn("系统分享", icon: "square.and.arrow.up") { prepareShare() }
                 actionBtn("保存到「文件」", icon: "folder") { exporting = true }
-                actionBtn(showPreview ? "收起预览" : "预览片段", icon: "eye") { withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showPreview.toggle() } }
+                actionBtn(showPreview ? "收起预览" : "完整预览", icon: "eye") { withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showPreview.toggle() } }
                 actionBtn("配置二维码", icon: "qrcode") { showConfigQR() }
                 actionBtn("复制文件名", icon: "textformat") { UIPasteboard.general.string = store.result.name; toast = "已复制文件名" }
             }
@@ -279,5 +293,25 @@ struct GenerateView: View {
             Label(title, systemImage: icon).font(.caption.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 10)
         }
         .buttonStyle(.bordered)
+    }
+}
+
+
+/// 用 UITextView 显示完整配置：TextKit 只排版可见区域，数万行也流畅；等宽、可选择、可滚动。
+struct FullTextView: UIViewRepresentable {
+    let text: String
+    func makeUIView(context: Context) -> UITextView {
+        let v = UITextView()
+        v.isEditable = false
+        v.isSelectable = true
+        v.alwaysBounceVertical = true
+        v.font = UIFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        v.backgroundColor = UIColor.secondarySystemBackground
+        v.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
+        v.layoutManager.allowsNonContiguousLayout = true
+        return v
+    }
+    func updateUIView(_ v: UITextView, context: Context) {
+        if v.text != text { v.text = text; v.setContentOffset(.zero, animated: false) }
     }
 }

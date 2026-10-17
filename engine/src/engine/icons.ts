@@ -1,4 +1,5 @@
 import {ICONS} from '../data/icons';
+import {resolveIcon} from '../data/icon-audit';
 import {GROUPS,CORE} from '../data/groups';
 import type {Plan} from './plan';
 import {N} from './plan';
@@ -7,7 +8,7 @@ import {has} from '../data/caps';
 /** 策略组名称 → 图标 URL（只有声明支持图标的客户端才会用到；找不到的组不写图标） */
 export function iconMap(p:Plan):Record<string,string>{
   const m:Record<string,string>={};
-  const put=(name:string,key:string)=>{const u=ICONS[key];if(u)m[name]=u};
+  const put=(name:string,key:string)=>{const u=resolveIcon(key,ICONS[key]);if(u)m[name]=u};
   put(N.proxy,'s:proxy');put(N.final,'s:final');put(N.update,'s:update');put(N.home,'s:home');put('国内直连','s:direct');
   put('全部-自动','s:autoAll');put('全部-手动','s:manAll');put('全部-订阅','s:manAll');put('全部-负载均衡','s:lb');
   for(const r of p.regions)for(const k of ['手动','自动','故转'])put(`${r.name}-${k}`,ICONS['r:'+r.id]?'r:'+r.id:'r:OT');

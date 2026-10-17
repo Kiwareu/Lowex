@@ -197,6 +197,36 @@
 - 未核实：导入入口、备份能力来自第三方教程，未对照官方文档
 - 来源：<https://github.com/ClashConnectRules/Egern/blob/main/README_zh.md>、<https://getegern.org/>
 
+## 策略组类型与故障转移（v1.4，2026-10-17 核对）
+
+故障转移 = 一个组按顺序用第一个健康的成员，挂了才换（fallback）。下表只认官方文档；来源页面均为当前版本文档。
+
+| 客户端族 | 支持故障转移 | 策略组类型 | Lowex 输出 | 可信度 |
+|---|---|---|---|---|
+| mihomoFamily | 是 | select / url-test / fallback / load-balance / relay | type: fallback（成员为该区的手动组与自动组，lazy、max-failed-times、empty-fallback） | high |
+| stash | 是 | select / url-test / fallback / load-balance / relay | type: fallback；策略组可嵌套策略组 | high |
+| surge | 是 | select / url-test / fallback / load-balance / smart / subnet | fallback, <手动组>, <自动组> | high |
+| loon | 是 | select / url-test / fallback / load-balance / ssid | fallback + 该区节点 / Remote Filter（不嵌套策略组） | high |
+| shadowrocket | 是 | select / url-test / fallback / load-balance / random | fallback + policy-regex-filter（不嵌套策略组） | medium |
+| qx | 是 | static / available / round-robin / dynamic / ssid / url-latency-benchmark | available=<名>, server-tag-regex=…（QX 的故障转移类型叫 available） | high |
+| egern | 是 | select / auto_test / fallback / load_balance / external / conditional | fallback: {policies: [手动组, 自动组]} | medium |
+| singbox | 否 | selector / urltest | 无故障转移组：自动组用 urltest（选延迟最低的健康节点，节点挂了自动换） | high |
+| karing | 否 | selector / urltest | 同 sing-box（本工具输出 sing-box JSON） | medium |
+
+- **mihomoFamily**：Verge Rev / FlClash / Clash Mi / CMFA / Clash Party / Mihomo 内核同一内核。 来源：<https://wiki.metacubex.one/en/config/proxy-groups/>
+- **stash**：官方文档明确「策略组可以包含另一个策略组」。 来源：<https://stash.wiki/proxy-protocols/proxy-groups>
+- **surge**：官方：除 smart 外，所有类型都可嵌套其他策略组。 来源：<https://manual.nssurge.com/policy-groups/overview.html>、<https://manual.nssurge.com/llms.txt>
+- **loon**：官方示例注明 url-test / fallback「只支持单个节点和远端节点，其他会被忽略」——v1.4 起不再把策略组塞进 fallback。 来源：<https://nsloon.bid/document/policygroup>、<https://github.com/Loon0x00/LoonExampleConfig/blob/master/example.conf>
+- **shadowrocket**：社区手册列出 url-test / fallback / load-balance / random；嵌套行为未核实，故用正则收纳节点。 来源：<https://github.com/LOWERTOP/Shadowrocket>
+- **qx**：官方 sample.conf：server-tag-regex 对 static / available / round-robin 有效；v1.4 起不再嵌套策略组。 来源：<https://raw.githubusercontent.com/crossutility/Quantumult-X/master/sample.conf>
+- **egern**：官方 FAQ：策略组可包含其他策略组。 来源：<https://egern.top/configuration/example>、<https://egernapp.com/zh-CN/docs/faq/>
+- **singbox**：官方只有 selector / urltest；priority / loadbalance 仅是未合并的 PR / issue。v1.3 及以前误输出了一个不会故障转移的「故转」selector，v1.4 已移除。 来源：<https://sing-box.sagernet.org/configuration/outbound/urltest/>、<https://github.com/SagerNet/sing-box/pull/4217>、<https://github.com/SagerNet/sing-box/pull/4321>
+- **karing**：Karing 自身的分组能力未核实，只按 sing-box 内核能力输出。 来源：<https://karing.app/en/app-manual/add-profiles>
+
+不支持故障转移的客户端（sing-box、Karing）：App 里不显示「故障转移」选项，生成的配置里也不含该组；自动组使用 urltest。
+
+Karing 的自有分组能力未核实，按 sing-box 内核能力处理。QX / 小火箭 / Egern / Loon / Surge / Stash 没有离线校验器，未做真机验证。
+
 ## Clash Mi「内置-不覆写」
 
 Clash Mi 的覆写分三层：订阅配置 ← 自定义覆写配置 ← 内置覆写（DNS / TUN / 端口等）。「内置-不覆写」表示完全使用订阅或导入配置原文，不叠加 App 内置覆写；「内置-覆写」（默认）则用 App 设置覆盖。添加配置链接时加 `overwrite=false` 等价于不覆写。Lowex 生成的完整配置（含 proxy-providers）建议选「内置-不覆写」，否则 DNS/TUN/端口会被 App 设置改写。来源：<https://clashmi.app/guide/faq>。

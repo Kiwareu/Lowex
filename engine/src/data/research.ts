@@ -151,3 +151,17 @@ export const RESEARCH:Record<string,Research>={
     conf:'medium',verified:false,unverified:['导入入口、备份能力来自第三方教程，未对照官方文档'],
     sources:['https://github.com/ClashConnectRules/Egern/blob/main/README_zh.md','https://getegern.org/']},
 };
+
+/** 故障转移 / 自动组支持表（v1.4 重新核对，逐条官方文档） */
+export interface GroupSupport{failover:boolean;types:string[];emit:string;note:string;sources:string[];conf:Conf}
+export const GROUPS_SUPPORT:Record<string,GroupSupport>={
+  mihomoFamily:{failover:true,types:['select','url-test','fallback','load-balance','relay'],emit:'type: fallback（成员为该区的手动组与自动组，lazy、max-failed-times、empty-fallback）',note:'Verge Rev / FlClash / Clash Mi / CMFA / Clash Party / Mihomo 内核同一内核。',sources:['https://wiki.metacubex.one/en/config/proxy-groups/'],conf:'high'},
+  stash:{failover:true,types:['select','url-test','fallback','load-balance','relay'],emit:'type: fallback；策略组可嵌套策略组',note:'官方文档明确「策略组可以包含另一个策略组」。',sources:['https://stash.wiki/proxy-protocols/proxy-groups'],conf:'high'},
+  surge:{failover:true,types:['select','url-test','fallback','load-balance','smart','subnet'],emit:'fallback, <手动组>, <自动组>',note:'官方：除 smart 外，所有类型都可嵌套其他策略组。',sources:['https://manual.nssurge.com/policy-groups/overview.html','https://manual.nssurge.com/llms.txt'],conf:'high'},
+  loon:{failover:true,types:['select','url-test','fallback','load-balance','ssid'],emit:'fallback + 该区节点 / Remote Filter（不嵌套策略组）',note:'官方示例注明 url-test / fallback「只支持单个节点和远端节点，其他会被忽略」——v1.4 起不再把策略组塞进 fallback。',sources:['https://nsloon.bid/document/policygroup','https://github.com/Loon0x00/LoonExampleConfig/blob/master/example.conf'],conf:'high'},
+  shadowrocket:{failover:true,types:['select','url-test','fallback','load-balance','random'],emit:'fallback + policy-regex-filter（不嵌套策略组）',note:'社区手册列出 url-test / fallback / load-balance / random；嵌套行为未核实，故用正则收纳节点。',sources:['https://github.com/LOWERTOP/Shadowrocket'],conf:'medium'},
+  qx:{failover:true,types:['static','available','round-robin','dynamic','ssid','url-latency-benchmark'],emit:'available=<名>, server-tag-regex=…（QX 的故障转移类型叫 available）',note:'官方 sample.conf：server-tag-regex 对 static / available / round-robin 有效；v1.4 起不再嵌套策略组。',sources:['https://raw.githubusercontent.com/crossutility/Quantumult-X/master/sample.conf'],conf:'high'},
+  egern:{failover:true,types:['select','auto_test','fallback','load_balance','external','conditional'],emit:'fallback: {policies: [手动组, 自动组]}',note:'官方 FAQ：策略组可包含其他策略组。',sources:['https://egern.top/configuration/example','https://egernapp.com/zh-CN/docs/faq/'],conf:'medium'},
+  singbox:{failover:false,types:['selector','urltest'],emit:'无故障转移组：自动组用 urltest（选延迟最低的健康节点，节点挂了自动换）',note:'官方只有 selector / urltest；priority / loadbalance 仅是未合并的 PR / issue。v1.3 及以前误输出了一个不会故障转移的「故转」selector，v1.4 已移除。',sources:['https://sing-box.sagernet.org/configuration/outbound/urltest/','https://github.com/SagerNet/sing-box/pull/4217','https://github.com/SagerNet/sing-box/pull/4321'],conf:'high'},
+  karing:{failover:false,types:['selector','urltest'],emit:'同 sing-box（本工具输出 sing-box JSON）',note:'Karing 自身的分组能力未核实，只按 sing-box 内核能力输出。',sources:['https://karing.app/en/app-manual/add-profiles'],conf:'medium'},
+};

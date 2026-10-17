@@ -15,6 +15,11 @@ final class Engine {
         api = ctx.objectForKeyedSubscript("Lowex")
     }
 
+    /// Lowex-Icons 仓库里已上传的组 id 列表（JSON 数组字符串）；引擎据此改用仓库图标
+    func setIconsReady(_ ids: [String]) {
+        guard let d = try? JSONSerialization.data(withJSONObject: ids), let s = String(data: d, encoding: .utf8) else { return }
+        _ = call("setIconsReady", [s])
+    }
     var version: String { api.objectForKeyedSubscript("version").toString() }
 
     private func call(_ name: String, _ args: [Any]) -> String {
