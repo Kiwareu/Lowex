@@ -432,12 +432,12 @@ struct NodesView: View {
                     Button { Haptics.selection(); store.toggleRegion(r.id) } label: {
                         HStack(spacing: 8) {
                             RemoteIcon(url: r.icon, name: r.name, size: 30)
-                            Text(r.name).font(.subheadline.weight(on ? .semibold : .regular)).lineLimit(1).minimumScaleFactor(0.8)
+                            Text(r.name).font(.subheadline.weight(on ? .semibold : .regular)).lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                             Spacer(minLength: 0)
                             Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Brand.pink : Color.secondary.opacity(0.5))
                         }
                         .foregroundStyle(Brand.ink)
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, 10)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(on ? Brand.pink.opacity(0.14) : Color.primary.opacity(0.06)))
                         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Brand.pink.opacity(on ? 0.55 : 0), lineWidth: 1.2))
@@ -777,60 +777,63 @@ struct GroupRow: View, Equatable {
         }
         .padding(.horizontal, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .fill(on ? Brand.pink.opacity(0.16) : Color.white.opacity(0.28))
-                .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(on ? Brand.pink.opacity(0.55) : Color.white.opacity(0.4), lineWidth: on ? 1.2 : 0.6)))
+        .background(GlassFill(r: radius, tint: on ? Brand.pink : nil))
     }
 
-    /// 单列 / 紧凑：图标 + 名称（单列多一行分类）+ 出口 + 收藏 + 开关，一行
+    /// 单列 / 紧凑：图标 | 名称（永远完整显示，必要时两行）+ 第二行（分类 / 出口）| 小箭头 | 星标 | 开关。
+    /// 出口菜单从名称右侧挪到名称下方，名称才有足够宽度。
     private var lineBody: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             Button(action: onOpen) {
                 HStack(spacing: 8) {
                     RemoteIcon(url: icon, name: name, size: density == .single ? 30 : 24)
-                    VStack(alignment: .leading, spacing: 1) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(name).font(density == .single ? .subheadline.weight(.semibold) : .footnote.weight(.semibold))
-                            .foregroundStyle(Brand.ink).lineLimit(1).minimumScaleFactor(0.8)
+                            .foregroundStyle(Brand.ink).lineLimit(2).minimumScaleFactor(0.8)
+                            .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                         if density == .single { Text(cat).font(.caption2).foregroundStyle(.secondary).lineLimit(1) }
                     }
+                    .layoutPriority(1)
                     Spacer(minLength: 0)
-                    if !detail.isEmpty { ChevronBadge(open: open) }
                 }
                 .frame(maxHeight: .infinity).contentShape(Rectangle())
             }.buttonStyle(.plain)
             if on { policyChip }
+            if !detail.isEmpty { chevron }
             starButton
             toggle
         }
     }
+    private var chevron: some View {
+        Button(action: onOpen) {
+            Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold)).foregroundStyle(Brand.pink)
+                .rotationEffect(.degrees(open ? 180 : 0))
+                .frame(width: 22, height: 22).background(Brand.pink.opacity(0.14), in: Circle())
+                .frame(width: 28, height: 36).contentShape(Rectangle())
+        }.buttonStyle(.plain)
+    }
 
-    /// 双列：上排图标 + 名称（固定两行高）+ 收藏；下排出口 / 未启用 + 开关；有详情时右上角 ⓘ 弹出详情
+    /// 双列：上排图标 + 名称（占满单元格宽度，最多两行）；下排出口 / 未启用 + 星标 + 开关。有详情时名称后带 ⓘ，点名称弹出详情。
     private var dualBody: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .top, spacing: 6) {
-                Button(action: onOpen) {
-                    HStack(spacing: 6) {
-                        RemoteIcon(url: icon, name: name, size: 24)
-                        Text(name).font(.footnote.weight(.semibold)).foregroundStyle(Brand.ink)
-                            .lineLimit(2).minimumScaleFactor(0.85).multilineTextAlignment(.leading)
-                        Spacer(minLength: 0)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading).contentShape(Rectangle())
-                }.buttonStyle(.plain)
-                if !detail.isEmpty {
-                    Button(action: onOpen) { Image(systemName: "info.circle").font(.footnote).foregroundStyle(.secondary).frame(width: 24, height: 30) }
-                        .buttonStyle(.plain)
+            Button(action: onOpen) {
+                HStack(spacing: 6) {
+                    RemoteIcon(url: icon, name: name, size: 24)
+                    Text(name).font(.footnote.weight(.semibold)).foregroundStyle(Brand.ink)
+                        .lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true).layoutPriority(1)
+                    if !detail.isEmpty { Image(systemName: "info.circle").font(.caption2).foregroundStyle(.secondary) }
+                    Spacer(minLength: 0)
                 }
-                starButton
-            }
-            HStack(spacing: 4) {
-                if on { policyChip } else { Text(L("未启用")).font(.caption2).foregroundStyle(.secondary) }
+                .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading).contentShape(Rectangle())
+            }.buttonStyle(.plain)
+            HStack(spacing: 0) {
+                if on { policyChip } else { Text(L("未启用")).font(.caption2).foregroundStyle(.secondary).lineLimit(1) }
                 Spacer(minLength: 0)
+                starButton
                 toggle
             }
-            .frame(height: 34)
+            .frame(height: 36)
         }
         .padding(.top, 4)
     }
@@ -838,7 +841,7 @@ struct GroupRow: View, Equatable {
     private var starButton: some View {
         Button(action: onFav) {
             Image(systemName: fav ? "star.fill" : "star").foregroundStyle(Brand.pink).font(.footnote)
-                .frame(width: 32, height: 36).contentShape(Rectangle())
+                .frame(width: 28, height: 36).contentShape(Rectangle())
         }.buttonStyle(.plain)
     }
     private var toggle: some View {
@@ -851,9 +854,9 @@ struct GroupRow: View, Equatable {
                 Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .bold))
             }
             .font(.caption2.weight(.semibold)).foregroundStyle(Brand.pink)
-            .padding(.horizontal, 8).padding(.vertical, 5)
+            .padding(.horizontal, 7).padding(.vertical, 4)
             .background(Brand.pink.opacity(0.12), in: Capsule())
-            .frame(maxWidth: 110)
+            .frame(maxWidth: 96)
         }.buttonStyle(.plain)
     }
 }

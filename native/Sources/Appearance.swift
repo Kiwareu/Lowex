@@ -140,7 +140,7 @@ struct AppearanceView: View {
                         }
                         PlainCard {
                             Toggle(L("性能模式"), isOn: Binding(get: { ap.performanceMode }, set: { ap.performanceMode = $0 })).tint(Brand.pink)
-                            Text(L("关闭背景动画与实时模糊，改用实心半透明卡片，滚动更流畅。iPhone XS 等较旧机型默认开启。")).font(.caption2).foregroundStyle(.secondary)
+                            Text(L("关闭背景动画，并用更轻量的玻璃质感卡片，滚动更流畅，外观几乎不变。iPhone XS 等较旧机型默认开启。")).font(.caption2).foregroundStyle(.secondary)
                         }
                         PlainCard {
                             Text(L("字体")).font(.headline)
@@ -174,7 +174,7 @@ struct AppearanceView: View {
                     .padding(16)
                 }
             }
-            .navigationTitle(L("外观与主题"))
+            .navigationTitle(L("自定义外观与主题"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("完成")) { dismiss() } } }
             .sheet(isPresented: $showPicker) {

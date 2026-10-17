@@ -19,7 +19,7 @@ struct MoreView: View {
                         Button { store.showAppearance = true } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: "paintpalette.fill").foregroundStyle(Brand.pink).frame(width: 28)
-                                Text(L("外观与主题（壁纸 / 玻璃 / 颜色）")).foregroundStyle(Brand.ink)
+                                Text(L("自定义外观与主题")).foregroundStyle(Brand.ink)
                                 Spacer()
                                 Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Brand.pink.opacity(0.8))
                             }

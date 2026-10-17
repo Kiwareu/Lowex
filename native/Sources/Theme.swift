@@ -161,19 +161,38 @@ struct GlassCard: ViewModifier {
     }
 }
 
-/// 卡片底：性能模式 = 实心半透明（无模糊 / 无阴影）；否则 = 一层材质 + 描边。无阴影（模糊半径的阴影每帧都要离屏渲染）。
-private struct GlassSurface: View {
+/// 玻璃底层：渐变高光 + 斜向描边，纯半透明叠层（不做实时模糊），所以可以给每一行 / 每张卡片用，滚动时只是合成，不重算。
+struct GlassFill: View {
     let r: CGFloat
+    var tint: Color? = nil
+    var boost: Double = 1
     @Environment(\.colorScheme) private var cs
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: r, style: .continuous)
-        let edge = LinearGradient(colors: [.white.opacity(cs == .dark ? 0.25 : 0.6), .white.opacity(0.08)], startPoint: .top, endPoint: .bottom)
-        if Appearance.shared.performanceMode {
-            shape.fill(cs == .dark ? Color.white.opacity(0.10) : Color.white.opacity(0.62))
-                .overlay(shape.strokeBorder(edge, lineWidth: 0.8))
-        } else {
-            shape.fill(.ultraThinMaterial.opacity(0.45 + 0.55 * Brand.glass))
-                .overlay(shape.strokeBorder(edge, lineWidth: 0.8))
+        let k = 0.65 + 0.7 * Brand.glass
+        let dark = cs == .dark
+        shape
+            .fill(LinearGradient(colors: dark ? [Color.white.opacity(0.17 * k * boost), Color.white.opacity(0.05 * k * boost)]
+                                              : [Color.white.opacity(0.62 * k * boost), Color.white.opacity(0.24 * k * boost)],
+                                 startPoint: .topLeading, endPoint: .bottomTrailing))
+            .overlay { if let tint { shape.fill(tint.opacity(dark ? 0.20 : 0.14)) } }
+            .overlay(shape.strokeBorder(
+                tint != nil ? AnyShapeStyle(tint!.opacity(0.6))
+                            : AnyShapeStyle(LinearGradient(colors: [Color.white.opacity(dark ? 0.38 : 0.95), Color.white.opacity(0.08), Color.white.opacity(dark ? 0.14 : 0.45)],
+                                                           startPoint: .topLeading, endPoint: .bottomTrailing)),
+                lineWidth: tint != nil ? 1.2 : 0.8))
+    }
+}
+
+/// 大卡片（首页 / 各页头部卡片，每页一两张）：一层真实材质模糊 + 玻璃叠层；性能模式下去掉实时模糊，改用更厚的叠层，外观接近。
+private struct GlassSurface: View {
+    let r: CGFloat
+    var body: some View {
+        ZStack {
+            if !Appearance.shared.performanceMode {
+                RoundedRectangle(cornerRadius: r, style: .continuous).fill(.ultraThinMaterial)
+            }
+            GlassFill(r: r, boost: Appearance.shared.performanceMode ? 1.15 : 0.8)
         }
     }
 }
@@ -184,22 +203,11 @@ extension View {
     }
 }
 
-/// Soft row surface — cheaper than material blur on every cell.
+/// 普通卡片 / 行：纯叠层玻璃（GlassFill），没有实时模糊。
 struct SoftCard: ViewModifier {
     var radius: CGFloat? = nil
-    @Environment(\.colorScheme) private var cs
     func body(content: Content) -> some View {
-        let r = radius ?? max(8, Brand.radius * 0.8)
-        let k = Brand.glass
-        content
-            .background {
-                RoundedRectangle(cornerRadius: r, style: .continuous)
-                    .fill(cs == .dark ? Color.white.opacity(0.05 + 0.10 * k) : Color.white.opacity(0.30 + 0.40 * k))
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: r, style: .continuous)
-                    .strokeBorder(Color.white.opacity(cs == .dark ? 0.10 : 0.45), lineWidth: 0.6)
-            }
+        content.background(GlassFill(r: radius ?? max(8, Brand.radius * 0.8)))
     }
 }
 extension View {
