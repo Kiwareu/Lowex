@@ -268,9 +268,15 @@ struct GenerateView: View {
                             .font(.caption2).foregroundStyle(.secondary)
                     }
                     HStack(spacing: 10) {
-                        Button { openFile(sc) } label: {
-                            Label(L("用 {} 打开文件", sc.appName), systemImage: "square.and.arrow.down.on.square").frame(maxWidth: .infinity)
-                        }.buttonStyle(link == nil ? .borderedProminent : .bordered).tint(Brand.pink)
+                        if link == nil {
+                            Button { openFile(sc) } label: {
+                                Label(L("用 {} 打开文件", sc.appName), systemImage: "square.and.arrow.down.on.square").frame(maxWidth: .infinity)
+                            }.buttonStyle(.borderedProminent).tint(Brand.pink)
+                        } else {
+                            Button { openFile(sc) } label: {
+                                Label(L("用 {} 打开文件", sc.appName), systemImage: "square.and.arrow.down.on.square").frame(maxWidth: .infinity)
+                            }.buttonStyle(.bordered).tint(Brand.pink)
+                        }
                         Button { UIPasteboard.general.string = store.result.text; openRoot(sc, copied: true) } label: {
                             Label(L("复制并打开"), systemImage: "doc.on.clipboard").frame(maxWidth: .infinity)
                         }.buttonStyle(.bordered)
