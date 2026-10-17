@@ -17,7 +17,6 @@ struct HomeView: View {
 
     var body: some View {
         PageChrome(showBrand: true) {
-            Text(store.versionLabel).font(.caption2.monospaced()).foregroundStyle(.secondary)
             HeroCard {
                 Text(L("代理配置生成器"))
                     .font(.title3.weight(.semibold))
@@ -102,6 +101,8 @@ struct HomeView: View {
                 Text(L("一键预设")).font(.headline)
                 Text(L("对齐作者 Clash Meta v4 结构并加强：故障转移、防泄漏、数字游民银行与加密货币规则包。不含私人订阅。"))
                     .font(.caption).foregroundStyle(.secondary)
+                Text(L("预设会一次性改写下面的「生成选项」，建议先套预设，再按需微调。"))
+                    .font(.caption2).foregroundStyle(Brand.pink.opacity(0.9))
                 PresetButtons()
             }
 
@@ -173,6 +174,13 @@ struct HomeView: View {
                 Label(L("下一步：节点"), systemImage: "arrow.right").frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent).tint(Brand.pink)
+
+            // 页脚：标语 + 版本，低调放在最底部，不挤在字标下面
+            VStack(spacing: 2) {
+                Text(L("本机生成 · 不上传")).font(.caption2).foregroundStyle(.secondary)
+                Text(store.versionLabel).font(.caption2.monospaced()).foregroundStyle(.secondary.opacity(0.7))
+            }
+            .frame(maxWidth: .infinity).padding(.top, Space.s)
         }
     }
 }
@@ -242,34 +250,20 @@ struct PresetButtons: View {
     }
 }
 
-/// DNS 与网络：国内 DNS 预设 / Bootstrap / 系统 DNS。只显示当前客户端支持的项。
+/// DNS 与网络：常用服务器多选 + 自定义地址；Bootstrap / 系统 DNS。只显示当前客户端支持的项。
 struct DnsCard: View {
     @EnvironmentObject var store: Store
     @State private var boot = ""
     @FocusState private var bootFocus: Bool
-    private let ali = "https://223.5.5.5/dns-query", ali2 = "https://223.6.6.6/dns-query"
-    private let tx = "https://doh.pub/dns-query", qh = "https://doh.360.cn/dns-query"
-    private var presets: [(String, String, [String])] {
-        [("ali-dnspod", L("阿里 + 腾讯 DNSPod（推荐）"), [ali, tx]), ("ali", L("仅阿里公共 DNS"), [ali, ali2]),
-         ("dnspod", L("仅腾讯 DNSPod"), [tx]), ("qihoo", L("360 安全 DNS"), [qh])]
-    }
-    private var current: String {
-        let cn = (store.opts["dnsCn"] as? [String]) ?? []
-        return presets.first { $0.2 == cn }?.0 ?? "custom"
-    }
     var body: some View {
         if store.supports("dnsCn") {
             PlainCard {
-                SectionHeader(title: L("DNS 与网络"), subtitle: L("国内公共 DoH 与运营商无关；这里可换服务商、设 bootstrap。依据见 docs/NETWORK-ENV.md。"))
-                Picker(L("国内 DNS（DoH）"), selection: Binding(
-                    get: { current },
-                    set: { id in
-                        if let p = presets.first(where: { $0.0 == id }) { store.setOpts(["dnsCn": p.2, "dnsPreset": id]) }
-                    })) {
-                    ForEach(presets, id: \.0) { Text($0.1).tag($0.0) }
-                    if current == "custom" { Text(L("自定义")).tag("custom") }
+                SectionHeader(title: L("DNS 与网络"), subtitle: L("勾选常用服务器，或添加自己的地址（DoH 地址 / IP / 域名，按当前客户端能用的写法校验）。依据见 docs/NETWORK-ENV.md。"))
+                DnsListEditor(title: L("国内 DNS（直连）"), key: "dnsCn", catalog: DnsCatalog.cn)
+                if store.supports("dnsRemote") {
+                    Divider().opacity(0.4)
+                    DnsListEditor(title: L("海外 DNS（经代理）"), key: "dnsRemote", catalog: DnsCatalog.remote)
                 }
-                .pickerStyle(.menu)
                 if store.supports("dnsBootstrap") {
                     VStack(alignment: .leading, spacing: Space.xs) {
                         Text(L("Bootstrap DNS（纯 IP，逗号分隔）")).font(.subheadline)
@@ -332,6 +326,7 @@ struct NodesView: View {
     @State private var subDraft = ""
     @State private var linkDraft = ""
     @State private var editing: ManualNodeDraft?
+    @ObservedObject private var ap = Appearance.shared
 
     private var isSR: Bool { store.family == "shadowrocket" }
     private var isSB: Bool { store.family == "singbox" }
@@ -443,12 +438,34 @@ struct NodesView: View {
             if showManual { manualCard }
 
             PlainCard {
-                Text(L("地区分组")).font(.headline)
+                HStack { Text(L("地区分组")).font(.headline); Spacer() }
+                DensityBar()
                 Text(L("打开的地区会出现在规则出口与策略组里（含故转/自动/手动）。手动节点按名称里的地区关键词（如「香港」「日本」）归入对应地区。")).font(.caption).foregroundStyle(.secondary)
-                ForEach(store.catalog.regions) { r in
-                    Toggle(isOn: Binding(get: { store.regions.contains(r.id) }, set: { _ in store.toggleRegion(r.id) })) {
-                        HStack(spacing: 8) { RemoteIcon(url: r.icon, name: r.name, size: 22); Text(r.name) }
-                    }.tint(Brand.pink)
+                if ap.density == .single {
+                    ForEach(store.catalog.regions) { r in
+                        Toggle(isOn: Binding(get: { store.regions.contains(r.id) }, set: { _ in store.toggleRegion(r.id) })) {
+                            HStack(spacing: 8) { RemoteIcon(url: r.icon, name: r.name, size: 22); Text(r.name) }
+                        }.tint(Brand.pink)
+                    }
+                } else {
+                    let cols = ap.density == .dual ? 2 : 3
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: cols), spacing: 6) {
+                        ForEach(store.catalog.regions) { r in
+                            let on = store.regions.contains(r.id)
+                            Button { Haptics.selection(); store.toggleRegion(r.id) } label: {
+                                HStack(spacing: 5) {
+                                    RemoteIcon(url: r.icon, name: r.name, size: 18)
+                                    Text(r.name).font(.caption.weight(on ? .semibold : .regular)).lineLimit(1).minimumScaleFactor(0.8)
+                                    Spacer(minLength: 0)
+                                    if on { Image(systemName: "checkmark").font(.caption2.weight(.bold)).foregroundStyle(Brand.pink) }
+                                }
+                                .foregroundStyle(Brand.ink)
+                                .padding(.horizontal, 8).padding(.vertical, 7)
+                                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(on ? Brand.pink.opacity(0.14) : Color.primary.opacity(0.06)))
+                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Brand.pink.opacity(on ? 0.55 : 0), lineWidth: 1))
+                            }.buttonStyle(.plain)
+                        }
+                    }
                 }
             }
 
@@ -621,6 +638,7 @@ struct RulesView: View {
     @State private var section: RuleSection = .groups
     @State private var onlyFav = false
     @State private var expanded: Set<String> = []
+    @ObservedObject private var ap = Appearance.shared
 
     enum RuleSection: String, CaseIterable, Identifiable {
         case groups = "服务分组"
@@ -644,10 +662,10 @@ struct RulesView: View {
         PageChrome(title: L("规则")) {
             HeroCard {
                 Text(L("③ 分流与增强"))
-                    .font(.title3.weight(.semibold))
+                    .font(.headline)
                 Text(store.stepRulesHint + L(" · 选项会直接进入生成配置"))
-                    .font(.footnote).foregroundStyle(.secondary)
-                ChoiceTabs(options: RuleSection.allCases.map { ($0, $0.title) }, selection: $section)
+                    .font(.caption).foregroundStyle(.secondary)
+                ChipTabs(options: RuleSection.allCases.map { ($0, $0.title) }, selection: $section)
             }
 
             switch section {
@@ -656,10 +674,17 @@ struct RulesView: View {
                     TextField(L("搜索服务分组"), text: $query)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    Toggle(L("只看收藏"), isOn: $onlyFav).tint(Brand.pink)
+                    HStack {
+                        Toggle(L("只看收藏"), isOn: $onlyFav).tint(Brand.pink).font(.subheadline)
+                    }
+                    DensityBar()
                 }
-                ForEach(filteredGroups) { g in
-                    groupRow(g)
+                if ap.density == .dual {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: Space.s), GridItem(.flexible(), spacing: Space.s)], spacing: Space.s) {
+                        ForEach(filteredGroups) { g in groupRow(g) }
+                    }
+                } else {
+                    ForEach(filteredGroups) { g in groupRow(g) }
                 }
             case .apps:
                 AppsInline()
@@ -686,42 +711,60 @@ struct RulesView: View {
     @ViewBuilder
     private func groupRow(_ g: Catalog.Group) -> some View {
         let isOpen = expanded.contains(g.id)
+        let on = store.isOn(g)
+        let d = ap.density
         let detail = [g.notes, g.risk.map { L("误判拦截风险：{}", $0) }].compactMap { $0 }.filter { !$0.isEmpty }
-        VStack(alignment: .leading, spacing: Space.s) {
+        let iconSize: CGFloat = d == .single ? 28 : 22
+        let toggle = Toggle("", isOn: Binding(get: { store.isOn(g) }, set: { store.setGroup(g, on: $0) }))
+            .labelsHidden().tint(Brand.pink)
+            .scaleEffect(d == .single ? 1 : 0.82, anchor: .trailing)
+        let star = Button { store.toggleFavorite(g.id) } label: {
+            Image(systemName: store.favoriteIds.contains(g.id) ? "star.fill" : "star").foregroundStyle(Brand.pink)
+                .font(d == .single ? .body : .footnote)
+        }.buttonStyle(IconTapStyle())
+        let policy = Picker("", selection: Binding(get: { store.policy(g) }, set: { store.setGroup(g, policy: $0) })) {
+            Text(L("代理")).tag("PROXY")
+            Text(L("直连")).tag("DIRECT")
+            Text(L("拦截")).tag("REJECT")
+            ForEach(store.catalog.regions.filter { store.regions.contains($0.id) }) {
+                Text(L("{} 节点", $0.name)).tag("R:\($0.id)")
+            }
+        }.pickerStyle(.menu).labelsHidden().tint(Brand.pink)
+        let title = Button {
+            Haptics.light()
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                if isOpen { expanded.remove(g.id) } else { expanded.insert(g.id) }
+            }
+        } label: {
             HStack(spacing: Space.s) {
-                Button {
-                    Haptics.light()
-                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                        if isOpen { expanded.remove(g.id) } else { expanded.insert(g.id) }
-                    }
-                } label: {
-                    HStack(spacing: Space.m) {
-                        RemoteIcon(url: g.icon, name: g.name, size: 28)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(g.name).font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink)
-                            Text(store.catalog.cats[g.cat] ?? g.cat).font(.caption2).foregroundStyle(.secondary)
-                        }
-                        Spacer(minLength: 0)
-                        if !detail.isEmpty { ChevronBadge(open: isOpen) }
-                    }
-                    .frame(maxWidth: .infinity, minHeight: Space.tap, alignment: .leading)
-                    .contentShape(Rectangle())
+                RemoteIcon(url: g.icon, name: g.name, size: iconSize)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(g.name).font(d == .single ? .subheadline.weight(.semibold) : .footnote.weight(.semibold)).foregroundStyle(Brand.ink)
+                        .lineLimit(d == .dual ? 2 : 1)
+                    if d == .single { Text(store.catalog.cats[g.cat] ?? g.cat).font(.caption2).foregroundStyle(.secondary) }
                 }
-                .buttonStyle(.plain)
-                .disabled(detail.isEmpty)
-                Button {
-                    store.toggleFavorite(g.id)
-                } label: {
-                    Image(systemName: store.favoriteIds.contains(g.id) ? "star.fill" : "star")
-                        .foregroundStyle(Brand.pink)
+                if d != .dual { Spacer(minLength: 0) }
+                if !detail.isEmpty && d != .dual { ChevronBadge(open: isOpen) }
+            }
+            .frame(maxWidth: .infinity, minHeight: d == .single ? Space.tap : 32, alignment: .leading)
+            .contentShape(Rectangle())
+        }.buttonStyle(.plain)
+
+        VStack(alignment: .leading, spacing: d == .single ? Space.s : 2) {
+            if d == .dual {
+                HStack(spacing: 4) { title; star }
+                HStack(spacing: 2) {
+                    if on { policy.font(.caption2) } else { Text(L("未启用")).font(.caption2).foregroundStyle(.secondary) }
+                    Spacer(minLength: 0)
+                    toggle
                 }
-                .buttonStyle(IconTapStyle())
-                Toggle("", isOn: Binding(
-                    get: { store.isOn(g) },
-                    set: { store.setGroup(g, on: $0) }
-                ))
-                .labelsHidden()
-                .tint(Brand.pink)
+            } else {
+                HStack(spacing: Space.s) {
+                    title
+                    if d == .compact && on { policy.font(.caption2) }
+                    star
+                    toggle
+                }
             }
             if isOpen && !detail.isEmpty {
                 VStack(alignment: .leading, spacing: Space.xs) {
@@ -729,23 +772,14 @@ struct RulesView: View {
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            if store.isOn(g) {
-                Picker(L("出口"), selection: Binding(
-                    get: { store.policy(g) },
-                    set: { store.setGroup(g, policy: $0) }
-                )) {
-                    Text(L("代理")).tag("PROXY")
-                    Text(L("直连")).tag("DIRECT")
-                    Text(L("拦截")).tag("REJECT")
-                    ForEach(store.catalog.regions.filter { store.regions.contains($0.id) }) {
-                        Text(L("{} 节点", $0.name)).tag("R:\($0.id)")
-                    }
-                }
-                .pickerStyle(.menu)
+            if d == .single && on {
+                policy.font(.callout)
             }
         }
-        .padding(.horizontal, Space.m).padding(.vertical, Space.s)
+        .padding(.horizontal, d == .single ? Space.m : Space.s).padding(.vertical, d == .single ? Space.s : 4)
+        .background(RoundedRectangle(cornerRadius: max(8, Brand.radius * 0.8), style: .continuous).fill(Brand.pink.opacity(on ? 0.10 : 0)))
         .softCard()
+        .overlay(RoundedRectangle(cornerRadius: max(8, Brand.radius * 0.8), style: .continuous).strokeBorder(Brand.pink.opacity(on ? 0.55 : 0), lineWidth: 1.2))
     }
 }
 

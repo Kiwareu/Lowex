@@ -37,7 +37,7 @@ Lowex 是一款运行在 iPhone / iPad 上的配置生成器：选好目标客�
 - **手动节点**：SOCKS5 / HTTP / HTTPS（住宅 / 家宽代理），密码存系统钥匙串，按客户端语法输出（见 [docs/MANUAL-NODES.md](docs/MANUAL-NODES.md)）。
 - **一键预设、备份与恢复**：数字游民、加密货币、通用防泄漏等预设；设置可导出为 JSON 并恢复。
 - **导出**：复制、系统分享、保存到「文件」、二维码；多数客户端支持 URL scheme 导入（见 [docs/IMPORT-SCHEMES.md](docs/IMPORT-SCHEMES.md)）。
-- **界面**：手写签名风格的字标、浅色 / 深色、强调色、圆角、玻璃强度、渐变速度、字体、自定义壁纸、触感反馈；尊重「减弱动态效果」。
+- **界面**：手写签名风格的字标、浅色 / 深色、强调色、圆角、玻璃强度、渐变速度、字体、自定义壁纸、触感反馈、列表密度（单列平铺 / 双列 / 紧凑）；尊重「减弱动态效果」。
 - **多语言**：简体中文 / 繁體中文（台灣、香港）/ English，默认跟随系统，可在 App 内切换（见 [docs/LOCALIZATION.md](docs/LOCALIZATION.md)）。
 
 ## 截图
@@ -46,7 +46,7 @@ Lowex 是一款运行在 iPhone / iPad 上的配置生成器：选好目标客�
 |---|---|
 | <img src="docs/screenshots/home.png" width="260"> | <img src="docs/screenshots/rules.png" width="260"> |
 
-> 截图来自较早的构建，界面细节以实际版本为准。
+> 截图为 v1.3 界面，v1.4 起规则 / 节点页新增列表密度，细节以实际版本为准。
 
 ## 支持的客户端
 

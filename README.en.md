@@ -35,7 +35,7 @@ Lowex runs on iPhone / iPad. Pick a target client and options, paste *your own* 
 - **Manual nodes**: SOCKS5 / HTTP / HTTPS (residential proxies); passwords stay in the system Keychain; output follows each client's syntax (see [docs/MANUAL-NODES.md](docs/MANUAL-NODES.md)).
 - **Presets, backup & restore**: digital-nomad, crypto and general leak-protection presets; settings export to JSON and restore.
 - **Export**: copy, system share sheet, save to Files, QR code; most clients support URL-scheme import (see [docs/IMPORT-SCHEMES.md](docs/IMPORT-SCHEMES.md)).
-- **UI**: script-style wordmark, light / dark, accent colour, corner radius, glass strength, gradient speed, fonts, custom wallpaper, haptics; honours Reduce Motion.
+- **UI**: script-style wordmark, light / dark, accent colour, corner radius, glass strength, gradient speed, fonts, custom wallpaper, haptics, list density (single / two columns / compact); honours Reduce Motion.
 - **Languages**: Simplified Chinese, Traditional Chinese (Taiwan, Hong Kong) and English; follows the system language and can be switched in the app (see [docs/LOCALIZATION.md](docs/LOCALIZATION.md)).
 
 ## Screenshots
@@ -44,7 +44,7 @@ Lowex runs on iPhone / iPad. Pick a target client and options, paste *your own* 
 |---|---|
 | <img src="docs/screenshots/home.png" width="260"> | <img src="docs/screenshots/rules.png" width="260"> |
 
-> Screenshots come from an earlier build; details may differ from the current version.
+> Screenshots show v1.3; v1.4 adds list density on the Rules / Nodes pages, so details may differ.
 
 ## Supported clients
 

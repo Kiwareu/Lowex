@@ -4,6 +4,7 @@ import SwiftUI
 struct MoreView: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var lang: Lang
+    @ObservedObject private var ap = Appearance.shared
     var body: some View {
         NavStack {
             ZStack {
@@ -15,11 +16,7 @@ struct MoreView: View {
                             .foregroundStyle(Brand.ink)
                             .padding(.top, 6)
 
-                        PlainCard {
-                            Text(L("主流程已移到首页 / 节点 / 规则 / 生成。这里只放辅助项。"))
-                                .font(.footnote).foregroundStyle(.secondary)
-                        }
-
+                        moreSection(L("外观与偏好"))
                         Button { store.showAppearance = true } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: "paintpalette.fill").foregroundStyle(Brand.pink).frame(width: 28)
@@ -38,25 +35,43 @@ struct MoreView: View {
                             }
                             .pickerStyle(.menu).tint(Brand.pink)
                         }
-                        .padding(14).softCard()
+                        .padding(.horizontal, Space.l).padding(.vertical, 6).frame(minHeight: Space.tap).softCard()
+                        VStack(alignment: .leading, spacing: Space.s) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "rectangle.grid.1x2").foregroundStyle(Brand.pink).frame(width: 28)
+                                Text(L("列表密度（规则 / 节点页）")).foregroundStyle(Brand.ink)
+                            }
+                            ChoiceTabs(options: LayoutDensity.allCases.map { ($0, $0.label) },
+                                       selection: Binding(get: { ap.density }, set: { ap.density = $0 }))
+                        }
+                        .padding(Space.l).softCard()
+
+                        moreSection(L("工具"))
                         navCard(L("防泄漏检查清单"), icon: "shield.lefthalf.filled", dest: LeakView())
                         if store.engine.supportsModules(client: store.client) {
                             navCard(L("模块与脚本"), icon: "puzzlepiece.extension", dest: ModulesView())
                         }
                         navCard(L("作者自用规则分享"), icon: "person.crop.circle.badge.checkmark", dest: SharedView())
                         navCard(L("备份与恢复 Lowex 设置"), icon: "externaldrive.badge.icloud", dest: BackupView())
-                        navCard(L("免责声明"), icon: "exclamationmark.shield.fill", dest: DisclaimerView())
+
+                        moreSection(L("关于"))
                         navCard(L("关于 Lowex"), icon: "info.circle", dest: AboutView())
+                        navCard(L("免责声明"), icon: "exclamationmark.shield.fill", dest: DisclaimerView())
                         Link(destination: URL(string: "https://github.com/Kiwareu/Lowex")!) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "chevron.left.forwardslash.chevron.right")
-                                Text(L("GitHub 项目主页")).font(.subheadline.weight(.medium))
+                            HStack(spacing: 12) {
+                                Image(systemName: "chevron.left.forwardslash.chevron.right").foregroundStyle(Brand.pink).frame(width: 28)
+                                Text(L("GitHub 项目主页")).foregroundStyle(Brand.ink)
                                 Spacer()
-                                Image(systemName: "arrow.up.right").font(.caption)
+                                Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(Brand.pink.opacity(0.8))
                             }
-                            .padding(14).frame(maxWidth: .infinity)
-                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .padding(Space.l).frame(minHeight: Space.tap).contentShape(Rectangle()).softCard()
+                        }.buttonStyle(PressableStyle())
+
+                        VStack(spacing: 2) {
+                            Text(L("本机生成 · 不上传")).font(.caption2).foregroundStyle(.secondary)
+                            Text(store.versionLabel).font(.caption2.monospaced()).foregroundStyle(.secondary.opacity(0.7))
                         }
+                        .frame(maxWidth: .infinity).padding(.top, Space.m)
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 28)
@@ -66,6 +81,11 @@ struct MoreView: View {
             }
             .hideNavBar()
         }
+    }
+
+    private func moreSection(_ t: String) -> some View {
+        Text(t).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+            .padding(.top, Space.s).padding(.leading, 4)
     }
 
     private func navCard<V: View>(_ title: String, icon: String, dest: V) -> some View {
@@ -527,7 +547,7 @@ struct AboutView: View {
                             .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundStyle(LinearGradient(colors: [Brand.pink, Brand.lilac],
                                                             startPoint: .leading, endPoint: .trailing))
-                        Text(L("原生 SwiftUI · 引擎 {}", store.engine.version))
+                        Text(L("本机生成 · 不上传"))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }

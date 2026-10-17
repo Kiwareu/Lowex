@@ -246,32 +246,25 @@ struct ScriptWordmark: View {
 }
 
 struct BrandHeader: View {
-    var subtitle: String? = nil
     private static let logoSize: CGFloat = 50
 
     var body: some View {
         // 字标区宽度 = 屏幕宽 - 两侧页边距 - Logo；高度由矢量宽高比决定（上限 128），尽量铺满
+        // 标语「本机生成 · 不上传」不放这里（字标下显得挤），改到关于页与首页底部脚注。
         let availW = max(min(UIScreen.main.bounds.width, 560) - Space.l * 2 - Self.logoSize - Space.s, 120)
         let h = min(availW / WordmarkShape.aspect, 128)
-        VStack(alignment: .trailing, spacing: 0) {
-            HStack(alignment: .center, spacing: Space.s) {
-                Image("BrandMark")
-                    .resizable().scaledToFit()
-                    .frame(width: Self.logoSize, height: Self.logoSize)
-                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-                    .shadow(color: Brand.pink.opacity(0.35), radius: 7, y: 3)
-                ScriptWordmark()
-                    .frame(width: availW, height: h, alignment: .trailing)
-            }
-            // 副标题靠右、紧贴字标下沿；"L" 的尾巴在左侧，不会与它重叠
-            Text(subtitle ?? L("本机生成 · 不上传"))
-                .font(.caption2).foregroundStyle(.secondary)
-                .lineLimit(1).minimumScaleFactor(0.8)
-                .padding(.top, -2)
+        HStack(alignment: .center, spacing: Space.s) {
+            Image("BrandMark")
+                .resizable().scaledToFit()
+                .frame(width: Self.logoSize, height: Self.logoSize)
+                .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .shadow(color: Brand.pink.opacity(0.35), radius: 7, y: 3)
+            ScriptWordmark()
+                .frame(width: availW, height: h, alignment: .trailing)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 2)
-        .padding(.bottom, 2)
+        .padding(.bottom, 4)
     }
 }
 
@@ -308,19 +301,20 @@ struct PageChrome<Content: View>: View {
 struct HeroCard<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) { content }
+        VStack(alignment: .leading, spacing: 8) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
+            .padding(14)
             .glassCard(heavy: true)
     }
 }
 
 struct PlainCard<Content: View>: View {
     @ViewBuilder var content: Content
+    @ObservedObject private var ap = Appearance.shared
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.s) { content }
+        VStack(alignment: .leading, spacing: ap.density == .compact ? 6 : Space.s) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(Space.l)
+            .padding(ap.density == .compact ? Space.m : Space.l)
             .softCard()
     }
 }
@@ -388,3 +382,58 @@ struct ChoiceTabs<T: Hashable>: View {
         .fixedSize(horizontal: false, vertical: true)
     }
 }
+
+/// 可横向滚动的胶囊标签：比等宽分段更小、更圆，适合规则页分区。
+struct ChipTabs<T: Hashable>: View {
+    let options: [(T, String)]
+    @Binding var selection: T
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(Array(options.enumerated()), id: \.offset) { _, o in
+                    let on = o.0 == selection
+                    Button {
+                        if !on { Haptics.selection(); selection = o.0 }
+                    } label: {
+                        Text(o.1)
+                            .font(.caption.weight(.semibold))
+                            .padding(.vertical, 6).padding(.horizontal, 11)
+                            .foregroundStyle(on ? Color.white : Brand.ink)
+                            .background(Capsule(style: .continuous)
+                                .fill(on ? AnyShapeStyle(LinearGradient(colors: [Brand.pink, Brand.lilac], startPoint: .leading, endPoint: .trailing))
+                                         : AnyShapeStyle(Color.secondary.opacity(0.14))))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            .padding(.vertical, 1)
+        }
+    }
+}
+
+/// 列表密度切换：规则 / 节点页顶栏右侧用。
+struct DensityBar: View {
+    @ObservedObject private var ap = Appearance.shared
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "rectangle.grid.1x2").font(.caption2).foregroundStyle(.secondary)
+            ForEach(LayoutDensity.allCases) { d in
+                let on = ap.density == d
+                Button {
+                    if !on { Haptics.selection(); ap.density = d }
+                } label: {
+                    Text(d.label)
+                        .font(.caption2.weight(on ? .bold : .medium))
+                        .padding(.vertical, 4).padding(.horizontal, 8)
+                        .foregroundStyle(on ? Color.white : Brand.ink)
+                        .background(Capsule().fill(on ? Brand.pink : Color.secondary.opacity(0.12)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+    }
+}
+
+
