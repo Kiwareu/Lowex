@@ -34,11 +34,11 @@ final class Boot: ObservableObject {
     init() {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             _ = Engine.shared   // 解析 engine.js（最耗时的一步）放在后台
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { self?.store = Store() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { self?.store = Store() }
         }
     }
     func finish(duration: Double) {
-        withAnimation(.spring(response: duration, dampingFraction: 0.95)) { showSplash = false }
+        withAnimation(.easeOut(duration: duration)) { showSplash = false }
         store?.finishSplash()
     }
 }

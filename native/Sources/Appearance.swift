@@ -159,16 +159,16 @@ struct AppearanceView: View {
 
 // MARK: - 启动动画
 /// 加载式启动序列（单一时间线）：
-/// 字标淡入（spring）→ 0.35s 后进度从左到右填充（一条 timingCurve 缓动，1.9s，只有一个动画值 progress）
-/// → 到 100% 后停顿 0.3s → 交给 Boot 淡出进入首页。
+/// 字标淡入 → 进度立即从左到右填充（一条 timingCurve 缓动，约 0.65s，只有一个动画值 progress）
+/// → 到 100% 后停顿 0.1s → 交给 Boot 用 0.2s 淡出进入首页（总长约 1 秒）。
 /// 填充用 scaleEffect(x:) + mask 的矩形，只做变换，不逐帧重绘文字；引擎在后台线程加载（见 Boot），不会卡住动画。
-/// 减弱动态效果：只做 0.25s 淡入、短停顿、0.25s 淡出。
+/// 减弱动态效果：只做短淡入、短停顿、0.2s 淡出。
 struct SplashView: View {
     @ObservedObject var boot: Boot
     @Environment(\.accessibilityReduceMotion) private var reduce
     @State private var appeared = false
     @State private var progress: CGFloat = 0
-    private let fillDuration = 1.9
+    private let fillDuration = 0.65
 
     private var fillGradient: LinearGradient {
         LinearGradient(colors: [Brand.pink, Brand.lilac], startPoint: .leading, endPoint: .trailing)
@@ -239,19 +239,18 @@ struct SplashView: View {
 
     private func run() async {
         if reduce {
-            withAnimation(.easeIn(duration: 0.25)) { appeared = true; progress = 1 }
-            try? await Task.sleep(nanoseconds: 700_000_000)
-            while boot.store == nil { try? await Task.sleep(nanoseconds: 50_000_000) }
-            boot.finish(duration: 0.25)
+            withAnimation(.easeIn(duration: 0.15)) { appeared = true; progress = 1 }
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            while boot.store == nil { try? await Task.sleep(nanoseconds: 30_000_000) }
+            boot.finish(duration: 0.2)
             return
         }
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) { appeared = true }
-        try? await Task.sleep(nanoseconds: 350_000_000)
-        withAnimation(.timingCurve(0.45, 0.0, 0.2, 1.0, duration: fillDuration)) { progress = 1 }
+        withAnimation(.easeOut(duration: 0.25)) { appeared = true }
+        withAnimation(.timingCurve(0.35, 0.0, 0.2, 1.0, duration: fillDuration)) { progress = 1 }
         try? await Task.sleep(nanoseconds: UInt64(fillDuration * 1_000_000_000))
-        while boot.store == nil { try? await Task.sleep(nanoseconds: 50_000_000) }
-        try? await Task.sleep(nanoseconds: 300_000_000)
-        boot.finish(duration: 0.55)
+        while boot.store == nil { try? await Task.sleep(nanoseconds: 30_000_000) }
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        boot.finish(duration: 0.2)
     }
 }
 
