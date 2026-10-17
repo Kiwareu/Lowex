@@ -20,7 +20,7 @@ export const CAPS:Record<Feature,{keys:(keyof Opts)[];fam:Family[];label:string}
  cnDnsMode:{keys:['cnDnsMode'],fam:MS,label:'国内域名用系统 DNS'},
  dnsRemote:{keys:['dnsRemote'],fam:['mihomo','singbox','stash','egern'],label:'境外 DNS'},
  quic:{keys:['blockQuic'],fam:ALL,label:'拦截境外 QUIC'},
- stun:{keys:['stun'],fam:['mihomo','singbox','surge','qx','shadowrocket','loon','egern'],label:'STUN / WebRTC'},
+ stun:{keys:['stun'],fam:['mihomo','singbox','surge','qx','shadowrocket','loon','stash','egern'],label:'STUN / WebRTC'},
  unknown:{keys:['unknown'],fam:ALL,label:'未知域名'},
  ads:{keys:['ads'],fam:ALL,label:'广告拦截'},
  telemetry:{keys:['telemetry'],fam:ALL,label:'拦截遥测'},

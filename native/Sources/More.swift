@@ -301,6 +301,7 @@ struct WifiInline: View {
             .tint(Brand.pink)
             Text(L("运营商 ePDG / IMS 域名直连，避免通话被代理。选择会写入生成配置。"))
                 .font(.caption).foregroundStyle(.secondary)
+            WifiCallNote()
         }
         PlainCard {
             Text(L("自定义 MCC / MNC")).font(.headline)
@@ -626,5 +627,21 @@ enum DisclaimerText {
         "",
         L(L("最后更新日期：2026-10-17"))
         ].joined(separator: "\n")
+    }
+}
+
+
+/// Wi-Fi 通话提示：规则会生成，但能否生效取决于用户自己的环境
+struct WifiCallNote: View {
+    @EnvironmentObject var store: Store
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label(L("规则已支持并会写入配置，但 Wi-Fi 通话能否生效取决于你自己的情况：客户端、iOS 版本、运营商和所用节点。"), systemImage: "info.circle")
+            if store.family == "singbox" && store.isMobilePlatform {
+                Label(L("sing-box 在 iOS 上对 Wi-Fi 通话的支持有限，遇到问题请优先尝试直连并检查客户端的蜂窝网络 / 全局代理设置。"), systemImage: "exclamationmark.triangle")
+            }
+        }
+        .font(.caption2).foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }

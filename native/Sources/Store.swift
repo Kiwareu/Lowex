@@ -156,6 +156,8 @@ final class Store: ObservableObject {
     var clientsForPlatform: [Catalog.Client] { catalog.clients.filter { $0.platforms.contains(platform) } }
     func supports(_ feature: String) -> Bool {
         if feature == "wifi" && !isMobilePlatform { return false }
+        // sing-box 系在手机上只有 TUN 入站，没有本地混合端口 / 局域网监听
+        if (feature == "localPort" || feature == "allowLan"), family == "singbox", isMobilePlatform { return false }
         return engine.supports(client: client, feature: feature)
     }
     func setPlatform(_ p: String) {

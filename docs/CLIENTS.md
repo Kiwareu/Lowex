@@ -236,3 +236,23 @@ Clash Mi 的覆写分三层：订阅配置 ← 自定义覆写配置 ← 内置�
 - **Android**：仅此平台可出现 Android 包名规则；不会出现 `.exe`。
 - **iOS**：没有进程名 / 包名规则，按应用分流自动退化为按域名或服务组。
 - **Wi-Fi 通话规则**：只在 iOS / Android 生成。
+
+
+## 能力审计（v1.4.4，2026-10-17）
+
+方法：对每个客户端生成「全开 / 最少」输出（每个平台各一份），逐项对照本文件、`clients.research.json` 与官方文档 / 社区手册；再用 `caps-test` 检查「矩阵声明支持 ⇔ 改动选项后生成物确实变化」，用规则类型白名单检查没有越界关键字。
+
+| 客户端 | 发现 | 处理 |
+|---|---|---|
+| Stash | QUIC 选项可选但不生成；STUN 未列入矩阵 | 按 Stash 文档生成 `AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((GEOIP,CN)))),REJECT` 与 `PROTOCOL,STUN,REJECT` |
+| Loon | `[General]` 里 `disable-stun` 写了两遍 | 只写一次 |
+| Shadowrocket | `dns-fallback-system` 不在官方 / 社区样例里 | 删除 |
+| Egern | `dns.forward` 用了未核实的 `domain_suffix` 匹配 | 改为文档示例的 `wildcard: *.cn` |
+| sing-box / Karing（手机） | 手机端只有 TUN 入站，但「本地端口 / 允许局域网」仍显示 | 手机平台隐藏这两项 |
+| Mihomo 系 / Surge / QX | 未发现不一致 | — |
+
+未实现 / 未核实（保持现状）：
+- 负载均衡组：Surge / Shadowrocket / Egern 官方文档有此类型，当前只对 Mihomo / Stash 生成（缺口，非越界）。
+- Surge 会写 `loglevel`，而「日志级别」选项对 Surge 隐藏。
+- Egern 的 `rule_set` 指向 Surge `.list`、策略组 `icon` 在官方示例里没有出现，标为未核实。
+- Surge、Loon、Shadowrocket、QX、Egern、Stash、Karing 为闭源，未在真机验证；Wi-Fi 通话流量是否进入隧道取决于 iOS 与客户端的「包含蜂窝 / 全部网络」设置。

@@ -137,8 +137,8 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
       case'package':rules.push(`PROCESS-NAME,${r.v},${targetName(r.p)}`);break;
       case'rset':{const f=setFmt(r.url);const k='cs_'+r.id.replace(/[^A-Za-z0-9]/g,'');rp[k]={type:'http',behavior:r.kind==='ip'?'ipcidr':r.kind,format:f==='mrs'?'mrs':f==='yaml'?'yaml':'text',interval:86400,...(stash?{}:{proxy:N.update}),url:r.url};
         rules.push(`RULE-SET,${k},${targetName(r.p)}${r.kind==='domain'?'':',no-resolve'}`);break}
-      case'quic':if(stash){rules.push('#QUIC 拦截：Stash 未核实，已省略');break}rules.push(`AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,gs_cn),(RULE-SET,gi_cn,no-resolve)))))),REJECT`);rpush('site','cn');rpush('ip','cn');break;
-      case'stun':if(stash)break;rules.push(`AND,((NETWORK,UDP),(OR,((DST-PORT,3478-3479),(DST-PORT,5349),(DST-PORT,19302-19309)))),${targetName(r.p)}`);break;
+      case'quic':if(stash){rules.push('AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((GEOIP,CN)))),REJECT');break}rules.push(`AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,gs_cn),(RULE-SET,gi_cn,no-resolve)))))),REJECT`);rpush('site','cn');rpush('ip','cn');break;
+      case'stun':if(stash){rules.push(`PROTOCOL,STUN,${targetName(r.p)}`);break}rules.push(`AND,((NETWORK,UDP),(OR,((DST-PORT,3478-3479),(DST-PORT,5349),(DST-PORT,19302-19309)))),${targetName(r.p)}`);break;
       case'wifi':if(stash){for(const d of r.domains)rules.push(`DOMAIN-SUFFIX,${d},${targetName(r.p)}`);break}rules.push(`AND,((NETWORK,UDP),(OR,((DST-PORT,500),(DST-PORT,4500))),(OR,(${r.domains.map(d=>`(DOMAIN-SUFFIX,${d})`).join(',')}))),${targetName(r.p)}`);for(const d of r.domains)rules.push(`DOMAIN-SUFFIX,${d},${targetName(r.p)}`);break;
       case'final':rules.push(`MATCH,${r.p==='PROXY'?N.final:'DIRECT'}`);break;
       case'site':{

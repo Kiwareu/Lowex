@@ -155,6 +155,7 @@ struct HomeView: View {
                 if store.supports("wifi") {
                     Text(L("打开后请到「规则」页选择运营商；规则会写入生成配置。"))
                         .font(.caption2).foregroundStyle(.secondary)
+                    WifiCallNote()
                 }
             }
 

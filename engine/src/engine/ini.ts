@@ -145,7 +145,7 @@ export function genSurge(s:State,plan?:Plan):string{
 export function genLoon(s:State,plan?:Plan):string{
   const P=plan||makePlan(s);const p=sup(P,'loon');const o=s.opts;const c=common(p,'loon');
   const L:string[]=[`# Lowex 生成 · Loon（已对照官方文档 nsloon.app 与 LoonExampleConfig 核对，未用真机导入）· ${new Date().toISOString().slice(0,10)}`,'# 全部在浏览器本地生成，未上传任何内容。',''];
-  L.push('[General]',`ip-mode = ${o.ipv6?'dual':'ipv4-only'}`,`skip-proxy = ${COMMON_SKIP}`,'bypass-tun = 10.0.0.0/8,100.64.0.0/10,127.0.0.0/8,169.254.0.0/16,172.16.0.0/12,192.168.0.0/16,224.0.0.0/4,255.255.255.255/32',`doh-server = ${o.dnsCn.join(',')}`,'dns-server = system','sni-sniffing = true',...(o.stun==='reject'?['disable-stun = true']:[]),`allow-wifi-access = ${o.allowLan}`,`proxy-test-url = ${o.testUrl}`,'test-timeout = 5',...(o.stun==='reject'?['disable-stun = true']:[]),'');
+  L.push('[General]',`ip-mode = ${o.ipv6?'dual':'ipv4-only'}`,`skip-proxy = ${COMMON_SKIP}`,'bypass-tun = 10.0.0.0/8,100.64.0.0/10,127.0.0.0/8,169.254.0.0/16,172.16.0.0/12,192.168.0.0/16,224.0.0.0/4,255.255.255.255/32',`doh-server = ${o.dnsCn.join(',')}`,'dns-server = system','sni-sniffing = true',...(o.stun==='reject'?['disable-stun = true']:[]),`allow-wifi-access = ${o.allowLan}`,`proxy-test-url = ${o.testUrl}`,'test-timeout = 5','');
   L.push('[Proxy]');let sk=0;for(const n of P.nodes){const l=nodeLine(n,'loon');if(l)L.push(l);else sk++}if(sk)L.push(`# 已跳过 ${sk} 个 Loon 不支持的节点`);
   L.push('','[Remote Proxy]');
   if(p.subs.length)p.subs.forEach((x,i)=>L.push(`${nm(x.name)||'订阅'+(i+1)} = ${x.url}`));else if(!p.nodes.length)L.push('订阅1 = {{SUB_URL_1}}');
@@ -219,7 +219,7 @@ export function genShadowrocket(s:State,plan?:Plan):string{
   const p=plan||makePlan(s);const o=s.opts;const c=common(p,'shadowrocket');
   const L:string[]=[`# Lowex 生成 · Shadowrocket（已对照社区手册 LOWERTOP/Shadowrocket 与配置样例核对，未用真机导入）· ${new Date().toISOString().slice(0,10)}`,'# 节点/订阅请在 App 首页里添加；下面的分组用正则自动收纳节点。全部在浏览器本地生成。','','[General]',
    `skip-proxy = ${COMMON_SKIP}`,'tun-excluded-routes = 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 255.255.255.255/32',
-   `dns-server = ${o.dnsCn.join(', ')}`,'fallback-dns-server = https://dns.alidns.com/dns-query, https://doh.pub/dns-query',`ipv6 = ${o.ipv6}`,'dns-fallback-system = false','dns-direct-system = false','prefer-ipv6 = false','private-ip-answer = true','dns-direct-fallback-proxy = true','icmp-auto-reply = true',`hijack-dns = ${HARD_DNS}`,`always-real-ip = ${REAL_IP}`,...(o.stun==='reject'?['stun-response-ip = 1.1.1.1']:[]),'udp-policy-not-supported-behaviour = REJECT',
+   `dns-server = ${o.dnsCn.join(', ')}`,'fallback-dns-server = https://dns.alidns.com/dns-query, https://doh.pub/dns-query',`ipv6 = ${o.ipv6}`,'dns-direct-system = false','prefer-ipv6 = false','private-ip-answer = true','dns-direct-fallback-proxy = true','icmp-auto-reply = true',`hijack-dns = ${HARD_DNS}`,`always-real-ip = ${REAL_IP}`,...(o.stun==='reject'?['stun-response-ip = 1.1.1.1']:[]),'udp-policy-not-supported-behaviour = REJECT',
    `block-quic = ${o.blockQuic==='foreign'?'all-proxy':'always-allow'}`,'',...(()=>{const ml=p.nodes.filter(n=>n.manual).map(n=>nodeLine(n,'shadowrocket')).filter(Boolean) as string[];return ml.length?['[Proxy]',...ml,'']:[]})(),'[Proxy Group]'];
   for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=${regionFilter(p,r)}`);L.push(`${regionGroup(r,'手动')} = select,policy-regex-filter=${regionFilter(p,r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,policy-regex-filter=${regionFilter(p,r)}`)}
   L.push(`全部-自动 = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=.*`);
@@ -308,7 +308,7 @@ export function genEgern(s:State,plan?:Plan):string{
     }
   }
   const dns={bootstrap:(o.dnsBootstrap&&o.dnsBootstrap.length?o.dnsBootstrap:['223.5.5.5']),upstreams:{cn:o.dnsCn,remote:o.dnsRemote},
-    forward:[{domain_suffix:{match:'cn',value:'cn'}},{proxy_rule_set:{match:BM7('Surge','China','list'),value:'cn'}},{wildcard:{match:'*',value:'remote'}}]};
+    forward:[{wildcard:{match:'*.cn',value:'cn'}},{proxy_rule_set:{match:BM7('Surge','China','list'),value:'cn'}},{wildcard:{match:'*',value:'remote'}}]};
   const top:Record<string,any>={ipv6:o.ipv6,allow_external_connections:o.allowLan,proxy_latency_test_url:o.testUrl,dns};
   let text=hdr+block(top);
   if(skipped)text+=`# 已跳过 ${skipped} 个 Egern 文档里没有对应写法的节点（如 Reality / gRPC / 插件）\n`;
