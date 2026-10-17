@@ -1,5 +1,7 @@
 # Lowex
 
+<img src="docs/brand/lowex-icon-rounded-1024.png" width="120" align="right">
+
 **语言 / Language：** 简体中文 · [繁體中文](README.zh-Hant.md) · [English](README.en.md)
 
 > **账号改名说明**：作者的 GitHub 账号已由 `wenxu184` 改名为 **Kiwareu**，仓库现在位于 https://github.com/Kiwareu/Lowex 。旧链接会被 GitHub 自动重定向，但本项目内的所有地址已更新为新名。
@@ -54,7 +56,7 @@ xcodebuild -project LowexNative.xcodeproj -scheme LowexNative -configuration Rel
 或直接运行 GitHub Actions 的 *Build Lowex IPA*（macOS runner，输出未签名 IPA）。
 
 ## 版本 / Versioning
-版本号与 GitHub tag 一致：当前 **v1.7.0**（App 首页显示 `v1.7 (build 18)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
+版本号与 GitHub tag 一致：当前 **v1.8.0**（App 首页显示 `v1.8 (build 19)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## FAQ
 - **为什么没有节点 / 订阅？** 本工具不提供任何节点，只整理你自己的。

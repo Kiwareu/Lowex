@@ -26,6 +26,8 @@ struct PinkBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduce
     var body: some View {
         ZStack {
+            // 不透明底色（与 LaunchBackground 同色）：网格渐变的色块带透明度，没有底色时会透出下层页面
+            (cs == .dark ? Color(red: 0.082, green: 0.051, blue: 0.129) : Color(red: 1, green: 0.949, blue: 0.969))
             if let img = Appearance.shared.wallpaper {
                 Color.clear.overlay { Image(uiImage: img).resizable().scaledToFill() }.clipped()
                 Color.black.opacity(cs == .dark ? 0.45 : 0.12)
@@ -199,31 +201,45 @@ struct SectionHeader: View {
     }
 }
 
+/// 手写签名风格字标（Great Vibes，SIL OFL 1.1，见 docs/brand/）。字体没注册成功时退回衬线斜体。
+enum BrandFont {
+    static let name = "GreatVibes-Regular"
+    static func script(_ size: CGFloat) -> Font {
+        UIFont(name: name, size: size) != nil ? .custom(name, fixedSize: size) : .system(size: size * 0.78, weight: .semibold, design: .serif).italic()
+    }
+}
+struct ScriptWordmark: View {
+    var size: CGFloat = 100
+    var body: some View {
+        Text("Lowex")
+            .font(BrandFont.script(size))
+            .lineLimit(1).minimumScaleFactor(0.5)
+            .foregroundStyle(LinearGradient(colors: [Brand.pink, Brand.lilac, Color(red: 1.0, green: 0.52, blue: 0.46)], startPoint: .leading, endPoint: .trailing))
+            .shadow(color: Brand.pink.opacity(0.22), radius: 8, y: 3)
+            .accessibilityLabel("Lowex")
+    }
+}
+
 struct BrandHeader: View {
     var subtitle: String? = nil
     var body: some View {
-        HStack(spacing: 12) {
-            Image("BrandMark")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .shadow(color: Brand.pink.opacity(0.35), radius: 8, y: 3)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Lowex")
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
-                    .tracking(-0.3)
-                    .foregroundStyle(
-                        LinearGradient(colors: [Brand.pink, Brand.lilac],
-                                       startPoint: .leading, endPoint: .trailing))
-                Text(subtitle ?? L("本机生成 · 不上传"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: Space.m) {
+                Image("BrandMark")
+                    .resizable().scaledToFit()
+                    .frame(width: 58, height: 58)
+                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                    .shadow(color: Brand.pink.opacity(0.35), radius: 8, y: 3)
+                ScriptWordmark(size: 124)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: 84)   // 字体行高很大，固定高度，字形允许少量溢出（不裁切）
             }
-            Spacer(minLength: 0)
+            Text(subtitle ?? L("本机生成 · 不上传"))
+                .font(.caption).foregroundStyle(.secondary)
+                .padding(.leading, 2).padding(.top, 6)
         }
-        .padding(.top, 8)
-        .padding(.bottom, 4)
+        .padding(.top, Space.s)
+        .padding(.bottom, Space.xs)
     }
 }
 

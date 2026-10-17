@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.8.0 (build 19)
+App 内显示 `v1.8 (build 19)`。
+- **严重 bug：启动动画时首页透出**。根因：网格渐变背景的色块带透明度、下面没有不透明底色，而首页在启动页下方已经渲染（连标签栏都可见）。修复：`PinkBackground` 自带不透明底色；首页在启动页下面先布局好但 `opacity 0` + 不可点；动画结束后启动页淡出 + 放大、首页淡入 + 回弹到 1。`UILaunchScreen` 设为 `LaunchBackground` 颜色（浅 / 深色各一），与启动页底色一致，没有白屏或错色首帧。
+- **进度条**改为 220×22 的玻璃质感胶囊：磨砂轨道、渐变填充（带光晕）、内部扫光与上半部高光；填充和扫光都由同一个 progress 驱动，1.9s 缓动到 100%。
+- **首页顶部**：手写签名风格字标 `Lowex`（Great Vibes，SIL OFL 1.1，随 App 打包，许可证见 [`docs/brand/OFL-GreatVibes.txt`](docs/brand/OFL-GreatVibes.txt)），渐变填满标题区，Logo 缩放配合；`minimumScaleFactor` 保证小屏不裁切；字体注册失败时退回衬线斜体。版本号仍在标题下方。启动页同样使用该字标。
+- **新 App 图标**：地球形的 O（经纬网格）+ 网络节点式 W + X 形星光，居中、对称，渐变同 App 配色（粉 / 紫 / 橙）；60pt 到 1024 都清晰。源 SVG：[`docs/brand/lowex-icon.svg`](docs/brand/lowex-icon.svg)，另有 PNG 与小尺寸对照图。应用内 Logo 同步更新。
+- 没有新增界面文案；`tools/check-i18n.py` 通过；mihomo `-t` / sing-box `check` / fuzz 重新运行通过。
+
 ## v1.7.0 (build 18)
 App 内显示 `v1.7 (build 18)`。
 - **展开 / 收起不灵敏的根因与修复**：按钮标签里的 `Spacer` 区域在 SwiftUI 里不参与点击测试，只有图标本身可点；滚动视图还会把触摸延迟约 150ms 才交给按钮；窗口级的「点空白收键盘」手势每次点击都参与分发。修复：所有展开头统一用 `ExpandHeader`（整行 `contentShape(Rectangle())`、≥44pt、圆底 chevron、spring + 触感）；`delaysContentTouches = false`；键盘手势仅在键盘弹出时才接收触摸。已审计：首页能力矩阵、规则页服务分组（新增可展开的说明 / 风险）、首页「推荐明细」、更多页各入口行、收藏星标（现为 44×44）。

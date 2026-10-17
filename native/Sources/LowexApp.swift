@@ -37,7 +37,7 @@ final class Boot: ObservableObject {
         }
     }
     func finish(duration: Double) {
-        withAnimation(.easeInOut(duration: duration)) { showSplash = false }
+        withAnimation(.spring(response: duration, dampingFraction: 0.95)) { showSplash = false }
         store?.finishSplash()
     }
 }
@@ -48,14 +48,17 @@ struct RootGate: View {
     var body: some View {
         ZStack {
             if let store = boot.store {
+                // 首页在启动动画下面先布局好（不可见、不可点），动画结束后一起淡入 + 轻微放大
                 RootContainer()
                     .environmentObject(store)
-                    .transition(.opacity)
+                    .opacity(boot.showSplash ? 0 : 1)
+                    .scaleEffect(boot.showSplash ? 0.97 : 1)
+                    .allowsHitTesting(!boot.showSplash)
+                    .accessibilityHidden(boot.showSplash)
             }
             if boot.showSplash {
                 SplashView(boot: boot)
-                    .allowsHitTesting(boot.store == nil)
-                    .transition(.opacity.combined(with: .scale(scale: 1.04)))
+                    .transition(.opacity.combined(with: .scale(scale: 1.05)))
                     .zIndex(5)
             }
         }

@@ -1,5 +1,6 @@
-export const VERSION='1.7.0';
+export const VERSION='1.8.0';
 export const CHANGELOG:{v:string;date:string;items:string[]}[]=[
+ {v:'1.8.0',date:'2026-10-17',items:['修复启动动画下首页透出：启动页改为不透明全屏，首页在下面先布局好并隐藏，动画结束后淡入；启动屏（LaunchScreen）颜色与启动页一致。','启动进度条改为玻璃质感胶囊 + 渐变填充 + 扫光；首页顶部改为手写签名风格字标；全新 App 图标（地球 O + 网络 W + X 星光）。']},
  {v:'1.7.0',date:'2026-10-17',items:['网络环境模型：新增中国广电 / 三家运营商手机流量等网络类型；国内 DNS 预设（阿里+腾讯 / 仅阿里 / 仅腾讯 / 360）、Bootstrap DNS、国内域名用系统 DNS；默认国内 DoH 由 1.12.12.12 改为官方推荐的 doh.pub。调研与来源见 docs/NETWORK-ENV.md。','界面：流动网格渐变背景、全新 Logo 与启动加载动画、展开 / 收起控件整行可点（≥44pt）。']},
  {v:'1.6.0',date:'2026-10-17',items:['界面多语言：简体中文 / 繁體中文（台灣、香港）/ English，默认跟随系统，可在「更多 → 语言」切换，立即生效。生成的配置正文与策略组名称保持中文。']},
  {v:'1.5.2',date:'2026-10-17',items:['GitHub 账号 wenxu184 改名为 Kiwareu：仓库地址、图标地址（raw.githubusercontent.com/Kiwareu/Lowex-Icons/…）、App 内链接、文档全部改为 Kiwareu，不再依赖旧名重定向。']},

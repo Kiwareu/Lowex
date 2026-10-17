@@ -182,28 +182,22 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            PinkBackground()
+            PinkBackground()          // 自带不透明底色，盖住下层首页
             VStack(spacing: Space.xl) {
                 Image("BrandMark")
                     .resizable().scaledToFit()
-                    .frame(width: 76, height: 76)
-                    .clipShape(RoundedRectangle(cornerRadius: 19, style: .continuous))
-                    .shadow(color: Brand.pink.opacity(0.35), radius: 14, y: 6)
+                    .frame(width: 84, height: 84)
+                    .clipShape(RoundedRectangle(cornerRadius: 21, style: .continuous))
+                    .shadow(color: Brand.pink.opacity(0.35), radius: 16, y: 7)
                     .scaleEffect(appeared ? 1 : 0.8)
                 ZStack {
-                    wordmark.foregroundStyle(Brand.ink.opacity(0.14))
+                    wordmark.foregroundStyle(Brand.ink.opacity(0.12))
                     wordmark.foregroundStyle(fillGradient)
                         .mask(alignment: .leading) {
                             Rectangle().scaleEffect(x: max(progress, 0.001), y: 1, anchor: .leading)
                         }
                 }
-                Capsule().fill(Color.primary.opacity(0.10))
-                    .frame(width: 168, height: 5)
-                    .overlay(alignment: .leading) {
-                        Capsule().fill(fillGradient)
-                            .scaleEffect(x: max(progress, 0.001), y: 1, anchor: .leading)
-                    }
-                    .clipShape(Capsule())
+                pill
                 Text(L("本机生成 · 不上传"))
                     .font(.footnote).foregroundStyle(.secondary)
             }
@@ -211,13 +205,42 @@ struct SplashView: View {
             .opacity(appeared ? 1 : 0)
             .offset(y: appeared ? 0 : 10)
         }
+        .ignoresSafeArea()
         .task { await run() }
+    }
+
+    /// 胶囊进度条：玻璃质感轨道 + 渐变填充 + 内部高光；填充与扫光都由同一个 progress 驱动（只做变换 / 位移）
+    private var pill: some View {
+        let w: CGFloat = 220, h: CGFloat = 22
+        return ZStack(alignment: .leading) {
+            Capsule().fill(.ultraThinMaterial)
+            Capsule().fill(Color.white.opacity(0.18))
+            Capsule().fill(fillGradient)
+                .padding(3)
+                .scaleEffect(x: max(progress, 0.001), y: 1, anchor: .leading)
+                .shadow(color: Brand.pink.opacity(0.45), radius: 8)
+            // 扫光：宽 60 的高光沿填充区域移动，用同一个 progress 定位，并被填充区域裁剪
+            LinearGradient(colors: [.clear, .white.opacity(0.65), .clear], startPoint: .leading, endPoint: .trailing)
+                .frame(width: 60, height: h - 6)
+                .offset(x: progress * (w - 60) - 0)
+                .blendMode(.plusLighter)
+                .mask(alignment: .leading) {
+                    Capsule().padding(3).scaleEffect(x: max(progress, 0.001), y: 1, anchor: .leading)
+                }
+            // 内部上半部的玻璃高光
+            Capsule().fill(LinearGradient(colors: [.white.opacity(0.45), .white.opacity(0)], startPoint: .top, endPoint: .bottom))
+                .padding(.horizontal, 6).padding(.top, 2).frame(height: h / 2)
+        }
+        .frame(width: w, height: h)
+        .overlay(Capsule().strokeBorder(LinearGradient(colors: [.white.opacity(0.75), .white.opacity(0.15)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
     }
 
     private var wordmark: some View {
         Text("Lowex")
-            .font(.system(size: 54, weight: .semibold, design: .rounded))
-            .tracking(-1)
+            .font(BrandFont.script(112))
+            .lineLimit(1).minimumScaleFactor(0.5)
     }
 
     private func run() async {

@@ -1,5 +1,7 @@
 # Lowex
 
+<img src="docs/brand/lowex-icon-rounded-1024.png" width="120" align="right">
+
 **Language:** [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · English
 
 > A fully on-device proxy-config generator for Windows / iOS / Android clients — native SwiftUI iOS app (iOS 18+).
@@ -32,7 +34,7 @@ python3 tools/check-i18n.py                     # localization tables sanity che
 Or run the *Build Lowex IPA* GitHub Action.
 
 ## Versioning
-Current **v1.7.0** (the Home screen shows `v1.7 (build 18)`). See [CHANGELOG.md](CHANGELOG.md).
+Current **v1.8.0** (the Home screen shows `v1.8 (build 19)`). See [CHANGELOG.md](CHANGELOG.md).
 
 ## Credits
 Generated configs only *reference* public resources by URL (MetaCubeX/meta-rules-dat, blackmatrix7/ios_rule_script, SagerNet, ACL4SSR, various icon repos); follow their licenses. Client and service names and trademarks belong to their owners.
