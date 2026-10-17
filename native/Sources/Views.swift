@@ -540,11 +540,12 @@ struct RulesView: View {
     @State private var onlyFav = false
 
     enum RuleSection: String, CaseIterable, Identifiable {
-        case groups = L("服务分组")
-        case apps = L("按 App")
-        case domains = L("自定义域名")
-        case wifi = L("Wi-Fi 通话")
+        case groups = "服务分组"
+        case apps = "按 App"
+        case domains = "自定义域名"
+        case wifi = "Wi-Fi 通话"
         var id: String { rawValue }
+        var title: String { L(rawValue) }
     }
 
     var filteredGroups: [Catalog.Group] {
@@ -564,7 +565,7 @@ struct RulesView: View {
                 Text(store.stepRulesHint + L(" · 选项会直接进入生成配置"))
                     .font(.footnote).foregroundStyle(.secondary)
                 Picker(L("分区"), selection: $section) {
-                    ForEach(RuleSection.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(RuleSection.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
             }
