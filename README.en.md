@@ -6,7 +6,6 @@
 
 **⚠️ Read [DISCLAIMER.md](DISCLAIMER.md) first.** Lowex provides no nodes or subscriptions and does not encourage anything that breaks local law.
 
-> The author's GitHub account was renamed from `wenxu184` to **Kiwareu**; the repo now lives at https://github.com/Kiwareu/Lowex. All addresses in this project use the new name.
 
 ## Features
 - **Three platforms**: pick Windows / iOS / Android, then a client; output only contains rules valid for that platform.
@@ -19,7 +18,7 @@
 - **Privacy**: everything runs on-device; no servers, no analytics.
 
 ## Install
-Download the latest `Lowex-native.ipa` from [Releases](../../releases) (**unsigned**), then install with TrollStore or sign it yourself (AltStore, Sideloadly…). Requires iOS 18+.
+Download the latest `Lowex-v1.2.0.ipa` from [Releases](../../releases) (**unsigned**), then install with TrollStore or sign it yourself (AltStore, Sideloadly…). Requires iOS 18+.
 
 ## Build
 ```
@@ -32,7 +31,7 @@ python3 tools/check-i18n.py                     # localization tables sanity che
 Or run the *Build Lowex IPA* GitHub Action.
 
 ## Versioning
-Current **v1.7.0** (the Home screen shows `v1.7 (build 18)`). See [CHANGELOG.md](CHANGELOG.md).
+Current **v1.2.0**. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Credits
 Generated configs only *reference* public resources by URL (MetaCubeX/meta-rules-dat, blackmatrix7/ios_rule_script, SagerNet, ACL4SSR, various icon repos); follow their licenses. Client and service names and trademarks belong to their owners.

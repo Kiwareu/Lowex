@@ -4,7 +4,6 @@
 
 
 
-> **賬號改名說明**：作者的 GitHub 賬號已由 `wenxu184` 改名為 **Kiwareu**，倉庫現在位於 https://github.com/Kiwareu/Lowex 。舊連結會被 GitHub 自動重定向，但本專案內的所有地址已更新為新名。
 
 > 本機生成的代理配置工具 · iOS 原生 SwiftUI · 支援 Windows / iOS / Android 三個目標平臺
 >
@@ -35,7 +34,7 @@
 > 截圖來自早期構建；當時配置名稱未跟隨客戶端自動變化，v1.0.0 已修復。
 
 ## 安裝 / Install
-從 [Releases](../../releases) 下載最新版 `Lowex-native.ipa`；安裝後請核對首頁頂部小字的版本與 build 是否與 Release 一致（**未簽名**）。
+從 [Releases](../../releases) 下載最新版 `Lowex-v1.2.0.ipa`；安裝後請核對首頁頂部小字的版本與 build 是否與 Release 一致（**未簽名**）。
 - **TrollStore**：用 TrollStore 開啟 / 分享 IPA 安裝（需要受支援的 iOS 版本）。
 - **自行簽名**：用你自己的證書 / 側載工具（AltStore、Sideloadly 等）簽名後安裝。
 - 系統要求：iOS 18+。作者在 iPhone XS（iOS 18.3.1 + TrollStore）上測試。
@@ -56,7 +55,7 @@ xcodebuild -project LowexNative.xcodeproj -scheme LowexNative -configuration Rel
 或直接執行 GitHub Actions 的 *Build Lowex IPA*（macOS runner，輸出未簽名 IPA）。
 
 ## 版本 / Versioning
-版本號與 GitHub tag 一致：當前 **v1.7.0**（App 首頁顯示 `v1.7 (build 18)`）。舊的內部 3.6 版本線記為 v1.0.x，見 [CHANGELOG.md](CHANGELOG.md)。
+版本號與 GitHub tag 一致：當前 **v1.2.0**。舊的內部 3.6 版本線記為 v1.0.x，見 [CHANGELOG.md](CHANGELOG.md)。
 
 ## FAQ
 - **為什麼沒有節點 / 訂閱？** 本工具不提供任何節點，只整理你自己的。
@@ -75,7 +74,7 @@ Lowex 只在生成的配置裡**引用**以下公開資源的 URL，不在本倉
 - 各客戶端與服務的名稱、商標歸其所有者。
 
 ## 許可 / License
-[MIT](LICENSE)（僅適用於本倉庫自有程式碼；第三方資源見上）。聯絡：wenx@xewol.com
+[MIT](LICENSE)（僅適用於本倉庫自有程式碼；第三方資源見上）。
 
 
 ## 圖示

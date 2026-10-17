@@ -216,7 +216,7 @@ final class Store: ObservableObject {
     }
     var buildNumber: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?" }
     var shortVersion: String { var v = appVersion; while v.hasSuffix(".0") { v.removeLast(2) }; return v }
-    var versionLabel: String { "v\(shortVersion) (build \(buildNumber))" }
+    var versionLabel: String { "v\(shortVersion)" }
     var appVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1.0" }
 
     /// 当前客户端是否把订阅 URL 写进配置文件
