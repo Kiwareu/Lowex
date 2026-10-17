@@ -78,9 +78,9 @@ final class Store: ObservableObject {
     }
 
     static let iconsReadyKey = "lowex.icons.ready.v1"
-    /// 启动时列出 github.com/wenxu184/Lowex-Icons 的 icons/ 目录，已上传的组图标会替换旧图 / 占位图（失败时静默沿用上次结果）
+    /// 启动时列出 github.com/Kiwareu/Lowex-Icons 的 icons/ 目录，已上传的组图标会替换旧图 / 占位图（失败时静默沿用上次结果）
     static func refreshReadyIcons() {
-        guard let url = URL(string: "https://api.github.com/repos/wenxu184/Lowex-Icons/contents/icons") else { return }
+        guard let url = URL(string: "https://api.github.com/repos/Kiwareu/Lowex-Icons/contents/icons") else { return }
         var req = URLRequest(url: url, timeoutInterval: 10)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         URLSession.shared.dataTask(with: req) { data, resp, _ in

@@ -12,7 +12,7 @@ enum IconCache {
     }()
 
     /// 内置图标：Lowex-Icons 的 PNG 已打包进 App（BundledIcons/<文件名>），离线、即时显示，优先于网络与磁盘缓存。
-    static let iconBase = "https://raw.githubusercontent.com/wenxu184/Lowex-Icons/main/icons/"
+    static let iconBase = "https://raw.githubusercontent.com/Kiwareu/Lowex-Icons/main/icons/"
     static func bundled(_ url: String?) -> UIImage? {
         guard let url, url.hasPrefix(iconBase) else { return nil }
         let name = String(url.dropFirst(iconBase.count))

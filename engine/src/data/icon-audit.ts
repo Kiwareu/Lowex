@@ -4,7 +4,7 @@
 // wrong / single / broken 一律改用中性占位图，不再显示错误品牌。
 export type IconStatus='ok'|'generic'|'wrong'|'single'|'broken';
 export interface IconAudit{s:IconStatus;was?:string;want:string}
-export const ICON_BASE='https://raw.githubusercontent.com/wenxu184/Lowex-Icons/main/icons';
+export const ICON_BASE='https://raw.githubusercontent.com/Kiwareu/Lowex-Icons/main/icons';
 export const ICON_PLACEHOLDER=ICON_BASE+'/_placeholder.png';
 export const ICON_AUDIT:Record<string,IconAudit>={
   bunq:{s:'wrong',was:'Wise 图标',want:'bunq（荷兰银行）彩虹 b 标志'},

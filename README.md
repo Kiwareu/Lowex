@@ -1,5 +1,7 @@
 # Lowex
 
+> **账号改名说明**：作者的 GitHub 账号已由 `wenxu184` 改名为 **Kiwareu**，仓库现在位于 https://github.com/Kiwareu/Lowex 。旧链接会被 GitHub 自动重定向，但本项目内的所有地址已更新为新名。
+
 > 本机生成的代理配置工具 · iOS 原生 SwiftUI · 支持 Windows / iOS / Android 三个目标平台
 >
 > A fully on-device proxy-config generator for Windows / iOS / Android clients, built with SwiftUI.
@@ -48,7 +50,7 @@ xcodebuild -project LowexNative.xcodeproj -scheme LowexNative -configuration Rel
 或直接运行 GitHub Actions 的 *Build Lowex IPA*（macOS runner，输出未签名 IPA）。
 
 ## 版本 / Versioning
-版本号与 GitHub tag 一致：当前 **v1.5.1**（App 首页显示 `v1.5 (build 15)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
+版本号与 GitHub tag 一致：当前 **v1.5.2**（App 首页显示 `v1.5 (build 16)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## FAQ
 - **为什么没有节点 / 订阅？** 本工具不提供任何节点，只整理你自己的。
@@ -72,4 +74,4 @@ Lowex 只在生成的配置里**引用**以下公开资源的 URL，不在本仓
 
 ## 图标
 
-全部服务组 / 地区 / 特殊组图标（共 97 张）都已重绘并内置进 App（v1.5.1），同时放在（见 [Lowex-Icons](https://github.com/wenxu184/Lowex-Icons) 的 contact-sheet.png）。核对结果见 [docs/ICONS-TODO.md](docs/ICONS-TODO.md)；补充图标放在 [Lowex-Icons](https://github.com/wenxu184/Lowex-Icons)，上传后 App 启动时自动采用。
+全部服务组 / 地区 / 特殊组图标（共 97 张）都已重绘并内置进 App（v1.5.1），同时放在（见 [Lowex-Icons](https://github.com/Kiwareu/Lowex-Icons) 的 contact-sheet.png）。核对结果见 [docs/ICONS-TODO.md](docs/ICONS-TODO.md)；补充图标放在 [Lowex-Icons](https://github.com/Kiwareu/Lowex-Icons)，上传后 App 启动时自动采用。

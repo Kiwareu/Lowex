@@ -1,5 +1,6 @@
-export const VERSION='1.5.1';
+export const VERSION='1.5.2';
 export const CHANGELOG:{v:string;date:string;items:string[]}[]=[
+ {v:'1.5.2',date:'2026-10-17',items:['GitHub 账号 wenxu184 改名为 Kiwareu：仓库地址、图标地址（raw.githubusercontent.com/Kiwareu/Lowex-Icons/…）、App 内链接、文档全部改为 Kiwareu，不再依赖旧名重定向。']},
  {v:'1.5.1',date:'2026-10-17',items:['图标全部内置进 App（97 张：75 个服务组 + 3 个核心组 + 8 个特殊组 + 11 个地区旗帜），规则页离线即时显示；所有组的图标统一为 Lowex-Icons 仓库的 raw 地址并写进生成的配置；升级时清掉旧图标缓存。']},
  {v:'1.5.0',date:'2026-10-17',items:['补齐 27 个服务组图标（bunq / SumUp / Maya / WhatsApp / HSBC / 暴雪战网 / Bybit / Kraken / MEXC / Bitget / Blackcat、各类银行与分类通用图标，Twitter 改 X、Meta 换新），统一 512×512 圆角方块，放在 Lowex-Icons 仓库；生成的配置直接引用其 raw 地址。']},
  {v:'1.4.0',date:'2026-10-17',items:['逐个客户端按官方文档核对故障转移（fallback）支持：sing-box 只有 selector / urltest，不再生成无效的「故转」组；Loon / 小火箭 / Quantumult X 的故障转移改用各自文档支持的写法。','生成页：预览显示完整配置（可滚动、可选择、等宽）；新增「清除配置」（只清结果，或重置选项并保留节点）。','关于页增加 GitHub 项目链接。','图标全量核对：错误 / 单一品牌 / 失效的图标改用占位图；新建 Lowex-Icons 图标库，上传后自动生效。']},

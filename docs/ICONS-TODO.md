@@ -2,8 +2,8 @@
 
 检查日期：2026-10-17。方法：把每个服务组的图标 URL 逐个下载并目视对照品牌（含 12 个地区旗帜，全部正确）。
 
-- v1.4 审计出的错误 / 单一品牌 / 失效 / 通用图标，v1.5 已全部自绘并上传到 [Lowex-Icons](https://github.com/wenxu184/Lowex-Icons)（`icons/<组 id>.png`，512×512 圆角方块）。
-- App 内置这些组 id，生成的配置直接引用 `https://raw.githubusercontent.com/wenxu184/Lowex-Icons/main/icons/<组 id>.png`，不依赖联网列目录。
+- v1.4 审计出的错误 / 单一品牌 / 失效 / 通用图标，v1.5 已全部自绘并上传到 [Lowex-Icons](https://github.com/Kiwareu/Lowex-Icons)（`icons/<组 id>.png`，512×512 圆角方块）。
+- App 内置这些组 id，生成的配置直接引用 `https://raw.githubusercontent.com/Kiwareu/Lowex-Icons/main/icons/<组 id>.png`，不依赖联网列目录。
 ## v1.5 已补齐的图标（本表为 v1.4 审计出的全部问题项，现均已自绘并上传）
 
 | 组名 | 组 id（文件名） | 旧图标 | 状态 | 新图标 |
