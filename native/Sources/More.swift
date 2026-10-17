@@ -502,8 +502,8 @@ struct AboutView: View {
                 }
                 Text("界面为原生 SwiftUI；规则引擎与网页版同一份。iOS 26 起用系统 Liquid Glass，iOS 18–25 为系统材质。所有生成只在本机完成，不上传。")
                     .font(.footnote)
-                Link(destination: URL(string: "mailto:wenx@xewol.com")!) {
-                    Label("联系作者 wenx@xewol.com", systemImage: "envelope")
+                Link(destination: URL(string: "https://github.com/Kiwareu/Lowex/issues")!) {
+                    Label("反馈问题 github.com/Kiwareu/Lowex/issues", systemImage: "bubble.left.and.exclamationmark.bubble.right")
                 }
                 .font(.footnote)
             }
@@ -558,7 +558,7 @@ Lowex 是一款在用户本机运行的网络配置模板生成工具，用于�
 本软件按「现状」提供，不作适销性、特定用途适用性或无错误的明示或默示担保。生成的配置可能因客户端版本、网络环境或用户选项而无效或需调整；作者不对直接或间接损失负责。
 
 五、联系
-如有疑问，可联系作者：wenx@xewol.com。
+如有疑问，请通过 GitHub 项目页的 Issues 反馈。
 
 最后更新日期：2026-10-16
 """
