@@ -128,7 +128,7 @@ Report vulnerabilities through GitHub's *Security → Report a vulnerability* (p
 
 ## Disclaimer
 
-Lowex is not affiliated with, authorised or endorsed by any client, service, bank or platform mentioned; all names and trademarks belong to their owners. Obey the laws where you live — see [DISCLAIMER.md](DISCLAIMER.md).
+Lowex is not affiliated with, authorised or endorsed by any client, service, bank or platform mentioned; all names and trademarks belong to their owners. The software is provided “as is” without warranty; the authors and contributors accept no liability for its use. It was developed and tested with AI assistance and may still contain errors — verify the generated results yourself. Comply with the laws that apply in your jurisdiction — see [DISCLAIMER.md](DISCLAIMER.md).
 
 ## Changelog
 

@@ -130,7 +130,7 @@ xcodebuild -project LowexNative.xcodeproj -scheme LowexNative -configuration Rel
 
 ## 免責宣告
 
-Lowex 與文中提到的任何客戶端、服務、銀行或平臺均無隸屬、授權或背書關係，相關名稱與商標歸其各自權利人所有。請遵守所在地法律法規，詳見 [DISCLAIMER.md](DISCLAIMER.md)。
+Lowex 與文中提到的任何客戶端、服務、銀行或平臺均無隸屬、授權或背書關係，相關名稱與商標歸其各自權利人所有。本軟體按「現狀」提供，不附帶任何擔保，作者與貢獻者不承擔使用後果；開發與測試使用了 AI 輔助工具，可能仍有錯誤，請自行驗證生成結果。請遵守所在地適用的法律法規，詳見 [DISCLAIMER.md](DISCLAIMER.md)。
 
 ## 更新日誌
 
