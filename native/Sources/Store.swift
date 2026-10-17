@@ -7,7 +7,10 @@ final class Store: ObservableObject {
     let engine = Engine.shared
     @Published var catalog: Catalog
     @Published var state: [String: Any] {
-        didSet { if !result.text.isEmpty || result.error != nil { result = GenResult(text: "", name: "", warnings: []) } }
+        didSet {
+            if !result.text.isEmpty || result.error != nil { result = GenResult(text: "", name: "", warnings: []) }
+            scheduleSave()
+        }
     }
     @Published var result = GenResult(text: "", name: "", warnings: [])
     @Published var recommendNote = ""
@@ -37,8 +40,10 @@ final class Store: ObservableObject {
         if let d = UserDefaults.standard.data(forKey: key),
            let s = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any] {
             var merged = s
-            merged["subs"] = []
-            merged["nodesText"] = ""
+            // 订阅 / 粘贴的节点单独存在沙盒私有文件里（见 save()），这里读回来：重启后不再丢失
+            let sec = LocalFile.read(Store.secretFile).flatMap { (try? JSONSerialization.jsonObject(with: $0)) as? [String: Any] }
+            merged["subs"] = (sec?["subs"] as? [[String: Any]]) ?? []
+            merged["nodesText"] = (sec?["nodesText"] as? String) ?? ""
             let plats = ["windows", "ios", "android"]
             if let pf = merged["platform"] as? String, plats.contains(pf) == false { merged["platform"] = "ios" }
             if merged["platform"] == nil { merged["platform"] = "ios" }
@@ -136,8 +141,20 @@ final class Store: ObservableObject {
         var o = opts; o[k] = v
         var s = state; s["opts"] = o; state = s; save()
     }
+    static let secretFile = "nodes-private.json"
+    private var saveWork: DispatchWorkItem?
+    /// 合并连续修改（如输入框逐字输入），稍后一次写盘；进入后台时会立刻 flush
+    func scheduleSave() {
+        saveWork?.cancel()
+        let w = DispatchWorkItem { [weak self] in self?.save() }
+        saveWork = w
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: w)
+    }
+    func flushSave() { saveWork?.cancel(); save(); LocalFile.flush() }
     func save() {
         var s = state
+        let secret: [String: Any] = ["subs": (s["subs"] as? [[String: Any]]) ?? [], "nodesText": (s["nodesText"] as? String) ?? ""]
+        if JSONSerialization.isValidJSONObject(secret), let d = try? JSONSerialization.data(withJSONObject: secret) { LocalFile.write(d, Store.secretFile) }
         s["subs"] = []
         s["nodesText"] = ""
         // 手动节点密码不进 UserDefaults：单独存钥匙串（见 SecretStore）
@@ -399,12 +416,28 @@ final class Store: ObservableObject {
         qrNote = ""
     }
 
+    /// 全部恢复默认：选项、节点、订阅、手动节点、历史记录都清空（外观与语言不动）
+    func resetEverything() {
+        for m in manualNodes { if let id = m["id"] as? String { SecretStore.remove(id) } }
+        HistoryStore.shared.clear()
+        var fresh = engine.initialState(client: client, platform: platform)
+        fresh["manualNodes"] = []
+        state = fresh
+        result = GenResult(text: "", name: "", warnings: [])
+        pasteNote = ""; remoteURL = ""; qrNote = ""
+        recommendNote = L("已恢复全部默认设置。")
+        flushSave()
+    }
+
     func restoreDefaults() {
         let c = client
         var fresh = engine.initialState(client: c, platform: platform)
         fresh["profileName"] = str("profileName")
         fresh["manualNodes"] = state["manualNodes"] ?? []
         fresh["profileNameCustom"] = state["profileNameCustom"] ?? false
+        fresh["subs"] = state["subs"] ?? []
+        fresh["nodesText"] = state["nodesText"] ?? ""
+        fresh["favoriteGroups"] = state["favoriteGroups"] ?? []
         state = fresh
         result = GenResult(text: "", name: "", warnings: [])
         pasteNote = ""
@@ -459,6 +492,7 @@ final class Store: ObservableObject {
             let base = pn.isEmpty ? "lowex" : pn
             result.name = ext.isEmpty ? base : "\(base).\(ext)"
             celebrate += 1
+            recordHistory()
         }
     }
 

@@ -4,6 +4,8 @@ import SwiftUI
 struct MoreView: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var lang: Lang
+    @State private var confirmReset = false
+    @State private var resetNote = ""
     var body: some View {
         NavStack {
             ZStack {
@@ -42,7 +44,17 @@ struct MoreView: View {
                             navCard(L("模块与脚本"), icon: "puzzlepiece.extension", dest: ModulesView())
                         }
                         navCard(L("作者自用规则分享"), icon: "person.crop.circle.badge.checkmark", dest: SharedView())
+                        navCard(L("历史记录"), icon: "clock.arrow.circlepath", dest: HistoryView())
                         navCard(L("备份与恢复 Lowex 设置"), icon: "externaldrive.badge.icloud", dest: BackupView())
+                        Button { confirmReset = true } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "arrow.counterclockwise").foregroundStyle(Brand.pink).frame(width: 28)
+                                Text(L("恢复默认设置")).foregroundStyle(Brand.ink)
+                                Spacer()
+                            }
+                            .padding(Space.l).frame(minHeight: Space.tap).contentShape(Rectangle()).softCard()
+                        }.buttonStyle(PressableStyle())
+                        if !resetNote.isEmpty { Text(resetNote).font(.caption).foregroundStyle(Brand.pink).padding(.leading, 4) }
 
                         moreSection(L("关于"))
                         navCard(L("关于 Lowex"), icon: "info.circle", dest: AboutView())
@@ -70,6 +82,13 @@ struct MoreView: View {
                 BottomFade()
             }
             .hideNavBar()
+        }
+        .confirmationDialog(L("恢复默认设置"), isPresented: $confirmReset, titleVisibility: .visible) {
+            Button(L("只重置选项（保留节点、订阅、历史）")) { store.resetSelections(); resetNote = L("已重置选项，节点、订阅与历史保留") }
+            Button(L("全部重置（含节点、订阅、历史）"), role: .destructive) { store.resetEverything(); resetNote = L("已恢复全部默认设置") }
+            Button(L("取消"), role: .cancel) {}
+        } message: {
+            Text(L("Lowex 会记住你所有的选择；这里可以把它们恢复成默认。外观与语言不受影响。建议先到「备份与恢复」导出一份备份。"))
         }
     }
 

@@ -27,6 +27,44 @@ struct ActivityView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
+/// 「存储到文件」：直接把带正确扩展名的文件交给系统文件选择器导出。
+/// 以前用 SwiftUI fileExporter + FileDocument：当 contentType 不在文档声明的 writableContentTypes 里时（.yaml / .conf 等动态类型就是这样），
+/// 系统会退回第一个可写类型 .plainText，于是文件被存成 .txt。UIDocumentPickerViewController(forExporting:) 按文件 URL 原样导出，扩展名不会变。
+struct DocumentExporter: UIViewControllerRepresentable {
+    let url: URL
+    var onDone: (Bool) -> Void
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let vc = UIDocumentPickerViewController(forExporting: [url], asCopy: true)
+        vc.delegate = context.coordinator
+        return vc
+    }
+    func updateUIViewController(_ vc: UIDocumentPickerViewController, context: Context) {}
+    func makeCoordinator() -> Coordinator { Coordinator(onDone: onDone) }
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onDone: (Bool) -> Void
+        init(onDone: @escaping (Bool) -> Void) { self.onDone = onDone }
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) { onDone(true) }
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { onDone(false) }
+    }
+}
+
+/// 「用客户端打开」：系统「打开方式」菜单，只列出声明能打开该文件的 App（Surge / Shadowrocket / Stash 等）。
+final class OpenInPresenter: NSObject, UIDocumentInteractionControllerDelegate {
+    static let shared = OpenInPresenter()
+    private var controller: UIDocumentInteractionController?
+    @discardableResult
+    func present(url: URL) -> Bool {
+        guard let root = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.windows.first(where: \.isKeyWindow) }).first?.rootViewController else { return false }
+        var top = root
+        while let p = top.presentedViewController { top = p }
+        let d = UIDocumentInteractionController(url: url)
+        d.delegate = self
+        controller = d
+        let rect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.maxY - 90, width: 1, height: 1)
+        return d.presentOpenInMenu(from: rect, in: top.view, animated: true)
+    }
+}
+
 enum QR {
     static func image(_ s: String) -> UIImage? {
         let f = CIFilter.qrCodeGenerator()
@@ -53,15 +91,15 @@ enum ClientOpen {
     static func scheme(for client: String) -> ImportScheme? {
         switch client {
         case "surge":
-            return ImportScheme(appName: "Surge", open: "surge:///", build: { u, n in "surge:///install-config?url=\(enc(u))&name=\(enc(n))" }, note: L("官方文档：surge:///install-config?url="))
+            return ImportScheme(appName: "Surge", open: "surge:///", build: { u, _ in "surge:///install-config?url=\(enc(u))" }, note: L("官方手册：surge:///install-config?url=（URL 需百分号编码）"))
         case "loon":
             return ImportScheme(appName: "Loon", open: "loon://", build: { u, _ in "loon://import?sub=\(enc(u))" }, note: L("官方文档：loon://import?sub=（远程配置）"))
         case "stash":
-            return ImportScheme(appName: "Stash", open: "stash://", build: { u, n in "stash://install-config?url=\(enc(u))&name=\(enc(n))" }, note: L("官方文档：stash://install-config?url="))
+            return ImportScheme(appName: "Stash", open: "stash://", build: { u, _ in "stash://install-config?url=\(enc(u))" }, note: L("官方文档 stash.wiki：stash://install-config?url=（URL 需编码）"))
         case "egern":
             return ImportScheme(appName: "Egern", open: "egern://", build: { u, n in "egern:/profiles/new?name=\(enc(n))&url=\(enc(u))" }, note: L("官方文档：egern:/profiles/new?name=&url="))
         case "shadowrocket":
-            return ImportScheme(appName: "Shadowrocket", open: "shadowrocket://", build: { u, _ in "shadowrocket://config/add/\(enc(u))" }, note: L("社区通用写法 shadowrocket://config/add/<URL>；官方未公开文档，失败请用复制 / 分享导入"))
+            return ImportScheme(appName: "Shadowrocket", open: "shadowrocket://", build: { u, _ in "shadowrocket://config/add/\(u)" }, note: L("社区手册 LOWERTOP/Shadowrocket：shadowrocket://config/add/{url}；官方未公开文档，未在真机验证，失败请用「用 Shadowrocket 打开文件」"))
         case "qx":
             return ImportScheme(appName: "Quantumult X", open: "quantumult-x://", build: nil, note: L("官方 scheme 只支持导入资源片段（节点/分流/重写），不支持整份配置；请用分享或复制后在 设置→配置文件 粘贴"))
         case "singbox":
@@ -70,9 +108,11 @@ enum ClientOpen {
             return ImportScheme(appName: "Karing", open: "karing://", build: { u, n in "karing://install-config?url=\(enc(u))&name=\(enc(n))" }, note: L("官方文档：karing://install-config?url=&name="))
         case "clashmi":
             return ImportScheme(appName: "Clash Mi", open: "clash://", build: { u, n in "clash://install-config?url=\(enc(u))&name=\(enc(n))" }, note: L("同 Karing 系：clash://install-config?url="))
-        case "verge", "clashparty", "cmfa":
-            let name = client == "verge" ? "Clash Verge" : (client == "cmfa" ? "ClashMeta for Android" : "Clash Party")
-            return ImportScheme(appName: name, open: "clash://", build: { u, n in "clash://install-config?url=\(enc(u))&name=\(enc(n))" }, note: L("Clash 通用：clash://install-config?url=（Verge Rev 文档已确认）"))
+        case "clashparty":
+            return ImportScheme(appName: "Clash Party", open: "mihomo://", build: { u, n in "mihomo://install-config?url=\(enc(u))&name=\(enc(n))" }, note: L("Clash Party 文档：mihomo://install-config?url=&name="))
+        case "verge", "cmfa":
+            let name = client == "verge" ? "Clash Verge" : "ClashMeta for Android"
+            return ImportScheme(appName: name, open: "clash://", build: { u, _ in "clash://install-config?url=\(enc(u))" }, note: L("Clash 通用：clash://install-config?url=（Verge Rev 文档已确认）"))
         case "flclash":
             return ImportScheme(appName: "FlClash", open: "flclash://", build: { u, _ in "flclash://install-config?url=\(enc(u))" }, note: L("FlClash README：clash:// / clashmeta:// / flclash:// 均可"))
         default: return nil
@@ -97,7 +137,7 @@ struct GenerateView: View {
     @State private var showPreview = false
     @State private var shareFile: ShareFile?
     @State private var toast = ""
-    @State private var exporting = false
+    @State private var exportFile: ShareFile?
     @State private var qrImage: UIImage?
     @State private var qrCaption = ""
     @State private var showQR = false
@@ -169,27 +209,33 @@ struct GenerateView: View {
             }
             .padding(24).detentsCompat()
         }
-        .fileExporter(isPresented: $exporting, document: ConfigDocument(text: store.result.text),
-                      contentType: exportType, defaultFilename: baseName) { r in
-            switch r { case .success: toast = L("已保存到「文件」"); case .failure(let e): toast = L("保存失败：{}", e.localizedDescription) }
+        .sheet(item: $exportFile) { f in
+            DocumentExporter(url: f.url) { ok in
+                exportFile = nil
+                toast = ok ? L("已保存到「文件」") : L("已取消")
+            }
         }
     }
 
-    private var ext: String { (store.result.name as NSString).pathExtension }
-    private var baseName: String { (store.result.name as NSString).deletingPathExtension }
-    private var exportType: UTType {
-        if ext == "json" { return .json }
-        return UTType(filenameExtension: ext, conformingTo: .plainText) ?? .plainText
+    /// 文件名保证带该客户端的扩展名（yaml / conf / json）
+    private var fileName: String {
+        let n = store.result.name.isEmpty ? "lowex" : store.result.name
+        let want = store.clientInfo?.fileExt ?? "conf"
+        return (n as NSString).pathExtension.lowercased() == want ? n : (n as NSString).deletingPathExtension + "." + want
+    }
+    private func prepareSave() {
+        if let u = TempFile.make(name: fileName, text: store.result.text) { exportFile = ShareFile(url: u) }
+        else { toast = L("写临时文件失败") }
     }
 
     private var exportCard: some View {
         PlainCard {
             Text(L("导出")).font(.headline)
-            Text(L("文件 {} · {} 字符", store.result.name, store.result.text.count)).font(.caption).foregroundStyle(.secondary)
+            Text(L("文件 {} · {} 字符", fileName, store.result.text.count)).font(.caption).foregroundStyle(.secondary)
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 actionBtn(L("复制全部"), icon: "doc.on.doc") { UIPasteboard.general.string = store.result.text; toast = L("已复制到剪贴板") }
                 actionBtn(L("系统分享"), icon: "square.and.arrow.up") { prepareShare() }
-                actionBtn(L("保存到「文件」"), icon: "folder") { exporting = true }
+                actionBtn(L("保存到「文件」"), icon: "folder") { prepareSave() }
                 actionBtn(showPreview ? L("收起预览") : L("完整预览"), icon: "eye") { withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showPreview.toggle() } }
                 actionBtn(L("配置二维码"), icon: "qrcode") { showConfigQR() }
                 actionBtn(L("复制文件名"), icon: "textformat") { UIPasteboard.general.string = store.result.name; toast = L("已复制文件名") }
@@ -213,10 +259,18 @@ struct GenerateView: View {
                     .padding(10).background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 let link = linkURL(sc)
                 if store.platform == "ios" {
-                    HStack(spacing: 10) {
+                    if link != nil {
                         Button { openLink(link, sc) } label: {
-                            Label(link == nil ? L("唤起 {}", sc.appName) : L("一键导入"), systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity)
+                            Label(L("一键导入到 {}", sc.appName), systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity)
                         }.buttonStyle(.borderedProminent).tint(Brand.pink)
+                    } else {
+                        Text(L("还没有填配置直链：下面的「用 {} 打开文件」会把配置文件本身交给它，由它的导入页处理；只「唤起」App 不会进入导入页。", sc.appName))
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                    HStack(spacing: 10) {
+                        Button { openFile(sc) } label: {
+                            Label(L("用 {} 打开文件", sc.appName), systemImage: "square.and.arrow.down.on.square").frame(maxWidth: .infinity)
+                        }.buttonStyle(link == nil ? .borderedProminent : .bordered).tint(Brand.pink)
                         Button { UIPasteboard.general.string = store.result.text; openRoot(sc, copied: true) } label: {
                             Label(L("复制并打开"), systemImage: "doc.on.clipboard").frame(maxWidth: .infinity)
                         }.buttonStyle(.bordered)
@@ -243,6 +297,14 @@ struct GenerateView: View {
         guard u.lowercased().hasPrefix("http"), let b = sc.build else { return nil }
         return b(u, store.profileName.isEmpty ? "Lowex" : store.profileName)
     }
+    private func openFile(_ sc: ImportScheme) {
+        guard let u = TempFile.make(name: fileName, text: store.result.text) else { toast = L("写临时文件失败"); return }
+        if !OpenInPresenter.shared.present(url: u) {
+            // 没有 App 声明能打开这类文件：退回系统分享面板
+            shareFile = ShareFile(url: u)
+            toast = L("系统没有列出可直接打开的 App，已改用分享面板")
+        }
+    }
     private func openLink(_ link: String?, _ sc: ImportScheme) {
         guard let link else { openRoot(sc, copied: false); return }
         guard let url = URL(string: link) else { toast = L("链接无效"); return }
@@ -265,10 +327,8 @@ struct GenerateView: View {
         qrImage = QR.image(t); qrCaption = L("配置内容二维码（{} 字节）", t.utf8.count); showQR = qrImage != nil
     }
     private func prepareShare() {
-        let name = store.result.name.isEmpty ? "lowex.conf" : store.result.name
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
-        do { try Data(store.result.text.utf8).write(to: url, options: .atomic); shareFile = ShareFile(url: url) }
-        catch { toast = L("写临时文件失败：{}", error.localizedDescription) }
+        if let u = TempFile.make(name: fileName, text: store.result.text) { shareFile = ShareFile(url: u) }
+        else { toast = L("写临时文件失败") }
     }
 
     private var summaryBlock: some View {

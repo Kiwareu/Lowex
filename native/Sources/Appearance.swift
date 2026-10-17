@@ -93,12 +93,14 @@ enum LayoutDensity: String, CaseIterable, Identifiable {
     case single = "single"
     case dual = "dual"
     case compact = "compact"
+    case category = "category"
     var id: String { rawValue }
     var label: String {
         switch self {
         case .single: return L("单列平铺")
         case .dual: return L("双列")
         case .compact: return L("紧凑")
+        case .category: return L("按分类")
         }
     }
 }

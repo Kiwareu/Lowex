@@ -23,6 +23,8 @@ export const ICONS:Record<string,string>={
 "r:OT": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/Global.png",
 "g:ai": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/ChatGPT.png",
 "g:ai-more": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/AI.png",
+"g:ai-agent": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/AI.png",
+"g:ai-cn": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/AI.png",
 "g:youtube": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/YouTube.png",
 "g:netflix": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/Netflix.png",
 "g:disney": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/Disney+.png",

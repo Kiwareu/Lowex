@@ -18,6 +18,8 @@ export const ICON_AUDIT:Record<string,IconAudit>={
   privacy:{s:'single',was:'Proton Mail 图标（只代表 Proton）',want:'「隐私 / 密码 / 邮箱工具」组图标'},
   'shop-more':{s:'single',was:'Etsy 图标（只代表 Etsy）',want:'「购物（更多海外）」组图标'},
   'ai-more':{s:'single',was:'Gemini 星芒图标（组里还有 Claude / Grok 等）',want:'「AI（更多）」组图标'},
+  'ai-agent':{s:'generic',was:'通用 AI 类别图标',want:'「AI 智能体 / 编程助手」组图标'},
+  'ai-cn':{s:'generic',was:'通用 AI 类别图标',want:'「国内 AI」组图标'},
   blizzard:{s:'generic',was:'通用手柄图标',want:'暴雪战网 Battle.net 标志'},
   'bybit-eu':{s:'generic',was:'通用加密币图标',want:'Bybit 标志'},
   krak:{s:'generic',was:'通用加密币图标',want:'Kraken 标志'},

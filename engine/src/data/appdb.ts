@@ -77,7 +77,7 @@ Grok|Grok|ai.x.grok||ai.x.grok|grok.com,x.ai|ai|
 Perplexity|Perplexity|ai.perplexity.app.android||ai.perplexity.app|perplexity.ai|ai|
 Copilot|Microsoft Copilot|com.microsoft.copilot||com.microsoft.copilot|copilot.microsoft.com|ai|
 Cursor|Cursor||Cursor.exe||cursor.com,cursor.sh|ai|
-DeepSeek|DeepSeek|com.deepseek.chat||com.deepseek.chat|deepseek.com||
+DeepSeek|DeepSeek|com.deepseek.chat||com.deepseek.chat|deepseek.com|ai-cn|
 Google Chrome|Chrome|com.android.chrome|chrome.exe|com.google.chrome.ios|google.com,gstatic.com|google|
 Microsoft Edge|Edge|com.microsoft.emmx|msedge.exe|com.microsoft.msedge|microsoft.com,bing.com|microsoft|
 Firefox|Firefox|org.mozilla.firefox|firefox.exe|org.mozilla.ios.Firefox|mozilla.org,mozilla.com||

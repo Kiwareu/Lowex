@@ -70,6 +70,7 @@ struct RootGate: View {
 }
 
 struct RootContainer: View {
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var store: Store
     @EnvironmentObject var appearance: Appearance
     @EnvironmentObject var lang: Lang
@@ -82,6 +83,7 @@ struct RootContainer: View {
         .fontDesignCompat(appearance.fontStyle.design)
         .onChangeValue(of: lang.revision) { _ in store.reloadLanguage() }
         .onChangeValue(of: store.celebrate) { _ in Haptics.success() }
+        .onChangeValue(of: scenePhase) { if $0 != .active { store.flushSave() } }
         .submitLabel(.done)
         .onSubmit { KeyboardHelper.shared.dismissKeyboard() }
         .onAppear { KeyboardHelper.shared.install() }

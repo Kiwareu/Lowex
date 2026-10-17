@@ -502,6 +502,7 @@ struct DensityBar: View {
                     if !on { Haptics.selection(); ap.density = d }
                 } label: {
                     Text(d.label)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                         .font(.caption2.weight(on ? .bold : .medium))
                         .padding(.vertical, 4).padding(.horizontal, 8)
                         .foregroundStyle(on ? Color.white : Brand.ink)

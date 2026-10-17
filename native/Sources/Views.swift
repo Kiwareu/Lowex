@@ -631,7 +631,7 @@ struct RulesView: View {
 
     /// 常用度排序（只影响界面顺序，不影响生成结果）：越常用越靠前，未列出的保持原顺序排在后面。
     private static let popularity: [String: Int] = {
-        let order = ["ai", "ai-more", "telegram", "youtube", "netflix", "google", "apple", "microsoft", "discord", "twitter", "meta",
+        let order = ["ai", "ai-more", "ai-agent", "ai-cn", "telegram", "youtube", "netflix", "google", "apple", "microsoft", "discord", "twitter", "meta",
                      "tiktok", "github", "steam", "disney", "spotify", "primevideo", "twitch", "reddit", "paypal", "bank-overseas",
                      "crypto", "crypto-more", "xbox", "playstation", "epic", "nintendo", "blizzard", "onedrive", "cloudflare",
                      "notion", "slack", "zoom", "dropbox", "linkedin", "signal", "amazon", "ebay", "docker", "npm", "gitlab",
@@ -675,7 +675,18 @@ struct RulesView: View {
                 // 每次渲染只取一次分组状态 / 收藏 / 分类（以前每行都各自从 [String: Any] 里重新转换一遍）
                 let gs = store.groupState, favs = Set(store.favoriteIds), cats = store.catalog.cats
                 let list = filteredGroups
-                if ap.density == .dual {
+                if ap.density == .category {
+                    // 按分类：单列、行高一致，分类标题按常见程度排序；名称完整显示
+                    ForEach(categorySections(list), id: \.0) { sec in
+                        HStack(spacing: 6) {
+                            Text(cats[sec.0] ?? sec.0).font(.footnote.weight(.bold)).foregroundStyle(Brand.ink)
+                            Text("\(sec.1.count)").font(.caption2).foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        .padding(.top, Space.s).padding(.leading, 4)
+                        ForEach(sec.1) { g in row(g, gs, favs, cats) }
+                    }
+                } else if ap.density == .dual {
                     ForEach(pairs(list), id: \.0.id) { pair in
                         HStack(alignment: .top, spacing: Space.s) {
                             row(pair.0, gs, favs, cats)
@@ -716,6 +727,16 @@ struct RulesView: View {
         .sheet(item: $detailTarget) { g in GroupDetailSheet(group: g, cat: store.catalog.cats[g.cat] ?? g.cat) }
     }
 
+    /// 分类显示顺序（越常用越靠前）；未列出的分类按原顺序排在最后
+    private static let categoryOrder = ["ai", "streaming", "social", "game", "dev", "office", "finance", "crypto", "shopping", "general", "cn-streaming", "download", "tools", "direct", "reject", "proxy"]
+    private func categorySections(_ l: [Catalog.Group]) -> [(String, [Catalog.Group])] {
+        var buckets: [String: [Catalog.Group]] = [:]
+        var firstSeen: [String] = []
+        for g in l { if buckets[g.cat] == nil { firstSeen.append(g.cat) }; buckets[g.cat, default: []].append(g) }
+        let known = Self.categoryOrder.filter { buckets[$0] != nil }
+        let rest = firstSeen.filter { !Self.categoryOrder.contains($0) }
+        return (known + rest).map { ($0, buckets[$0] ?? []) }
+    }
     private func pairs(_ l: [Catalog.Group]) -> [(Catalog.Group, Catalog.Group?)] {
         stride(from: 0, to: l.count, by: 2).map { (l[$0], $0 + 1 < l.count ? l[$0 + 1] : nil) }
     }
@@ -735,7 +756,7 @@ struct RulesView: View {
         return GroupRow(
             name: g.name, icon: g.icon, cat: cats[g.cat] ?? g.cat, detail: detail,
             on: (gs[g.id]?["on"] as? Bool) ?? g.defOn, policy: policyText((gs[g.id]?["policy"] as? String) ?? g.def), fav: favs.contains(g.id),
-            density: ap.density, open: expanded.contains(g.id),
+            density: ap.density == .category ? .single : ap.density, open: expanded.contains(g.id),
             onOpen: {
                 Haptics.light()
                 if ap.density == .dual { detailTarget = g; return }     // 双列：弹出详情，不撑高单元格

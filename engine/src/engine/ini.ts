@@ -308,7 +308,7 @@ export function genEgern(s:State,plan?:Plan):string{
     }
   }
   const dns={bootstrap:(o.dnsBootstrap&&o.dnsBootstrap.length?o.dnsBootstrap:['223.5.5.5']),upstreams:{cn:o.dnsCn,remote:o.dnsRemote},
-    forward:[{wildcard:{match:'*.cn',value:'cn'}},{proxy_rule_set:{match:BM7('Surge','China','list'),value:'cn'}},{wildcard:{match:'*',value:'remote'}}]};
+    forward:[{domain_suffix:{match:'cn',value:'cn'}},{proxy_rule_set:{match:BM7('Surge','China','list'),value:'cn'}},{domain_wildcard:{match:'*',value:'remote'}}]};
   const top:Record<string,any>={ipv6:o.ipv6,allow_external_connections:o.allowLan,proxy_latency_test_url:o.testUrl,dns};
   let text=hdr+block(top);
   if(skipped)text+=`# 已跳过 ${skipped} 个 Egern 文档里没有对应写法的节点（如 Reality / gRPC / 插件）\n`;

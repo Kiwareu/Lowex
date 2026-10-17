@@ -60,3 +60,9 @@
 
 ## Wi-Fi 通话提示（v1.4.4）
 首页选项区与「更多 → Wi-Fi 通话」卡片都显示 `WifiCallNote`：规则会生成，但能否生效取决于客户端、iOS、运营商与节点；sing-box 在手机上多一行提示。手机上 sing-box 系隐藏「本地端口 / 允许局域网」（`Store.supports`）。
+
+## v1.5.0
+- 规则页密度新增「按分类」：单列、行高与「单列平铺」一致，分类标题按 AI → 流媒体 → 社交 → 游戏 → 开发 → 办公 → 金融 … 排序（`RulesView.categoryOrder`，只影响界面）。
+- 持久化：`Store.state` 变化 0.5 秒后写入 UserDefaults；订阅与粘贴的节点单独写到沙盒私有文件 `nodes-private.json`（`LocalFile`，不上传、不进设备备份）；进入后台立即写盘。
+- 历史记录：`HistoryStore`（`history.json`，最多 60 条 × 20 版本）；备份 v2 含 `state` / `prefs` / `history`。
+- 导出：一律用 `UIDocumentPickerViewController(forExporting:)` + 带扩展名的临时文件（不用 `fileExporter`，原因见 CHANGELOG v1.5.0）。

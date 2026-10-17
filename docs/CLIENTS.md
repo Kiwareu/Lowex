@@ -247,7 +247,7 @@ Clash Mi 的覆写分三层：订阅配置 ← 自定义覆写配置 ← 内置�
 | Stash | QUIC 选项可选但不生成；STUN 未列入矩阵 | 按 Stash 文档生成 `AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((GEOIP,CN)))),REJECT` 与 `PROTOCOL,STUN,REJECT` |
 | Loon | `[General]` 里 `disable-stun` 写了两遍 | 只写一次 |
 | Shadowrocket | `dns-fallback-system` 不在官方 / 社区样例里 | 删除 |
-| Egern | `dns.forward` 用了未核实的 `domain_suffix` 匹配 | 改为文档示例的 `wildcard: *.cn` |
+| Egern | `dns.forward` 匹配器 | v1.4.4 曾误改为 `wildcard`；v1.5.0 对照官方 DNS 文档（egernapp.com/docs/configuration/dns）更正为 `domain_suffix` / `domain_wildcard` |
 | sing-box / Karing（手机） | 手机端只有 TUN 入站，但「本地端口 / 允许局域网」仍显示 | 手机平台隐藏这两项 |
 | Mihomo 系 / Surge / QX | 未发现不一致 | — |
 
