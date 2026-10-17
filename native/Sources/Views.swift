@@ -376,10 +376,8 @@ struct NodesView: View {
             if store.nodeModeChoice {
                 PlainCard {
                     Text(L("节点放在哪里")).font(.headline)
-                    Picker(L("模式"), selection: Binding(get: { store.nodeMode }, set: { store.setNodeMode($0) })) {
-                        Text(L("写入配置文件")).tag("config")
-                        Text(L("在客户端 App 内自己添加")).tag("app")
-                    }.pickerStyle(.segmented)
+                    ChoiceTabs(options: [("config", L("写入配置")), ("app", L("客户端内添加"))],
+                               selection: Binding(get: { store.nodeMode }, set: { store.setNodeMode($0) }))
                     Text(store.appMode ? appGuide : L("输入的内容会在生成时直接写进配置文件，导入后即可使用。{}", store.family == "shadowrocket" ? L("（小火箭 conf 只能带手动节点，订阅请选「在客户端 App 内自己添加」。）") : "")).font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -492,7 +490,7 @@ struct NodesView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(m["name"] as? String ?? "").font(.subheadline.weight(.semibold))
                             Text("\(kindLabel(m)) · \(m["host"] as? String ?? ""):\(String(describing: m["port"] ?? 0))" + (((m["user"] as? String) ?? "").isEmpty ? "" : L(" · 有账号")))
-                                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                                .font(.caption2).foregroundStyle(.secondary).lineLimit(2).truncationMode(.middle)
                         }
                         Spacer()
                         Toggle("", isOn: Binding(get: { on }, set: { _ in store.toggleManual(id) })).labelsHidden().tint(Brand.pink)
@@ -649,10 +647,7 @@ struct RulesView: View {
                     .font(.title3.weight(.semibold))
                 Text(store.stepRulesHint + L(" · 选项会直接进入生成配置"))
                     .font(.footnote).foregroundStyle(.secondary)
-                Picker(L("分区"), selection: $section) {
-                    ForEach(RuleSection.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                ChoiceTabs(options: RuleSection.allCases.map { ($0, $0.title) }, selection: $section)
             }
 
             switch section {

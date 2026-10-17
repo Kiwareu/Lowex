@@ -1,98 +1,29 @@
 # Changelog
 
-## v1.8.1 (build 20)
-App 内显示 `v1.8 (build 20)`。
-- **App 图标重绘**：去掉 v1.8.0 里生硬的"节点圆点 W"，改为原创的圆润粗线条手写风 W——中间连接处是一个小圆环，左右大致对称，端点圆润；白色到淡粉的玻璃渐变、柔和投影与内部渐变描边，背景保留粉 / 紫 / 橙网格渐变，加一层很淡的地球经纬网格和一颗小星光。60pt 下仍清晰。源 SVG：`docs/brand/lowex-icon.svg`；应用内 Logo（首页顶部、启动页）同步更新。
-- 无代码逻辑与界面文案变化。
+## v1.3.0 — 2026-10-17
 
-## v1.8.0 (build 19)
-App 内显示 `v1.8 (build 19)`。
-- **严重 bug：启动动画时首页透出**。根因：网格渐变背景的色块带透明度、下面没有不透明底色，而首页在启动页下方已经渲染（连标签栏都可见）。修复：`PinkBackground` 自带不透明底色；首页在启动页下面先布局好但 `opacity 0` + 不可点；动画结束后启动页淡出 + 放大、首页淡入 + 回弹到 1。`UILaunchScreen` 设为 `LaunchBackground` 颜色（浅 / 深色各一），与启动页底色一致，没有白屏或错色首帧。
-- **进度条**改为 220×22 的玻璃质感胶囊：磨砂轨道、渐变填充（带光晕）、内部扫光与上半部高光；填充和扫光都由同一个 progress 驱动，1.9s 缓动到 100%。
-- **首页顶部**：手写签名风格字标 `Lowex`（Great Vibes，SIL OFL 1.1，随 App 打包，许可证见 [`docs/brand/OFL-GreatVibes.txt`](docs/brand/OFL-GreatVibes.txt)），渐变填满标题区，Logo 缩放配合；`minimumScaleFactor` 保证小屏不裁切；字体注册失败时退回衬线斜体。版本号仍在标题下方。启动页同样使用该字标。
-- **新 App 图标**：地球形的 O（经纬网格）+ 网络节点式 W + X 形星光，居中、对称，渐变同 App 配色（粉 / 紫 / 橙）；60pt 到 1024 都清晰。源 SVG：[`docs/brand/lowex-icon.svg`](docs/brand/lowex-icon.svg)，另有 PNG 与小尺寸对照图。应用内 Logo 同步更新。
-- 没有新增界面文案；`tools/check-i18n.py` 通过；mihomo `-t` / sing-box `check` / fuzz 重新运行通过。
+首个正式版本，汇总了目前为止的全部功能。
 
-## v1.7.0 (build 18)
-App 内显示 `v1.7 (build 18)`。
-- **展开 / 收起不灵敏的根因与修复**：按钮标签里的 `Spacer` 区域在 SwiftUI 里不参与点击测试，只有图标本身可点；滚动视图还会把触摸延迟约 150ms 才交给按钮；窗口级的「点空白收键盘」手势每次点击都参与分发。修复：所有展开头统一用 `ExpandHeader`（整行 `contentShape(Rectangle())`、≥44pt、圆底 chevron、spring + 触感）；`delaysContentTouches = false`；键盘手势仅在键盘弹出时才接收触摸。已审计：首页能力矩阵、规则页服务分组（新增可展开的说明 / 风险）、首页「推荐明细」、更多页各入口行、收藏星标（现为 44×44）。
-- **启动动画重做**：字标淡入 → 进度条与字标填充从左到右（单一 `timingCurve`，1.9s）→ 100% 停顿 0.3s → 淡出进首页。只有一个动画值，填充用 `scaleEffect(x:)` + mask，不逐帧重绘；JavaScriptCore 引擎改在后台线程加载，动画不再被主线程卡住。减弱动态效果时只做短淡入 / 淡出。
-- **视觉**：背景换成 iOS 18 `MeshGradient` 网格渐变（柔和漂移、约 20fps，减弱动态时静止；自定义壁纸、深浅色仍有效）；统一 8pt 间距网格（`Space`）、统一分区标题（`SectionHeader`）；全新 App 图标与应用内字标（圆润单笔 L + 星光，全套图标重新生成）。
-- **网络环境模型**：见 [`docs/NETWORK-ENV.md`](docs/NETWORK-ENV.md)（含来源、日期、可信度）。新增网络类型（广电、三家运营商手机流量）、国内 DNS 预设、Bootstrap DNS、国内域名用系统 DNS；默认国内 DoH 改用 DNSPod 官方建议的 `doh.pub`（旧设置自动迁移）；首页新增「推荐明细与依据」可展开列表。sing-box 的 DoH 服务器加 `domain_resolver` 指向 bootstrap。
-- 新字符串已翻译进 简体 / 繁體（台灣、香港）/ English；`tools/check-i18n.py` 通过。
-- mihomo `-t`、sing-box `check`、120 份随机选项 fuzz 全部通过。
+### 生成与客户端
+- 14 个客户端：Clash Verge Rev、FlClash、Clash Mi、Clash Meta for Android、Mihomo Party、Mihomo 内核、sing-box、Karing、Surge、Quantumult X、Shadowrocket、Loon、Stash、Egern；逐个核对订阅 / 节点放置方式、导入方式与备份能力（见 [docs/CLIENTS.md](docs/CLIENTS.md)）。
+- 按平台输出：Windows / iOS / Android 各自只含有效规则（Windows 仅 `.exe` 进程名，Android 仅包名，iOS 无进程 / 包名）。
+- 75 个服务分组：AI、流媒体、社交、开发、银行与券商、跨境账户、远程工作、数字游民工具、加密货币等。
+- 故障转移：每个地区「手动 / 自动测速 / 故转」；按各客户端官方文档只生成它真正支持的策略组类型（sing-box 仅 selector / urltest，Loon 与 Quantumult X 不嵌套策略组等）。
+- 防泄漏：fake-ip DNS、嗅探、QUIC / STUN 拦截、可选的广告 / 追踪 / 遥测拦截；基准研究见 [docs/BENCHMARKS.md](docs/BENCHMARKS.md)。
+- 网络环境：中国广电 / 三家运营商手机流量等网络类型；国内 DoH 预设与 Bootstrap DNS；按依据给出 IPv6 / MTU / QUIC 推荐（[docs/NETWORK-ENV.md](docs/NETWORK-ENV.md)）。
+- 手动节点：SOCKS5 / HTTP / HTTPS，密码存钥匙串，按客户端语法输出。
+- 一键预设；导出：复制、分享、保存到「文件」、二维码、URL scheme 导入。
 
-## v1.6.0 (build 17)
-App 内显示 `v1.6 (build 17)`。
-- **界面多语言**：简体中文 / 繁體中文（台灣）/ 繁體中文（香港）/ English。默认跟随系统语言；「更多 → 语言」可切换（跟随系统 / 简体 / 繁體台灣 / 繁體香港 / English），立即生效。覆盖标签页、各页面、按钮、说明、弹窗、关于、免责声明、分组名与说明、客户端说明，以及引擎给出的防泄漏评分文案和校验 / 警告消息。
-- 台灣 / 香港繁體分表：用词确有差异（軟體 / 軟件、網路 / 網絡 …），见 [`docs/LOCALIZATION.md`](docs/LOCALIZATION.md)。
-- 刻意不翻译：生成的配置正文与策略组名称保持中文；App 名称库、更新日志条目保持原文。
-- 新增 `tools/check-i18n.py` 检查翻译表完整性；README 增加繁體中文与 English 版本。
-- 引擎行为不变（mihomo / sing-box 校验器与随机选项测试仍通过）。
+### 应用
+- **支持 iOS 15 及以上**：导航、相册选图、背景渐变、材质等在旧系统上都有兼容实现（[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)）。
+- 界面语言：简体中文 / 繁體中文（台灣、香港）/ English，默认跟随系统，可在应用内切换。
+- 外观：浅色 / 深色、强调色、圆角、玻璃强度、渐变速度、字体、自定义壁纸；触感反馈；尊重「减弱动态效果」。
+- 启动页：全屏不透明背景（与系统启动屏同色，无闪屏）、手写签名字标与玻璃胶囊进度条；首页在下面先布局好，动画结束后淡入。
+- 首页顶部：手写签名风格字标（Great Vibes，SIL OFL 1.1）随屏宽铺满，副标题紧凑排布。
+- 全新图标：手绘风 W 字标，马克笔质感，起笔与收笔带书法式弧线。
+- 节点页「节点放在哪里」改为可换行的按钮组（「写入配置」/「客户端内添加」），小屏与大字号下完整显示。
+- 备份与恢复、内置 97 张服务 / 地区图标、「关于」页介绍应用本身与工作方式。
 
-## v1.5.2 (build 16)
-App 内显示 `v1.5 (build 16)`。
-- **账号改名**：GitHub 账号 `wenxu184` → **Kiwareu**。仓库现为 [Kiwareu/Lowex](https://github.com/Kiwareu/Lowex)、[Kiwareu/Lowex-Icons](https://github.com/Kiwareu/Lowex-Icons)。App 内的 GitHub 链接、生成配置里的图标地址（`raw.githubusercontent.com/Kiwareu/Lowex-Icons/main/icons/<文件名>.png`）、文档、图标仓库说明全部改为新名，不依赖 GitHub 的旧名重定向。
-- 历史提交保留旧作者名 `wenxu184`；之后的提交使用 Kiwareu 的 GitHub noreply 邮箱。
-
-## v1.5.1 (build 15)
-App 内显示 `v1.5 (build 15)`。
-- **根因**：v1.5.0 的图标只是网络地址，App 靠 raw.githubusercontent.com 下载；国内网络下容易失败或被缓存了旧的占位图 / 旧图，规则页就显示成灰色占位或旧的 ¥ 银行图标。引擎给出的组 id 和图标地址本身是对的（已逐个核对）。
-- **修复**：97 张图标（75 个服务组、3 个核心组、8 个特殊组、11 个地区旗帜）缩成 192px 打进 App（`BundledIcons/`），内置图优先、离线即时显示；升级时自动清掉旧图标缓存。
-- 剩余用上游图标的 48 个服务组（ChatGPT、YouTube、Netflix… 以及通用的加密货币、游戏、影音、学术、PT 等）全部按统一风格重绘；品牌类用 Simple Icons（CC0）矢量为底，Simple Icons 没有的品牌（AI 服务、Disney+、Prime Video、LinkedIn、Nintendo、Xbox、Microsoft、OneDrive、Slack、Amazon）为手绘简化版。
-- 所有图标统一为 `https://raw.githubusercontent.com/Kiwareu/Lowex-Icons/main/icons/<文件名>.png` 并写进生成的配置（文件名：组 id；特殊组 `s-<名>`；地区 `region-<ID>`）。
-
-## v1.5.0 (build 14)
-App 内显示 `v1.5 (build 14)`。
-- 补齐 27 个服务组图标并上传 [Lowex-Icons](https://github.com/Kiwareu/Lowex-Icons)：bunq、SumUp、WhatsApp、HSBC、暴雪战网、X（Twitter 组）、Meta 以 Simple Icons（CC0）矢量为底重绘；Maya、Kraken、Bybit、MEXC、Bitget、Blackcat 为手绘简化版（非官方原图）；fintech / 远程工作 / AI 更多 / 社交更多 / 购物更多 / 隐私 / 国内银行直连及各类银行、券商、数字游民工具为分类通用图标（银行类不再带货币符号）。统一 512×512 圆角方块。
-- App 内置这些组 id，生成的配置直接引用 `https://raw.githubusercontent.com/Kiwareu/Lowex-Icons/main/icons/<组 id>.png`。
-- 详见 [`docs/ICONS-TODO.md`](docs/ICONS-TODO.md)。
-
-## v1.4.0 (build 13)
-App 内显示 `v1.4 (build 13)`。
-- **故障转移逐客户端核对**（官方文档，见 [`docs/CLIENTS.md`](docs/CLIENTS.md) 的「策略组类型与故障转移」）：Mihomo 系、Stash、Surge、Egern 支持 fallback；Loon 的 fallback 只能放节点 / 远程节点，已改写；小火箭、Quantumult X 改用 `policy-regex-filter` / `server-tag-regex` 成员；**sing-box 只有 selector / urltest，没有 fallback**，v1.3 及以前输出的「故转」组其实不会故障转移，现已去掉，该客户端不再显示故障转移选项。
-- 生成页：预览显示**完整**配置（UITextView，等宽、可滚动、可选择）；新增「清除配置」：只清生成结果，或重置选项（保留节点 / 订阅）。
-- 关于页（及「更多」页）加 GitHub 项目链接。
-- 图标全量核对（75 个组 + 12 个地区）：Bunq / SumUp / Maya 等错图改占位图；新建公开仓库 [Lowex-Icons](https://github.com/Kiwareu/Lowex-Icons)，按 `<组 id>.png` 上传后 App 启动时自动采用。待办见 [`docs/ICONS-TODO.md`](docs/ICONS-TODO.md)。
-
-## v1.3.0 (build 12)
-App 内显示 `v1.3 (build 12)`。
-- 对照 GitHub 高星配置、官方文档、博主文章（含 YouTube / X 公开内容）做了基准研究，来源、许可证和学到的东西见 [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)；只学结构，规则集仍以 URL 引用，不复制 GPL / CC-BY-SA 内容。
-- 各客户端补强：Surge（`ipv6-vif`、`hijack-dns`、`always-real-ip`）、Shadowrocket（`dns-fallback-system=false`、`dns-direct-system=false`、`hijack-dns`、`always-real-ip`、`icmp-auto-reply`、`stun-response-ip`）、Quantumult X（`no-system`）、Loon（`sni-sniffing`、拦截 STUN 时 `disable-stun`）、sing-box / Karing（TUN `stack: mixed`、DNS `reverse_mapping`）。
-- 防泄漏检查：每项都从生成出的配置文本里取证，新增综合分（0–100）；找不到对应字段就如实降级，客户端本身没有的开关不会被「补分」。
-- 校验：mihomo 1.19.32 `-t` 与 sing-box 1.14.3 `check` 通过 10 份默认输出 + 120 份随机选项输出；闭源客户端按文档核对，未做真机导入。
-
-## v1.2.0 (build 11)
-App 内显示 `v1.2 (build 11)`。
-- **先调研再设计**：逐个客户端核对「App 内添加订阅/节点」「配置导入」「备份/同步」「覆写机制」，结果、来源 URL、置信度（high/medium/low）和「未核实」清单写进 [`docs/CLIENTS.md`](docs/CLIENTS.md) 与机器可读的 [`docs/clients.research.json`](docs/clients.research.json)。
-- **纠错**：此前 v1.1 认为 Clash Mi 等客户端不能在 App 内添加订阅——错误。Clash Mi（添加配置链接/剪贴板/扫码/文件）、Clash Verge Rev、FlClash、Clash Meta for Android、Clash Party 都可以。Shadowrocket 的 conf 确实不能携带订阅（只可带本地节点），Surge/Loon/Stash/Egern/sing-box/Karing 的 App 内添加与配置是同一份数据，所以仍只提供「写入配置」。
-- 「节点放在哪里」选择扩展到所有 Mihomo 系 GUI 客户端（Verge Rev、FlClash、Clash Mi、CMFA、Clash Party）：选「在客户端 App 内自己添加」时输出**覆写用 YAML**（不含订阅/节点，策略组用 `include-all` + 地区正则收纳），按各客户端的覆写入口给出导入步骤。
-- 导入步骤按「客户端 × 放置方式」分别显示；首页显示该客户端的资料可信度。
-- 新增「备份与恢复 Lowex 设置」：导出/导入/分享本地 JSON（订阅链接永不写入；手动节点需手动勾选）。
-- 已知未核实：Clash Mi 等「自定义覆写」对 proxy-groups / rules 是替换还是合并，官方文档未写明，未在设备上实测；如覆写后分组异常请改用「写入配置文件」。
-
-## v1.1.0 (build 10)
-版本规则：此前的内部 3.6 版本线（build 5–8）统一记为 **v1.0.x**；本次为 **v1.1**，App 内显示 `v1.1 (build 10)`。
-- 节点页按客户端能力显示三块并从上到下排列：① 订阅链接 URL（一行一个，可逐条删除）② 节点链接 / Base64 ③ 手动添加节点（SOCKS5 / HTTP / HTTPS）。客户端写不出的区块直接隐藏，只留一行小字说明（小火箭隐藏订阅与链接；sing-box / Karing 隐藏订阅区）。填写内容在生成时自动写入配置对应位置。
-- 同时支持两种放置方式的客户端（Quantumult X、小火箭）在节点页提供「写入配置文件 / 在客户端 App 内自己添加」选择：选后者时配置不含订阅与节点（含手动节点），分组按名称正则收纳；其余客户端只能写入配置，页面上有一行小字说明。
-- 首页：当前客户端不支持的选项合并成一行小字提示，不再逐个占位。
-- 版本号改为 1.1.0；发布流程只在 tag 构建里上传 Release 附件，避免旧构建覆盖。
-
-
-## v1.0.0 — 首次公开发布 / First public release
-对应旧内部版本 3.6.0（build 5–8），现统一记为 v1.0.x。
-
-- Windows / iOS / Android 三平台配置生成，14 个客户端，按平台严格隔离规则（PROCESS-NAME `.exe` 仅 Windows，包名仅 Android，iOS 无）。
-- 75 个服务分组，新增：汇丰 HSBC、香港银行 / 虚拟银行、新加坡银行、跨境商业账户、远程工作平台、券商、数字游民工具。
-- 故障转移（手动 / 自动 / 故转）、防泄漏（fake-ip、嗅探、QUIC / STUN 拦截）、一键预设（数字游民、加密货币、通用防泄漏）。
-- 生成页：复制、系统分享、保存到「文件」、二维码、客户端 URL scheme 导入。
-- 外观：浅色 / 深色 / 跟随系统，强调色，圆角，玻璃强度，渐变速度，字体，自定义壁纸；启动动画与烟花（尊重「减弱动态效果」）。
-- 首次启动免责声明；图标磁盘缓存。
-
-**首发后修订（同一 v1.0.0，标签已更新）**：配置名称自动跟随所选客户端（手动修改后才固定）；切换系统 / 客户端时统一对齐状态（不支持的选项回默认、不适用的进程名 / 包名规则移除、旧结果与提示清空）；步骤指示改为真实完成状态；节点粘贴区不再把已有节点重复追加；订阅 URL 追加去重；旧版本状态升级时补默认选项；底部标签栏上方增加渐隐衬底与更大的内容下边距；深色模式输入框配色。
-
-**build 7**：系统 / 客户端改为平铺大按钮（原菜单与分段控件易误触或无反馈）；首页与「关于」显示版本与 build；配置名带「自动 / 自定义」标记，未聚焦时始终显示当前自动名；升级时丢弃一切 `Lowex-<客户端名>` 形式的旧名称。
-
-**build 8**：节点页拆为「订阅 URL / 节点链接与 Base64 / 手动节点」三块并按客户端说明行为；新增手动 SOCKS5 / HTTP / HTTPS 节点（可编辑 / 删除 / 开关，密码存钥匙串；Clash、sing-box、Surge、Shadowrocket、Loon、QX、Egern、Stash 各按官方写法输出，写不出的给出原因）；键盘「完成」按钮、点空白收起、滚动收起、Return 收起；全局触感反馈及设置开关。
-
-内部版本映射 / Internal mapping: 3.5.x（Apple-only 预览）→ 3.6.0（多平台）= v1.0.x；v1.1.0 起 App 版本与 tag 一致。
+### 工程
+- SwiftUI + TypeScript 引擎（JavaScriptCore）；mihomo `-t` / `sing-box check` 校验与随机选项模糊测试；`tools/check-i18n.py` 检查语言表。
+- 发布资产命名为 `Lowex-vX.Y.Z.ipa`，附 `.sha256`。

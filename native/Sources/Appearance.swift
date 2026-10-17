@@ -110,9 +110,8 @@ struct AppearanceView: View {
                         }
                         PlainCard {
                             Text(L("字体")).font(.headline)
-                            Picker(L("字体"), selection: Binding(get: { ap.fontStyle }, set: { ap.fontStyle = $0 })) {
-                                ForEach(Appearance.FontStyle.allCases) { Text($0.label).tag($0) }
-                            }.pickerStyle(.segmented)
+                            ChoiceTabs(options: Appearance.FontStyle.allCases.map { ($0, $0.label) },
+                                       selection: Binding(get: { ap.fontStyle }, set: { ap.fontStyle = $0 }))
                         }
                         PlainCard {
                             slider(L("圆角"), value: $radius, range: 8...32, text: "\(Int(radius))") { ap.cornerRadius = CGFloat(radius) }

@@ -235,7 +235,7 @@ struct ScriptWordmark: View {
     var body: some View {
         Text("Lowex")
             .font(BrandFont.script(size))
-            .lineLimit(1).minimumScaleFactor(0.5)
+            .lineLimit(1).minimumScaleFactor(0.7)
             .foregroundStyle(LinearGradient(colors: [Brand.pink, Brand.lilac, Color(red: 1.0, green: 0.52, blue: 0.46)], startPoint: .leading, endPoint: .trailing))
             .shadow(color: Brand.pink.opacity(0.22), radius: 8, y: 3)
             .accessibilityLabel("Lowex")
@@ -244,24 +244,40 @@ struct ScriptWordmark: View {
 
 struct BrandHeader: View {
     var subtitle: String? = nil
+    private static let logoSize: CGFloat = 50
+
+    /// "Lowex" 在 1pt 字号下的排版宽度，用来把字标正好铺满剩余宽度。
+    private static let advance: CGFloat = {
+        if let f = UIFont(name: BrandFont.name, size: 100) {
+            return ("Lowex" as NSString).size(withAttributes: [.font: f]).width / 100
+        }
+        return 1.7
+    }()
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center, spacing: Space.m) {
+        // 标题区宽度 = 屏幕宽 - 两侧页边距 - Logo；字号按宽度反推，字标左右贴边铺满
+        let availW = max(min(UIScreen.main.bounds.width, 560) - Space.l * 2 - Self.logoSize - Space.s, 120)
+        let size = min(availW / Self.advance, 150)
+        let h = size * 0.80
+        VStack(alignment: .trailing, spacing: 0) {
+            HStack(alignment: .center, spacing: Space.s) {
                 Image("BrandMark")
                     .resizable().scaledToFit()
-                    .frame(width: 58, height: 58)
-                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                    .shadow(color: Brand.pink.opacity(0.35), radius: 8, y: 3)
-                ScriptWordmark(size: 124)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(height: 84)   // 字体行高很大，固定高度，字形允许少量溢出（不裁切）
+                    .frame(width: Self.logoSize, height: Self.logoSize)
+                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .shadow(color: Brand.pink.opacity(0.35), radius: 7, y: 3)
+                ScriptWordmark(size: size)
+                    .frame(width: availW, height: h, alignment: .center)
             }
+            // 副标题靠右、紧贴字标下沿；"L" 的尾巴在左侧，不会与它重叠
             Text(subtitle ?? L("本机生成 · 不上传"))
-                .font(.caption).foregroundStyle(.secondary)
-                .padding(.leading, 2).padding(.top, 6)
+                .font(.caption2).foregroundStyle(.secondary)
+                .lineLimit(1).minimumScaleFactor(0.8)
+                .padding(.top, -2)
         }
-        .padding(.top, Space.s)
-        .padding(.bottom, Space.xs)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 2)
+        .padding(.bottom, 2)
     }
 }
 
@@ -346,5 +362,35 @@ struct BottomFade: View {
             .frame(maxHeight: .infinity, alignment: .bottom)
             .ignoresSafeArea(edges: .bottom)
             .allowsHitTesting(false)
+    }
+}
+
+/// 多行自适应的单选按钮组：代替 segmented Picker，标签再长也会换行显示完整，大字号 / 小屏不会出现省略号。
+struct ChoiceTabs<T: Hashable>: View {
+    let options: [(T, String)]
+    @Binding var selection: T
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(Array(options.enumerated()), id: \.offset) { _, o in
+                let on = o.0 == selection
+                Button {
+                    if !on { Haptics.selection(); selection = o.0 }
+                } label: {
+                    Text(o.1)
+                        .font(.subheadline.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.vertical, 9).padding(.horizontal, 6)
+                        .foregroundStyle(on ? Color.white : Brand.ink)
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(on ? AnyShapeStyle(LinearGradient(colors: [Brand.pink, Brand.lilac], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                     : AnyShapeStyle(Color.secondary.opacity(0.14))))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
     }
 }

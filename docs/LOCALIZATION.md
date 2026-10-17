@@ -1,4 +1,4 @@
-# 本地化 / Localization（v1.6.0）
+# 本地化 / Localization
 
 ## 语言
 | 选项 | 表文件 | 说明 |

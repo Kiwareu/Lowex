@@ -1,4 +1,4 @@
-# 基准研究 / Benchmarks（v1.3.0，2026-10-16）
+# 基准研究 / Benchmarks（2026-10-16）
 
 目的：对照广受好评的公开配置、官方文档和知名博主的方案，找出 Lowex 各客户端输出的差距并改进。**只学习结构与写法，不拷贝内容**；规则集一律以远程 URL 引用，许可证见下表。
 
@@ -29,7 +29,7 @@
 
 ## 3. 差距 → 改进（逐客户端）
 
-| 客户端 | 发现的差距 | v1.3 改进 |
+| 客户端 | 发现的差距 | 改进 |
 |---|---|---|
 | Mihomo 系（Verge Rev / FlClash / Clash Mi / CMFA / Clash Party / Mihomo） | 对照官方文档与多个博主：`respect-rules`、`proxy-server-nameserver`、`direct-nameserver`、`nameserver-policy`、fake-ip 过滤、sniffer、`strict-route`、IPv6 策略均已具备；规则域名在 IP 前 | 无结构性差距；用 mihomo 1.19.32 `-t` 校验通过 |
 | Stash | 输出没有 STUN 规则（逻辑规则语法未核实） | **未改**，在防泄漏清单里如实显示「未开启」 |

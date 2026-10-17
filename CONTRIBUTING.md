@@ -3,7 +3,7 @@
 欢迎 PR 与 Issue。
 
 ## 结构
-- `native/` — SwiftUI 应用（iOS 18+），XcodeGen（`project.yml`）。
+- `native/` — SwiftUI 应用（iOS 15+，新系统 API 请放进 `Compat.swift` 做可用性判断），XcodeGen（`project.yml`）。
 - `engine/` — TypeScript 生成引擎，打包为 `native/Resources/engine.js` 并在 JavaScriptCore 中运行。
 - `docs/` — 客户端矩阵、导入 scheme 说明。
 
@@ -15,9 +15,10 @@
 cd engine && npm install && npm run build   # 输出 native/Resources/engine.js
 ```
 ## 构建 IPA
-在 GitHub Actions 运行 *Build Lowex IPA*，或在 macOS：`cd native && xcodegen generate && xcodebuild ...`（见 workflow）。
+在 GitHub Actions 运行 *Build Lowex IPA*，或在 macOS：`cd native && xcodegen generate && xcodebuild ...`（见 workflow）。发布资产命名为 `Lowex-vX.Y.Z.ipa`（由 workflow 按 tag 自动生成，并附 `.sha256`）。
 
 ## 约定
 - 不得提交任何真实订阅链接、节点、密码、令牌；不得提交个人参考配置。
 - 平台隔离是硬性要求：改动后确认 iOS 输出不含 PROCESS-NAME / 包名，Android 不含 `.exe`，Windows 不含包名。
-- 提交信息用英文或中文均可；请使用 GitHub noreply 邮箱。
+- 提交信息用英文或中文均可；请使用 GitHub noreply 邮箱，不要在代码、文档或提交里留下个人邮箱、真实姓名等信息。
+- 新增界面文案必须同时补全 `native/Resources/Lang/` 里的 3 张语言表，并通过 `python3 tools/check-i18n.py`。

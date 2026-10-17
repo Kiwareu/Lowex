@@ -127,7 +127,7 @@ struct AppsInline: View {
                 Text("App Store").font(.headline)
                 ForEach(Array(online.enumerated()), id: \.offset) { _, item in
                     HStack {
-                        Text(item.0).lineLimit(1)
+                        Text(item.0).lineLimit(2).fixedSize(horizontal: false, vertical: true)
                         Spacer()
                         Button(L("添加")) {
                             add(Catalog.AppEntry(n: item.0, en: item.0, pkg: nil, bid: item.1, dom: [], g: nil))
@@ -531,18 +531,22 @@ struct AboutView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                Text(L("界面为原生 SwiftUI；规则引擎与网页版同一份。iOS 26 起用系统 Liquid Glass，iOS 18–25 为系统材质。所有生成只在本机完成，不上传。"))
+                Text(L("Lowex 是一款在本机生成代理 / 分流配置的工具：选好客户端与选项，粘贴节点或订阅，即可导出适合各客户端的配置文件。"))
                     .font(.footnote)
-                Link(destination: URL(string: "mailto:wenx@xewol.com")!) {
-                    Label(L("联系作者 wenx@xewol.com"), systemImage: "envelope")
-                }
-                .font(.footnote)
+                Text(L("工作方式：所有生成都在本机完成，没有服务器，不上传节点或订阅。界面使用 SwiftUI 编写，规则引擎使用 TypeScript，打包后在系统自带的 JavaScriptCore 中运行。"))
+                    .font(.footnote)
+                Text(L("材质：iOS 26 及以上使用系统的 Liquid Glass；更早的系统自动回退为系统模糊材质。"))
+                    .font(.footnote).foregroundStyle(.secondary)
                 Link(destination: URL(string: "https://github.com/Kiwareu/Lowex")!) {
                     Label(L("GitHub 项目 github.com/Kiwareu/Lowex"), systemImage: "chevron.left.forwardslash.chevron.right")
                 }
                 .font(.footnote)
                 Link(destination: URL(string: "https://github.com/Kiwareu/Lowex-Icons")!) {
                     Label(L("图标库 github.com/Kiwareu/Lowex-Icons"), systemImage: "photo.on.rectangle")
+                }
+                .font(.footnote)
+                Link(destination: URL(string: "https://github.com/Kiwareu/Lowex/issues")!) {
+                    Label(L("反馈问题 github.com/Kiwareu/Lowex/issues"), systemImage: "bubble.left.and.exclamationmark.bubble.right")
                 }
                 .font(.footnote)
             }
@@ -598,7 +602,7 @@ enum DisclaimerText {
         L(L("本软件按「现状」提供，不作适销性、特定用途适用性或无错误的明示或默示担保。生成的配置可能因客户端版本、网络环境或用户选项而无效或需调整；作者不对直接或间接损失负责。")),
         "",
         L(L("五、联系")),
-        L(L("如有疑问，可联系作者：wenx@xewol.com。")),
+        L(L("如有疑问，请通过 GitHub 项目页的 Issues 反馈。")),
         "",
         L(L("最后更新日期：2026-10-16"))
         ].joined(separator: "\n")
