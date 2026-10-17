@@ -38,6 +38,8 @@ export const ICON_AUDIT:Record<string,IconAudit>={
   npm:{s:'ok',was:'google favicon 服务（低清）',want:'npm 高清标志（可选更新）'},
 };
 /** 已上传到 Lowex-Icons 的组 id（运行时由 App 通过 GitHub API 列出仓库文件更新；这里是内置默认值） */
+/** v1.5：这些组的图标已画好并上传到 Lowex-Icons（512×512 圆角方块），App 内置此列表，不依赖联网也直接引用仓库路径 */
+export const NEW_ICONS:string[]=["ai-more", "bank-eu", "bank-hk", "bank-overseas", "bank-sg", "bitget-wallet", "biz-banking", "blackcat", "blizzard", "brokers", "bunq", "bybit-eu", "cn-bank-direct", "fintech", "hsbc", "krak", "maya", "meta", "mexc", "nomad-tools", "nomad-work", "privacy", "shop-more", "social-more", "sumup", "twitter", "whatsapp"];
 let READY:string[]=[];
 export const setIconsReady=(l:string[])=>{READY=Array.isArray(l)?l.filter(x=>typeof x==='string'):[]};
 export const iconsReady=()=>READY;
@@ -45,7 +47,7 @@ export const iconsReady=()=>READY;
 export function resolveIcon(key:string,orig:string|undefined):string|undefined{
   if(!key.startsWith('g:'))return orig;
   const id=key.slice(2);
-  if(READY.includes(id))return `${ICON_BASE}/${id}.png`;
+  if(NEW_ICONS.includes(id)||READY.includes(id))return `${ICON_BASE}/${id}.png`;
   const a=ICON_AUDIT[id];
   if(a&&(a.s==='wrong'||a.s==='single'||a.s==='broken'))return ICON_PLACEHOLDER;
   return orig;

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.5.0 (build 14)
+App 内显示 `v1.5 (build 14)`。
+- 补齐 27 个服务组图标并上传 [Lowex-Icons](https://github.com/wenxu184/Lowex-Icons)：bunq、SumUp、WhatsApp、HSBC、暴雪战网、X（Twitter 组）、Meta 以 Simple Icons（CC0）矢量为底重绘；Maya、Kraken、Bybit、MEXC、Bitget、Blackcat 为手绘简化版（非官方原图）；fintech / 远程工作 / AI 更多 / 社交更多 / 购物更多 / 隐私 / 国内银行直连及各类银行、券商、数字游民工具为分类通用图标（银行类不再带货币符号）。统一 512×512 圆角方块。
+- App 内置这些组 id，生成的配置直接引用 `https://raw.githubusercontent.com/wenxu184/Lowex-Icons/main/icons/<组 id>.png`。
+- 详见 [`docs/ICONS-TODO.md`](docs/ICONS-TODO.md)。
+
 ## v1.4.0 (build 13)
 App 内显示 `v1.4 (build 13)`。
 - **故障转移逐客户端核对**（官方文档，见 [`docs/CLIENTS.md`](docs/CLIENTS.md) 的「策略组类型与故障转移」）：Mihomo 系、Stash、Surge、Egern 支持 fallback；Loon 的 fallback 只能放节点 / 远程节点，已改写；小火箭、Quantumult X 改用 `policy-regex-filter` / `server-tag-regex` 成员；**sing-box 只有 selector / urltest，没有 fallback**，v1.3 及以前输出的「故转」组其实不会故障转移，现已去掉，该客户端不再显示故障转移选项。

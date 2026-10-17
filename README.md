@@ -48,7 +48,7 @@ xcodebuild -project LowexNative.xcodeproj -scheme LowexNative -configuration Rel
 或直接运行 GitHub Actions 的 *Build Lowex IPA*（macOS runner，输出未签名 IPA）。
 
 ## 版本 / Versioning
-版本号与 GitHub tag 一致：当前 **v1.4.0**（App 首页显示 `v1.4 (build 13)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
+版本号与 GitHub tag 一致：当前 **v1.5.0**（App 首页显示 `v1.5 (build 14)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## FAQ
 - **为什么没有节点 / 订阅？** 本工具不提供任何节点，只整理你自己的。
@@ -72,4 +72,4 @@ Lowex 只在生成的配置里**引用**以下公开资源的 URL，不在本仓
 
 ## 图标
 
-服务组图标核对结果见 [docs/ICONS-TODO.md](docs/ICONS-TODO.md)；补充图标放在 [Lowex-Icons](https://github.com/wenxu184/Lowex-Icons)，上传后 App 启动时自动采用。
+27 个有问题的服务组图标已在 v1.5 全部补齐（见 [Lowex-Icons](https://github.com/wenxu184/Lowex-Icons) 的 contact-sheet.png）。核对结果见 [docs/ICONS-TODO.md](docs/ICONS-TODO.md)；补充图标放在 [Lowex-Icons](https://github.com/wenxu184/Lowex-Icons)，上传后 App 启动时自动采用。
