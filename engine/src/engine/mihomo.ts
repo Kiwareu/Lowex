@@ -42,21 +42,23 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
       'external-controller-cors':{'allow-origins':['http://127.0.0.1:*','http://localhost:*','tauri://localhost',...o.panelOrigins],'allow-private-network':true}}),
   };
   const dnsCnDoh=o.dnsCn;
+  const cnNs=(o.cnDnsMode==='system'&&!stash)?['system']:o.dnsCn;
+  const boot=(o.dnsBootstrap&&o.dnsBootstrap.length)?o.dnsBootstrap:['223.5.5.5','119.29.29.29'];
   const homeDom=o.homeDomain?[o.homeDomain]:[];
   const dnsPolicy:Record<string,any>={};
-  if(!stash){dnsPolicy['rule-set:private_domain']='system';dnsPolicy['rule-set:cn_domain']=dnsCnDoh}
+  if(!stash){dnsPolicy['rule-set:private_domain']='system';dnsPolicy['rule-set:cn_domain']=cnNs}
   if(o.homeDomain&&o.lanDns)dnsPolicy[`+.${o.homeDomain}`]=o.lanDns;
   if(o.campusDomain&&o.lanDns)for(const d of o.campusDomain.split(/[\s,]+/).filter(Boolean))dnsPolicy[`+.${d}`]=o.lanDns;
-  const dns:Record<string,any>=stash?{enable:true,ipv6:o.ipv6,'enhanced-mode':'fake-ip','fake-ip-range':'198.18.0.1/16','default-nameserver':['223.5.5.5','119.29.29.29'],nameserver:dnsCnDoh,fallback:o.dnsRemote,'fake-ip-filter':['+.lan','+.local','time.*.com','ntp.*.com','+.pool.ntp.org','+.connectivitycheck.gstatic.com',...homeDom.map(d=>'+.'+d)]}:{
+  const dns:Record<string,any>=stash?{enable:true,ipv6:o.ipv6,'enhanced-mode':'fake-ip','fake-ip-range':'198.18.0.1/16','default-nameserver':boot,nameserver:dnsCnDoh,fallback:o.dnsRemote,'fake-ip-filter':['+.lan','+.local','time.*.com','ntp.*.com','+.pool.ntp.org','+.connectivitycheck.gstatic.com',...homeDom.map(d=>'+.'+d)]}:{
     enable:true,ipv6:o.ipv6,'prefer-h3':false,'enhanced-mode':o.fakeIp?'fake-ip':'redir-host','cache-algorithm':low||mobile?'lru':'arc',
     ...(o.fakeIp?{'fake-ip-range':'198.18.0.1/16','fake-ip-filter-mode':'blacklist','fake-ip-filter':['+.lan','+.local','+.arpa','time.*.com','ntp.*.com','+.pool.ntp.org','+.connectivitycheck.gstatic.com','rule-set:cn_domain','rule-set:private_domain',...homeDom.map(d=>'+.'+d),...(o.campusDomain?o.campusDomain.split(/[\s,]+/).filter(Boolean).map(d=>'+.'+d):[])]}:{}),
     'respect-rules':true,'use-hosts':true,'use-system-hosts':false,
-    'default-nameserver':['223.5.5.5','119.29.29.29'],
-    'proxy-server-nameserver':dnsCnDoh,'direct-nameserver':dnsCnDoh,'direct-nameserver-follow-policy':false,
+    'default-nameserver':boot,
+    'proxy-server-nameserver':dnsCnDoh,'direct-nameserver':cnNs,'direct-nameserver-follow-policy':false,
     'nameserver-policy':dnsPolicy,
     nameserver:[...o.dnsRemote,...(stash?[]:['tls://8.8.4.4'])],
   };
-  if(p.overseas&&!stash){dns['nameserver-policy']={...dnsPolicy,'rule-set:cn_domain':dnsCnDoh}}
+  if(p.overseas&&!stash){dns['nameserver-policy']={...dnsPolicy,'rule-set:cn_domain':cnNs}}
   const tun:Record<string,any>={enable:o.tun,stack:o.tunStack,'dns-hijack':['any:53','tcp://any:53'],'auto-route':true,'auto-detect-interface':true,'strict-route':true,mtu:o.mtu,'udp-timeout':300};
   const sniffer={enable:true,'parse-pure-ip':true,'force-dns-mapping':true,'override-destination':false,sniff:{QUIC:{ports:[443]},TLS:{ports:[443,8443]},HTTP:{ports:[80,'8080-8880'],'override-destination':true}},
     'force-domain':['+.netflix.com','+.nflxvideo.net','+.amazonaws.com','+.media.dssott.com','+.tiktok.com','+.binance.com','+.bybit.com','+.okx.com','+.kraken.com','+.payward.com','+.mexc.com','+.mexcservices.com','+.krak.io','+.whatsapp.com','+.line.me','+.bunq.com','+.sumup.com'],

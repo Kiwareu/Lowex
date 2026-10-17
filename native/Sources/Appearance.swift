@@ -164,44 +164,77 @@ struct AppearanceView: View {
 }
 
 // MARK: - 启动动画
+/// 加载式启动序列（单一时间线）：
+/// 字标淡入（spring）→ 0.35s 后进度从左到右填充（一条 timingCurve 缓动，1.9s，只有一个动画值 progress）
+/// → 到 100% 后停顿 0.3s → 交给 Boot 淡出进入首页。
+/// 填充用 scaleEffect(x:) + mask 的矩形，只做变换，不逐帧重绘文字；引擎在后台线程加载（见 Boot），不会卡住动画。
+/// 减弱动态效果：只做 0.25s 淡入、短停顿、0.25s 淡出。
 struct SplashView: View {
+    @ObservedObject var boot: Boot
     @Environment(\.accessibilityReduceMotion) private var reduce
-    @State private var appear = false
-    @State private var sweep = false
+    @State private var appeared = false
+    @State private var progress: CGFloat = 0
+    private let fillDuration = 1.9
+
+    private var fillGradient: LinearGradient {
+        LinearGradient(colors: [Brand.pink, Brand.lilac], startPoint: .leading, endPoint: .trailing)
+    }
+
     var body: some View {
         ZStack {
             PinkBackground()
-            VStack(spacing: 14) {
+            VStack(spacing: Space.xl) {
+                Image("BrandMark")
+                    .resizable().scaledToFit()
+                    .frame(width: 76, height: 76)
+                    .clipShape(RoundedRectangle(cornerRadius: 19, style: .continuous))
+                    .shadow(color: Brand.pink.opacity(0.35), radius: 14, y: 6)
+                    .scaleEffect(appeared ? 1 : 0.8)
                 ZStack {
-                    Text("Lowex")
-                        .font(.system(size: 56, weight: .heavy, design: .rounded))
-                        .foregroundStyle(LinearGradient(colors: [Brand.pink, Brand.lilac], startPoint: .leading, endPoint: .trailing))
-                        .padding(.horizontal, 34).padding(.vertical, 20)
-                        .glassCard(radius: 44, heavy: true)
-                        .overlay {
-                            if !reduce {
-                                LinearGradient(colors: [.clear, .white.opacity(0.55), .clear], startPoint: .leading, endPoint: .trailing)
-                                    .frame(width: 70).offset(x: sweep ? 170 : -170)
-                                    .blendMode(.overlay)
-                                    .clipShape(RoundedRectangle(cornerRadius: 44, style: .continuous))
-                                    .allowsHitTesting(false)
-                            }
+                    wordmark.foregroundStyle(Brand.ink.opacity(0.14))
+                    wordmark.foregroundStyle(fillGradient)
+                        .mask(alignment: .leading) {
+                            Rectangle().scaleEffect(x: max(progress, 0.001), y: 1, anchor: .leading)
                         }
                 }
-                .scaleEffect(appear ? 1 : 0.55)
-                .opacity(appear ? 1 : 0)
+                Capsule().fill(Color.primary.opacity(0.10))
+                    .frame(width: 168, height: 5)
+                    .overlay(alignment: .leading) {
+                        Capsule().fill(fillGradient)
+                            .scaleEffect(x: max(progress, 0.001), y: 1, anchor: .leading)
+                    }
+                    .clipShape(Capsule())
                 Text(L("本机生成 · 不上传"))
                     .font(.footnote).foregroundStyle(.secondary)
-                    .opacity(appear ? 1 : 0).offset(y: appear ? 0 : 12)
             }
+            .compositingGroup()
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 10)
         }
-        .onAppear {
-            if reduce { withAnimation(.easeIn(duration: 0.3)) { appear = true } }
-            else {
-                withAnimation(.spring(response: 0.7, dampingFraction: 0.58)) { appear = true }
-                withAnimation(.easeInOut(duration: 1.0).delay(0.35)) { sweep = true }
-            }
+        .task { await run() }
+    }
+
+    private var wordmark: some View {
+        Text("Lowex")
+            .font(.system(size: 54, weight: .semibold, design: .rounded))
+            .tracking(-1)
+    }
+
+    private func run() async {
+        if reduce {
+            withAnimation(.easeIn(duration: 0.25)) { appeared = true; progress = 1 }
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            while boot.store == nil { try? await Task.sleep(nanoseconds: 50_000_000) }
+            boot.finish(duration: 0.25)
+            return
         }
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) { appeared = true }
+        try? await Task.sleep(nanoseconds: 350_000_000)
+        withAnimation(.timingCurve(0.45, 0.0, 0.2, 1.0, duration: fillDuration)) { progress = 1 }
+        try? await Task.sleep(nanoseconds: UInt64(fillDuration * 1_000_000_000))
+        while boot.store == nil { try? await Task.sleep(nanoseconds: 50_000_000) }
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        boot.finish(duration: 0.55)
     }
 }
 

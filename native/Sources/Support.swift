@@ -15,6 +15,7 @@ enum Haptics {
 final class KeyboardHelper: NSObject, UIGestureRecognizerDelegate {
     static let shared = KeyboardHelper()
     private var installed = false
+    private var keyboardUp = false
     private lazy var bar: UIToolbar = {
         let tb = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 44))
         tb.sizeToFit()
@@ -29,6 +30,8 @@ final class KeyboardHelper: NSObject, UIGestureRecognizerDelegate {
         let nc = NotificationCenter.default
         nc.addObserver(self, selector: #selector(began(_:)), name: UITextField.textDidBeginEditingNotification, object: nil)
         nc.addObserver(self, selector: #selector(began(_:)), name: UITextView.textDidBeginEditingNotification, object: nil)
+        nc.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { [weak self] _ in self?.keyboardUp = true }
+        nc.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { [weak self] _ in self?.keyboardUp = false }
         DispatchQueue.main.async { self.attachTap() }
     }
     @objc private func began(_ n: Notification) {
@@ -48,6 +51,8 @@ final class KeyboardHelper: NSObject, UIGestureRecognizerDelegate {
         w.addGestureRecognizer(g)
     }
     func gestureRecognizer(_ g: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        // 键盘没弹出时这个手势什么也不做，也不参与触摸分发，避免和 ScrollView / 按钮抢手势
+        guard keyboardUp else { return false }
         var v: UIView? = touch.view
         while let x = v {
             if x is UITextField || x is UITextView || x is UIControl || x is UIToolbar { return false }

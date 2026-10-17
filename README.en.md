@@ -15,6 +15,7 @@
 - **Failover** per region (manual / auto speed-test / fallback), **anti-leak** (fake-ip DNS, sniffing, QUIC / STUN blocking, optional ad / tracker blocking).
 - **Manual nodes** (SOCKS5 / HTTP / HTTPS), passwords kept in the Keychain; presets; export by copy / share / Files / QR code / URL scheme.
 - **Languages (v1.6.0)**: 简体中文, 繁體中文 (Taiwan), 繁體中文 (Hong Kong) and English. Follows the system language by default; switch in *More → Language*, applied immediately. See [docs/LOCALIZATION.md](docs/LOCALIZATION.md). Generated config text and policy-group names stay in Chinese regardless of UI language.
+- **Network environment (v1.7.0)**: sourced recommendations by carrier / network type / location (mainland DoH, bootstrap DNS, IPv6, MTU, QUIC); sources and confidence in [docs/NETWORK-ENV.md](docs/NETWORK-ENV.md).
 - **Privacy**: everything runs on-device; no servers, no analytics.
 
 ## Install
@@ -31,7 +32,7 @@ python3 tools/check-i18n.py                     # localization tables sanity che
 Or run the *Build Lowex IPA* GitHub Action.
 
 ## Versioning
-Current **v1.6.0** (the Home screen shows `v1.6 (build 17)`). See [CHANGELOG.md](CHANGELOG.md).
+Current **v1.7.0** (the Home screen shows `v1.7 (build 18)`). See [CHANGELOG.md](CHANGELOG.md).
 
 ## Credits
 Generated configs only *reference* public resources by URL (MetaCubeX/meta-rules-dat, blackmatrix7/ios_rule_script, SagerNet, ACL4SSR, various icon repos); follow their licenses. Client and service names and trademarks belong to their owners.

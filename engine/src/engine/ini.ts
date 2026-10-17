@@ -307,7 +307,7 @@ export function genEgern(s:State,plan?:Plan):string{
       case'final':R('geoip',{match:'CN',policy:p.overseas?N.home:'DIRECT',no_resolve:true});R('default',{policy:r.p==='PROXY'?N.final:'DIRECT'});break;
     }
   }
-  const dns={bootstrap:['223.5.5.5'],upstreams:{cn:o.dnsCn,remote:o.dnsRemote},
+  const dns={bootstrap:(o.dnsBootstrap&&o.dnsBootstrap.length?o.dnsBootstrap:['223.5.5.5']),upstreams:{cn:o.dnsCn,remote:o.dnsRemote},
     forward:[{domain_suffix:{match:'cn',value:'cn'}},{proxy_rule_set:{match:BM7('Surge','China','list'),value:'cn'}},{wildcard:{match:'*',value:'remote'}}]};
   const top:Record<string,any>={ipv6:o.ipv6,allow_external_connections:o.allowLan,proxy_latency_test_url:o.testUrl,dns};
   let text=hdr+block(top);

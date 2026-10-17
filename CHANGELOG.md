@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7.0 (build 18)
+App 内显示 `v1.7 (build 18)`。
+- **展开 / 收起不灵敏的根因与修复**：按钮标签里的 `Spacer` 区域在 SwiftUI 里不参与点击测试，只有图标本身可点；滚动视图还会把触摸延迟约 150ms 才交给按钮；窗口级的「点空白收键盘」手势每次点击都参与分发。修复：所有展开头统一用 `ExpandHeader`（整行 `contentShape(Rectangle())`、≥44pt、圆底 chevron、spring + 触感）；`delaysContentTouches = false`；键盘手势仅在键盘弹出时才接收触摸。已审计：首页能力矩阵、规则页服务分组（新增可展开的说明 / 风险）、首页「推荐明细」、更多页各入口行、收藏星标（现为 44×44）。
+- **启动动画重做**：字标淡入 → 进度条与字标填充从左到右（单一 `timingCurve`，1.9s）→ 100% 停顿 0.3s → 淡出进首页。只有一个动画值，填充用 `scaleEffect(x:)` + mask，不逐帧重绘；JavaScriptCore 引擎改在后台线程加载，动画不再被主线程卡住。减弱动态效果时只做短淡入 / 淡出。
+- **视觉**：背景换成 iOS 18 `MeshGradient` 网格渐变（柔和漂移、约 20fps，减弱动态时静止；自定义壁纸、深浅色仍有效）；统一 8pt 间距网格（`Space`）、统一分区标题（`SectionHeader`）；全新 App 图标与应用内字标（圆润单笔 L + 星光，全套图标重新生成）。
+- **网络环境模型**：见 [`docs/NETWORK-ENV.md`](docs/NETWORK-ENV.md)（含来源、日期、可信度）。新增网络类型（广电、三家运营商手机流量）、国内 DNS 预设、Bootstrap DNS、国内域名用系统 DNS；默认国内 DoH 改用 DNSPod 官方建议的 `doh.pub`（旧设置自动迁移）；首页新增「推荐明细与依据」可展开列表。sing-box 的 DoH 服务器加 `domain_resolver` 指向 bootstrap。
+- 新字符串已翻译进 简体 / 繁體（台灣、香港）/ English；`tools/check-i18n.py` 通过。
+- mihomo `-t`、sing-box `check`、120 份随机选项 fuzz 全部通过。
+
 ## v1.6.0 (build 17)
 App 内显示 `v1.6 (build 17)`。
 - **界面多语言**：简体中文 / 繁體中文（台灣）/ 繁體中文（香港）/ English。默认跟随系统语言；「更多 → 语言」可切换（跟随系统 / 简体 / 繁體台灣 / 繁體香港 / English），立即生效。覆盖标签页、各页面、按钮、说明、弹窗、关于、免责声明、分组名与说明、客户端说明，以及引擎给出的防泄漏评分文案和校验 / 警告消息。

@@ -4,9 +4,11 @@ import UIKit
 // MARK: - 首页
 struct HomeView: View {
     @EnvironmentObject var store: Store
+    @State private var showRecs = false
     private let networks = [
-        ("mobile", L("中国移动宽带")), ("telecom", L("中国电信宽带")), ("unicom", L("中国联通宽带")),
-        ("cellular", L("手机蜂窝数据")), ("campus", L("校园网")), ("company", L("公司网络")),
+        ("mobile", L("中国移动宽带")), ("telecom", L("中国电信宽带")), ("unicom", L("中国联通宽带")), ("cbn", L("中国广电宽带 / 5G")),
+        ("cell-cmcc", L("中国移动 手机流量")), ("cell-unicom", L("中国联通 手机流量")), ("cell-telecom", L("中国电信 手机流量")),
+        ("cellular", L("其他蜂窝数据")), ("campus", L("校园网")), ("company", L("公司网络")),
         ("overseas", L("海外网络")), ("other", L("其他 / 不确定"))
     ]
     private let locations = [
@@ -56,7 +58,7 @@ struct HomeView: View {
             }
 
             PlainCard {
-                Text(L("网络环境与所在地")).font(.headline)
+                SectionHeader(title: L("网络环境与所在地"), subtitle: L("选网络类型与所在地，一键套用带依据的推荐（DNS、IPv6、MTU、QUIC…）。每一项都可以再改。"))
                 Picker(L("网络"), selection: Binding(get: { store.str("network") }, set: { store.set("network", $0) })) {
                     ForEach(networks, id: \.0) { Text($0.1).tag($0.0) }
                 }.pickerStyle(.menu)
@@ -64,13 +66,37 @@ struct HomeView: View {
                     ForEach(locations, id: \.0) { Text($0.1).tag($0.0) }
                 }.pickerStyle(.menu)
                 Button { store.applyRecommend() } label: {
-                    Label(L("按环境智能推荐"), systemImage: "wand.and.stars").frame(maxWidth: .infinity)
+                    Label(L("按环境智能推荐"), systemImage: "wand.and.stars").frame(maxWidth: .infinity, minHeight: Space.tap)
                 }
                 .buttonStyle(.borderedProminent).tint(Brand.pink)
                 if !store.recommendNote.isEmpty {
                     Text(store.recommendNote).font(.footnote).foregroundStyle(.secondary)
                 }
+                if !store.recommendList.isEmpty {
+                    ExpandHeader(open: $showRecs) {
+                        Text(L("查看推荐明细与依据（{} 项）", store.recommendList.count)).font(.subheadline.weight(.medium)).foregroundStyle(Brand.ink)
+                    }
+                    if showRecs {
+                        VStack(alignment: .leading, spacing: Space.m) {
+                            ForEach(Array(store.recommendList.enumerated()), id: \.offset) { _, r in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: Space.s) {
+                                        Text(r["label"] as? String ?? "").font(.footnote.weight(.semibold))
+                                        Text(r["basis"] as? String ?? "").font(.caption2.weight(.bold)).foregroundStyle(.white)
+                                            .padding(.horizontal, 6).padding(.vertical, 1)
+                                            .background(Brand.pink.opacity(0.8), in: Capsule())
+                                    }
+                                    Text(r["value"] as? String ?? "").font(.caption).foregroundStyle(Brand.pink)
+                                    Text(r["why"] as? String ?? "").font(.caption2).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
+                    }
+                }
             }
+
+            DnsCard()
 
             PlainCard {
                 Text(L("一键预设")).font(.headline)
@@ -166,13 +192,9 @@ struct CapMatrixCard: View {
     @State private var open = false
     var body: some View {
         PlainCard {
-            Button { withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { open.toggle() } } label: {
-                HStack {
-                    Text(L("能力矩阵 · {}", store.clientInfo?.name ?? "")).font(.headline).foregroundStyle(Brand.ink)
-                    Spacer()
-                    Image(systemName: "chevron.down").rotationEffect(.degrees(open ? 180 : 0)).foregroundStyle(.secondary)
-                }
-            }.buttonStyle(.plain)
+            ExpandHeader(open: $open) {
+                Text(L("能力矩阵 · {}", store.clientInfo?.name ?? "")).font(.headline).foregroundStyle(Brand.ink)
+            }
             if open {
                 let caps = Set(store.clientInfo?.caps ?? [])
                 LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)], spacing: 6) {
@@ -220,11 +242,73 @@ struct PresetButtons: View {
     }
 }
 
+/// DNS 与网络：国内 DNS 预设 / Bootstrap / 系统 DNS。只显示当前客户端支持的项。
+struct DnsCard: View {
+    @EnvironmentObject var store: Store
+    @State private var boot = ""
+    @FocusState private var bootFocus: Bool
+    private let ali = "https://223.5.5.5/dns-query", ali2 = "https://223.6.6.6/dns-query"
+    private let tx = "https://doh.pub/dns-query", qh = "https://doh.360.cn/dns-query"
+    private var presets: [(String, String, [String])] {
+        [("ali-dnspod", L("阿里 + 腾讯 DNSPod（推荐）"), [ali, tx]), ("ali", L("仅阿里公共 DNS"), [ali, ali2]),
+         ("dnspod", L("仅腾讯 DNSPod"), [tx]), ("qihoo", L("360 安全 DNS"), [qh])]
+    }
+    private var current: String {
+        let cn = (store.opts["dnsCn"] as? [String]) ?? []
+        return presets.first { $0.2 == cn }?.0 ?? "custom"
+    }
+    var body: some View {
+        if store.supports("dnsCn") {
+            PlainCard {
+                SectionHeader(title: L("DNS 与网络"), subtitle: L("国内公共 DoH 与运营商无关；这里可换服务商、设 bootstrap。依据见 docs/NETWORK-ENV.md。"))
+                Picker(L("国内 DNS（DoH）"), selection: Binding(
+                    get: { current },
+                    set: { id in
+                        if let p = presets.first(where: { $0.0 == id }) { store.setOpts(["dnsCn": p.2, "dnsPreset": id]) }
+                    })) {
+                    ForEach(presets, id: \.0) { Text($0.1).tag($0.0) }
+                    if current == "custom" { Text(L("自定义")).tag("custom") }
+                }
+                .pickerStyle(.menu)
+                if store.supports("dnsBootstrap") {
+                    VStack(alignment: .leading, spacing: Space.xs) {
+                        Text(L("Bootstrap DNS（纯 IP，逗号分隔）")).font(.subheadline)
+                        TextField("223.5.5.5, 119.29.29.29", text: Binding(
+                            get: { bootFocus ? boot : ((store.opts["dnsBootstrap"] as? [String]) ?? []).joined(separator: ", ") },
+                            set: { boot = $0 }))
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                            .keyboardType(.numbersAndPunctuation)
+                            .focused($bootFocus)
+                            .onChange(of: bootFocus) { _, f in
+                                if f { boot = ((store.opts["dnsBootstrap"] as? [String]) ?? []).joined(separator: ", ") }
+                                else {
+                                    let list = boot.split(whereSeparator: { ", ，\n".contains($0) }).map(String.init)
+                                        .filter { $0.range(of: "^[0-9a-fA-F:.]+$", options: .regularExpression) != nil }
+                                    if !list.isEmpty { store.setOpts(["dnsBootstrap": list]) }
+                                }
+                            }
+                        Text(L("用来解析 DoH 地址里的域名（如 doh.pub）。只能写 IP。")).font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+                OptToggle(title: L("国内域名用系统 DNS（运营商 / 校园 / 公司）"), key: "cnDnsMode", feature: "cnDnsMode", systemMode: true)
+                if store.supports("cnDnsMode") {
+                    Text(L("DoH 被拦、或需要解析内网域名时再开。系统 DNS 是明文，节点域名仍走 DoH。")).font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+}
+
 struct OptToggle: View {
     @EnvironmentObject var store: Store
-    let title: String; let key: String; let feature: String; var invert = false
+    let title: String; let key: String; let feature: String; var invert = false; var systemMode = false
     var body: some View {
-        if store.supports(feature) {
+        if store.supports(feature) && systemMode {
+            Toggle(title, isOn: Binding(
+                get: { (store.opts[key] as? String) == "system" },
+                set: { store.setOpt(key, $0 ? "system" : "doh") }
+            )).tint(Brand.pink)
+        } else if store.supports(feature) {
             Toggle(title, isOn: Binding(
                 get: {
                     let defOn: Bool = {
@@ -538,6 +622,7 @@ struct RulesView: View {
     @State private var query = ""
     @State private var section: RuleSection = .groups
     @State private var onlyFav = false
+    @State private var expanded: Set<String> = []
 
     enum RuleSection: String, CaseIterable, Identifiable {
         case groups = "服务分组"
@@ -605,27 +690,49 @@ struct RulesView: View {
 
     @ViewBuilder
     private func groupRow(_ g: Catalog.Group) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                RemoteIcon(url: g.icon, name: g.name, size: 28)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(g.name).font(.subheadline.weight(.semibold))
-                    Text(store.catalog.cats[g.cat] ?? g.cat).font(.caption2).foregroundStyle(.secondary)
+        let isOpen = expanded.contains(g.id)
+        let detail = [g.notes, g.risk.map { L("误判拦截风险：{}", $0) }].compactMap { $0 }.filter { !$0.isEmpty }
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.s) {
+                Button {
+                    Haptics.light()
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        if isOpen { expanded.remove(g.id) } else { expanded.insert(g.id) }
+                    }
+                } label: {
+                    HStack(spacing: Space.m) {
+                        RemoteIcon(url: g.icon, name: g.name, size: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(g.name).font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink)
+                            Text(store.catalog.cats[g.cat] ?? g.cat).font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 0)
+                        if !detail.isEmpty { ChevronBadge(open: isOpen) }
+                    }
+                    .frame(maxWidth: .infinity, minHeight: Space.tap, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
-                Spacer()
+                .buttonStyle(.plain)
+                .disabled(detail.isEmpty)
                 Button {
                     store.toggleFavorite(g.id)
                 } label: {
                     Image(systemName: store.favoriteIds.contains(g.id) ? "star.fill" : "star")
                         .foregroundStyle(Brand.pink)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(IconTapStyle())
                 Toggle("", isOn: Binding(
                     get: { store.isOn(g) },
                     set: { store.setGroup(g, on: $0) }
                 ))
                 .labelsHidden()
                 .tint(Brand.pink)
+            }
+            if isOpen && !detail.isEmpty {
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    ForEach(detail, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary) }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
             if store.isOn(g) {
                 Picker(L("出口"), selection: Binding(
@@ -642,7 +749,7 @@ struct RulesView: View {
                 .pickerStyle(.menu)
             }
         }
-        .padding(12)
+        .padding(.horizontal, Space.m).padding(.vertical, Space.s)
         .softCard()
     }
 }

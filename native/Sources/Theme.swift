@@ -13,7 +13,14 @@ enum Brand {
     static var glass: Double { Appearance.shared.glassIntensity }
 }
 
-/// 背景：自定义壁纸 > 渐变（可调速、减弱动态时静止）。动画限 15fps，iPhone XS 友好。
+/// 8pt 网格：全 App 统一的间距
+enum Space {
+    static let xs: CGFloat = 4, s: CGFloat = 8, m: CGFloat = 12, l: CGFloat = 16, xl: CGFloat = 24, xxl: CGFloat = 32
+    /// 最小可点区域（HIG 44pt）
+    static let tap: CGFloat = 44
+}
+
+/// 背景：自定义壁纸 > 柔和流动的网格渐变（Gemini 风格；可调速，减弱动态效果时静止）。
 struct PinkBackground: View {
     @Environment(\.colorScheme) private var cs
     @Environment(\.accessibilityReduceMotion) private var reduce
@@ -23,30 +30,41 @@ struct PinkBackground: View {
                 Color.clear.overlay { Image(uiImage: img).resizable().scaledToFill() }.clipped()
                 Color.black.opacity(cs == .dark ? 0.45 : 0.12)
             } else {
-                LinearGradient(
-                    colors: cs == .dark
-                        ? [Color(red: 0.10, green: 0.05, blue: 0.14), Color(red: 0.08, green: 0.06, blue: 0.17), Color(red: 0.12, green: 0.06, blue: 0.12)]
-                        : [Color(red: 1, green: 0.94, blue: 0.97), Color(red: 0.97, green: 0.92, blue: 1.0), Color(red: 1, green: 0.95, blue: 0.93)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing)
-                blobs
+                MeshBackdrop(dark: cs == .dark, speed: Appearance.shared.gradientSpeed, paused: reduce)
             }
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
     }
-    @ViewBuilder private var blobs: some View {
-        let speed = Appearance.shared.gradientSpeed
-        let k = cs == .dark ? 0.55 : 1.0
-        TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: reduce || speed <= 0.01)) { ctx in
-            let t = ctx.date.timeIntervalSinceReferenceDate * speed * 0.35
-            ZStack {
-                RadialGradient(colors: [Brand.pinkSoft.opacity(0.42 * k), .clear],
-                               center: UnitPoint(x: 0.2 + 0.18 * sin(t), y: 0.12 + 0.10 * cos(t * 0.8)), startRadius: 8, endRadius: 380)
-                RadialGradient(colors: [Brand.lilac.opacity(0.34 * k), .clear],
-                               center: UnitPoint(x: 0.85 + 0.12 * cos(t * 0.7), y: 0.85 + 0.10 * sin(t)), startRadius: 8, endRadius: 420)
-                RadialGradient(colors: [Brand.peach.opacity(0.22 * k), .clear],
-                               center: UnitPoint(x: 0.7 + 0.2 * sin(t * 0.9 + 1), y: 0.25 + 0.12 * cos(t * 0.6)), startRadius: 4, endRadius: 260)
-            }
+}
+
+/// 3×3 网格渐变（iOS 18 MeshGradient，GPU 渲染）。只有内部 5 个控制点做缓慢的李萨如漂移，约 20fps；
+/// 角点固定，所以边缘不会露底。
+struct MeshBackdrop: View {
+    let dark: Bool; let speed: Double; let paused: Bool
+    private var colors: [Color] {
+        let a = Brand.pinkSoft, l = Brand.lilac, p = Brand.peach
+        if dark {
+            return [Color(red: 0.10, green: 0.05, blue: 0.15), l.opacity(0.35), Color(red: 0.08, green: 0.07, blue: 0.19),
+                    a.opacity(0.38), Color(red: 0.16, green: 0.07, blue: 0.17), l.opacity(0.30),
+                    Color(red: 0.12, green: 0.06, blue: 0.13), p.opacity(0.22), a.opacity(0.28)]
+        }
+        return [Color(red: 1.0, green: 0.93, blue: 0.97), l.opacity(0.42), Color(red: 0.95, green: 0.93, blue: 1.0),
+                a.opacity(0.50), Color(red: 1.0, green: 0.88, blue: 0.94), l.opacity(0.36),
+                p.opacity(0.40), Color(red: 1.0, green: 0.93, blue: 0.95), a.opacity(0.38)]
+    }
+    private func points(_ t: Float) -> [SIMD2<Float>] {
+        let k: Float = 0.11
+        return [
+            SIMD2<Float>(0, 0), SIMD2<Float>(0.5 + k * sin(t), 0), SIMD2<Float>(1, 0),
+            SIMD2<Float>(0, 0.5 + k * cos(t * 0.8)), SIMD2<Float>(0.5 + 0.2 * sin(t * 0.6 + 1), 0.5 + 0.2 * cos(t * 0.5)), SIMD2<Float>(1, 0.5 + k * sin(t * 0.7 + 2)),
+            SIMD2<Float>(0, 1), SIMD2<Float>(0.5 + k * cos(t * 0.9 + 0.5), 1), SIMD2<Float>(1, 1)]
+    }
+    var body: some View {
+        let base = dark ? Color(red: 0.08, green: 0.05, blue: 0.13) : Color(red: 1, green: 0.95, blue: 0.97)
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: paused || speed <= 0.01)) { ctx in
+            let t = Float(ctx.date.timeIntervalSinceReferenceDate * speed * 0.22)
+            MeshGradient(width: 3, height: 3, points: points(t), colors: colors, background: base, smoothsColors: true)
         }
     }
 }
@@ -116,9 +134,68 @@ extension View {
 struct PressableStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .contentShape(Rectangle())
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.spring(response: 0.28, dampingFraction: 0.62), value: configuration.isPressed)
             .onChange(of: configuration.isPressed) { _, p in if p { Haptics.light() } }
+    }
+}
+
+/// 展开 / 收起箭头：圆底 + 品牌色，比单独的灰色 chevron 更容易看见
+struct ChevronBadge: View {
+    let open: Bool
+    var body: some View {
+        Image(systemName: "chevron.down")
+            .font(.footnote.weight(.bold))
+            .foregroundStyle(Brand.pink)
+            .rotationEffect(.degrees(open ? 180 : 0))
+            .frame(width: 32, height: 32)
+            .background(Brand.pink.opacity(0.14), in: Circle())
+    }
+}
+
+/// 整行可点的展开头：≥44pt 高、整行 contentShape、spring + 触感。所有「展开 / 收起」统一用它。
+struct ExpandHeader<Label: View>: View {
+    @Binding var open: Bool
+    @ViewBuilder var label: Label
+    var body: some View {
+        Button {
+            Haptics.light()
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) { open.toggle() }
+        } label: {
+            HStack(spacing: Space.m) {
+                label
+                Spacer(minLength: Space.s)
+                ChevronBadge(open: open)
+            }
+            .frame(maxWidth: .infinity, minHeight: Space.tap, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityValue(open ? "expanded" : "collapsed")
+    }
+}
+
+/// 图标按钮：最小 44×44 的点击区域
+struct IconTapStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .frame(minWidth: Space.tap, minHeight: Space.tap)
+            .contentShape(Rectangle())
+            .scaleEffect(configuration.isPressed ? 0.88 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
+    }
+}
+
+/// 统一的分区标题：标题 + 可选说明
+struct SectionHeader: View {
+    let title: String; var subtitle: String? = nil
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            Text(title).font(.headline).foregroundStyle(Brand.ink)
+            if let subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
+        }
     }
 }
 
@@ -134,7 +211,8 @@ struct BrandHeader: View {
                 .shadow(color: Brand.pink.opacity(0.35), radius: 8, y: 3)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Lowex")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(size: 28, weight: .semibold, design: .rounded))
+                    .tracking(-0.3)
                     .foregroundStyle(
                         LinearGradient(colors: [Brand.pink, Brand.lilac],
                                        startPoint: .leading, endPoint: .trailing))
@@ -158,7 +236,7 @@ struct PageChrome<Content: View>: View {
         ZStack(alignment: .top) {
             PinkBackground()
             ScrollView(.vertical, showsIndicators: false) {
-                LazyVStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: Space.m) {
                     if showBrand {
                         BrandHeader()
                     } else if let title {
@@ -169,8 +247,8 @@ struct PageChrome<Content: View>: View {
                     }
                     content
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 28)
+                .padding(.horizontal, Space.l)
+                .padding(.bottom, Space.xl)
             }
             .scrollBounceBehavior(.basedOnSize)
             .contentMargins(.bottom, 56, for: .scrollContent)
@@ -193,9 +271,9 @@ struct HeroCard<Content: View>: View {
 struct PlainCard<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) { content }
+        VStack(alignment: .leading, spacing: Space.s) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(14)
+            .padding(Space.l)
             .softCard()
     }
 }

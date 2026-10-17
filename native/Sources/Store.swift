@@ -11,6 +11,7 @@ final class Store: ObservableObject {
     }
     @Published var result = GenResult(text: "", name: "", warnings: [])
     @Published var recommendNote = ""
+    @Published var recommendList: [[String: Any]] = []
     @Published var tab: AppTab = .home
     @Published var generating = false
     @Published var pasteNote = ""
@@ -64,6 +65,10 @@ final class Store: ObservableObject {
             let base = Engine.shared.initialState(client: merged["client"] as? String ?? "shadowrocket", platform: pf)
             var o = (base["opts"] as? [String: Any]) ?? [:]
             for (k, v) in (merged["opts"] as? [String: Any]) ?? [:] { o[k] = v }
+            // v1.7.0：DNSPod 官方不再公开 1.12.12.12 的 IP 接入，旧设置里的该地址换成 doh.pub
+            if let cn = o["dnsCn"] as? [String], cn.contains("https://1.12.12.12/dns-query") {
+                o["dnsCn"] = cn.map { $0 == "https://1.12.12.12/dns-query" ? "https://doh.pub/dns-query" : $0 }
+            }
             merged["opts"] = o
             if let ml = merged["manualNodes"] as? [[String: Any]] {
                 merged["manualNodes"] = ml.map { var m = $0; m["pass"] = SecretStore.get(m["id"] as? String ?? ""); return m }
@@ -103,7 +108,7 @@ final class Store: ObservableObject {
     }
 
     func finishSplash() {
-        withAnimation(.easeOut(duration: 0.45)) { showSplash = false }
+        showSplash = false
         if needsDisclaimer { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.showDisclaimer = true } }
     }
 
@@ -120,6 +125,12 @@ final class Store: ObservableObject {
         var s = state; s[k] = v; state = s; save()
     }
     var opts: [String: Any] { state["opts"] as? [String: Any] ?? [:] }
+    func setOpts(_ d: [String: Any]) {
+        Haptics.selection()
+        var o = opts
+        for (k, v) in d { o[k] = v }
+        var s = state; s["opts"] = o; state = s; save()
+    }
     func setOpt(_ k: String, _ v: Any) {
         Haptics.selection()
         var o = opts; o[k] = v
@@ -169,7 +180,7 @@ final class Store: ObservableObject {
         let defOpts = (base["opts"] as? [String: Any]) ?? [:]
         var o = (s["opts"] as? [String: Any]) ?? [:]
         let map: [(String, String)] = [("failover", "failover"), ("ads", "ads"), ("trackers", "trackers"), ("telemetry", "telemetry"),
-            ("icons", "icons"), ("ipv6", "ipv6"), ("tun", "tun"), ("fakeIp", "fakeIp"), ("blockQuic", "quic"), ("stun", "stun"),
+            ("icons", "icons"), ("ipv6", "ipv6"), ("tun", "tun"), ("fakeIp", "fakeIp"), ("blockQuic", "quic"), ("stun", "stun"), ("cnDnsMode", "cnDnsMode"),
             ("allowLan", "allowLan"), ("wifiCalling", "wifi")]
         var reset: [String] = []
         for (k, f) in map where !supports(f) {
@@ -425,7 +436,8 @@ final class Store: ObservableObject {
         if let regs = r["regionsOn"] as? [String] {
             var s = state; s["regions"] = regs; state = s
         }
-        let n = (r["list"] as? [[String: Any]])?.count ?? 0
+        recommendList = (r["list"] as? [[String: Any]]) ?? []
+        let n = recommendList.count
         recommendNote = L("已按所选网络与地区应用 {} 项推荐。", n)
         save()
     }

@@ -1,14 +1,15 @@
 import type {Platform} from '../data/clients';
 export type Policy=string; // PROXY | DIRECT | REJECT | HOME | R:HK ...
 export type Location='cn'|'hk'|'mo'|'tw'|'overseas';
-export type Network='mobile'|'telecom'|'unicom'|'cellular'|'campus'|'company'|'overseas'|'other';
+export type Network='mobile'|'telecom'|'unicom'|'cbn'|'cell-cmcc'|'cell-unicom'|'cell-telecom'|'cellular'|'campus'|'company'|'overseas'|'other';
+export type DnsPreset='ali-dnspod'|'ali'|'dnspod'|'qihoo'|'custom';
 export interface CustomSet{id:string;name:string;url:string;kind:'domain'|'ip'|'classical';policy:Policy}
 export interface SubItem{name:string;url:string}
 export interface AppRoute{id:string;kind:'preset'|'package'|'process'|'domain';value:string;label:string;policy:Policy}
 export interface Opts{
   ipv6:boolean;tun:boolean;mtu:number;mixedPort:number;apiPort:number;secret:string;logLevel:'warning'|'info'|'debug'|'error';
   allowLan:boolean;
-  dnsCn:string[];dnsRemote:string[];fakeIp:boolean;
+  dnsCn:string[];dnsRemote:string[];fakeIp:boolean;dnsPreset:DnsPreset;dnsBootstrap:string[];cnDnsMode:'doh'|'system';
   blockQuic:'foreign'|'off';stun:'proxy'|'reject'|'off';
   unknown:'proxy'|'direct';ads:'off'|'lite'|'full';telemetry:boolean;trackers:boolean;icons:boolean;
   lowMemory:boolean;keepAlive:boolean;testUrl:string;urlTestInterval:number;

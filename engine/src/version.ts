@@ -1,5 +1,6 @@
-export const VERSION='1.6.0';
+export const VERSION='1.7.0';
 export const CHANGELOG:{v:string;date:string;items:string[]}[]=[
+ {v:'1.7.0',date:'2026-10-17',items:['网络环境模型：新增中国广电 / 三家运营商手机流量等网络类型；国内 DNS 预设（阿里+腾讯 / 仅阿里 / 仅腾讯 / 360）、Bootstrap DNS、国内域名用系统 DNS；默认国内 DoH 由 1.12.12.12 改为官方推荐的 doh.pub。调研与来源见 docs/NETWORK-ENV.md。','界面：流动网格渐变背景、全新 Logo 与启动加载动画、展开 / 收起控件整行可点（≥44pt）。']},
  {v:'1.6.0',date:'2026-10-17',items:['界面多语言：简体中文 / 繁體中文（台灣、香港）/ English，默认跟随系统，可在「更多 → 语言」切换，立即生效。生成的配置正文与策略组名称保持中文。']},
  {v:'1.5.2',date:'2026-10-17',items:['GitHub 账号 wenxu184 改名为 Kiwareu：仓库地址、图标地址（raw.githubusercontent.com/Kiwareu/Lowex-Icons/…）、App 内链接、文档全部改为 Kiwareu，不再依赖旧名重定向。']},
  {v:'1.5.1',date:'2026-10-17',items:['图标全部内置进 App（97 张：75 个服务组 + 3 个核心组 + 8 个特殊组 + 11 个地区旗帜），规则页离线即时显示；所有组的图标统一为 Lowex-Icons 仓库的 raw 地址并写进生成的配置；升级时清掉旧图标缓存。']},

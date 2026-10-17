@@ -2,7 +2,7 @@
 import type {Family} from './clients';
 import {CLIENTS} from './clients';
 import type {Opts} from '../engine/types';
-export type Feature='tun'|'failover'|'mtu'|'tunStack'|'fakeIp'|'ipv6'|'localPort'|'controller'|'logLevel'|'allowLan'|'dnsCn'|'dnsRemote'|'quic'|'stun'|'unknown'|'ads'|'telemetry'|'trackers'|'icons'|'lowMemory'|'keepAlive'|'testUrl'|'interval'|'tolerance'|'lbGroup'|'nodeFilter'|'campus'|'homeDomain'|'homeHosts'|'homeDns'|'wifi'|'modules'|'mitm';
+export type Feature='tun'|'failover'|'mtu'|'tunStack'|'fakeIp'|'ipv6'|'localPort'|'controller'|'logLevel'|'allowLan'|'dnsCn'|'dnsRemote'|'dnsBootstrap'|'cnDnsMode'|'quic'|'stun'|'unknown'|'ads'|'telemetry'|'trackers'|'icons'|'lowMemory'|'keepAlive'|'testUrl'|'interval'|'tolerance'|'lbGroup'|'nodeFilter'|'campus'|'homeDomain'|'homeHosts'|'homeDns'|'wifi'|'modules'|'mitm';
 const ALL:Family[]=['mihomo','singbox','surge','qx','shadowrocket','loon','stash','egern'];
 const M:Family[]=['mihomo'],MS:Family[]=['mihomo','singbox'];
 export const CAPS:Record<Feature,{keys:(keyof Opts)[];fam:Family[];label:string}>={
@@ -15,7 +15,9 @@ export const CAPS:Record<Feature,{keys:(keyof Opts)[];fam:Family[];label:string}
  controller:{keys:['apiPort','secret','panelOrigins'],fam:M,label:'控制 API'},
  logLevel:{keys:['logLevel'],fam:['mihomo','singbox','stash'],label:'日志级别'},
  allowLan:{keys:['allowLan'],fam:['mihomo','singbox','surge','loon','stash','egern'],label:'允许局域网连接'},
- dnsCn:{keys:['dnsCn'],fam:ALL,label:'国内 DNS'},
+ dnsCn:{keys:['dnsCn','dnsPreset'],fam:ALL,label:'国内 DNS'},
+ dnsBootstrap:{keys:['dnsBootstrap'],fam:['mihomo','singbox','stash','egern'],label:'Bootstrap DNS'},
+ cnDnsMode:{keys:['cnDnsMode'],fam:MS,label:'国内域名用系统 DNS'},
  dnsRemote:{keys:['dnsRemote'],fam:['mihomo','singbox','stash','egern'],label:'境外 DNS'},
  quic:{keys:['blockQuic'],fam:ALL,label:'拦截境外 QUIC'},
  stun:{keys:['stun'],fam:['mihomo','singbox','surge','qx','shadowrocket','loon','egern'],label:'STUN / WebRTC'},

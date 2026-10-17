@@ -5,22 +5,62 @@ import UIKit
 struct LowexApp: App {
     init() {
         UIScrollView.appearance().bounces = false
+        // 默认滚动视图会把触摸延迟约 150ms 才交给按钮，快速点按 chevron 时像「没反应」
+        UIScrollView.appearance().delaysContentTouches = false
         UITableView.appearance().bounces = false
         let tb = UITabBarAppearance(); tb.configureWithDefaultBackground()
         UITabBar.appearance().standardAppearance = tb
         UITabBar.appearance().scrollEdgeAppearance = tb
     }
-    @StateObject private var store = Store()
+    @StateObject private var boot = Boot()
     @StateObject private var appearance = Appearance.shared
     @StateObject private var lang = Lang.shared
     var body: some Scene {
         WindowGroup {
-            RootContainer()
-                .environmentObject(store)
+            RootGate(boot: boot)
                 .environmentObject(appearance)
                 .environmentObject(lang)
                 .environment(\.locale, lang.resolved.locale)
         }
+    }
+}
+
+/// 启动编排：先显示启动动画；引擎（JavaScriptCore）在后台线程加载，加载完再在主线程建 Store。
+/// 动画与引擎加载互不阻塞；动画走完且 Store 就绪后淡出进首页。
+final class Boot: ObservableObject {
+    @Published var store: Store?
+    @Published var showSplash = true
+    init() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            _ = Engine.shared   // 解析 engine.js（最耗时的一步）放在后台
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { self?.store = Store() }
+        }
+    }
+    func finish(duration: Double) {
+        withAnimation(.easeInOut(duration: duration)) { showSplash = false }
+        store?.finishSplash()
+    }
+}
+
+struct RootGate: View {
+    @ObservedObject var boot: Boot
+    @EnvironmentObject var appearance: Appearance
+    var body: some View {
+        ZStack {
+            if let store = boot.store {
+                RootContainer()
+                    .environmentObject(store)
+                    .transition(.opacity)
+            }
+            if boot.showSplash {
+                SplashView(boot: boot)
+                    .allowsHitTesting(boot.store == nil)
+                    .transition(.opacity.combined(with: .scale(scale: 1.04)))
+                    .zIndex(5)
+            }
+        }
+        .preferredColorScheme(appearance.scheme)
+        .fontDesign(appearance.fontStyle.design)
     }
 }
 
@@ -32,9 +72,6 @@ struct RootContainer: View {
         ZStack {
             RootView().id("\(appearance.revision)-\(lang.revision)")
             ConfettiView(trigger: store.celebrate)
-            if store.showSplash {
-                SplashView().allowsHitTesting(false).transition(.opacity).zIndex(5)
-            }
         }
         .preferredColorScheme(appearance.scheme)
         .fontDesign(appearance.fontStyle.design)
@@ -43,10 +80,6 @@ struct RootContainer: View {
         .submitLabel(.done)
         .onSubmit { KeyboardHelper.shared.dismissKeyboard() }
         .onAppear { KeyboardHelper.shared.install() }
-        .task {
-            try? await Task.sleep(nanoseconds: 1_700_000_000)
-            store.finishSplash()
-        }
         .sheet(isPresented: $store.showDisclaimer) {
             NavigationStack {
                 ScrollView {

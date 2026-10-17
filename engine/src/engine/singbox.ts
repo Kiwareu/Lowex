@@ -75,7 +75,10 @@ export function genSingbox(s:State,plan?:Plan):string{
       case'ip':{if(r.name==='private')break;const direct=r.g.id==='cn';rules.push({rule_set:[rsAdd('ip',r.name)],...outbound(direct?tg(r.p):svc(r.g,r.p))});break}
     }
   }
-  const dnsServers:any[]=[...o.dnsCn.map((u,i)=>dohServer('dns-cn'+(i||''),u)),...o.dnsRemote.map((u,i)=>({...dohServer('dns-remote'+(i||''),u),detour:N.proxy})),
+  const bootIp=(o.dnsBootstrap&&o.dnsBootstrap[0])||'223.5.5.5';
+  const withBoot=(x:any)=>(x.type==='https'||x.type==='tls')&&!/^[\d.:]+$/.test(x.server)?{...x,domain_resolver:'dns-bootstrap'}:x;
+  const cnServers=o.cnDnsMode==='system'?[{type:'local',tag:'dns-cn'}]:o.dnsCn.map((u,i)=>withBoot(dohServer('dns-cn'+(i||''),u)));
+  const dnsServers:any[]=[{type:'udp',tag:'dns-bootstrap',server:bootIp},...cnServers,...o.dnsRemote.map((u,i)=>({...withBoot(dohServer('dns-remote'+(i||''),u)),detour:N.proxy})),
     ...(o.fakeIp?[{type:'fakeip',tag:'dns-fakeip',inet4_range:'198.18.0.0/15'}]:[]),{type:'local',tag:'dns-local'}];
   const dnsRules:any[]=[];
   if(o.homeDomain&&o.lanDns)dnsRules.push({domain_suffix:[o.homeDomain],action:'route',server:'dns-lan'});

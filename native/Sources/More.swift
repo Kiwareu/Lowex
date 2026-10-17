@@ -25,9 +25,9 @@ struct MoreView: View {
                                 Image(systemName: "paintpalette.fill").foregroundStyle(Brand.pink).frame(width: 28)
                                 Text(L("外观与主题（壁纸 / 玻璃 / 颜色）")).foregroundStyle(Brand.ink)
                                 Spacer()
-                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+                                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Brand.pink.opacity(0.8))
                             }
-                            .padding(14).softCard()
+                            .padding(Space.l).frame(minHeight: Space.tap).contentShape(Rectangle()).softCard()
                         }.buttonStyle(PressableStyle())
                         HStack(spacing: 12) {
                             Image(systemName: "globe").foregroundStyle(Brand.pink).frame(width: 28)
@@ -77,12 +77,14 @@ struct MoreView: View {
                 Image(systemName: icon).foregroundStyle(Brand.pink).frame(width: 28)
                 Text(title).foregroundStyle(Brand.ink)
                 Spacer()
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Brand.pink.opacity(0.8))
             }
-            .padding(14)
+            .padding(Space.l)
+            .frame(minHeight: Space.tap)
+            .contentShape(Rectangle())
             .softCard()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableStyle())
     }
 }
 

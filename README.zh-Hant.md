@@ -24,6 +24,7 @@
 - **匯出**：複製、系統分享、儲存到「檔案」、二維碼；多數客戶端支援 URL scheme 匯入（見 [docs/IMPORT-SCHEMES.md](docs/IMPORT-SCHEMES.md)）。
 - **外觀**：淺色 / 深色 / 跟隨系統、強調色、圓角、玻璃強度、漸變速度、字型、自定義桌布；啟動動畫和生成成功煙花（遵守「減弱動態效果」）。
 - **多語言（v1.6.0）**：介面支援 簡體中文 / 繁體中文（臺灣）/ 繁體中文（香港）/ English；預設跟隨系統語言，也可在「更多 → 語言」裡切換，立即生效。詳見 [docs/LOCALIZATION.md](docs/LOCALIZATION.md)。生成的配置正文與策略組名稱保持中文，不隨介面語言變化。
+- **網路環境（v1.7.0）**：按運營商 / 網路型別 / 所在地給出帶依據的推薦（國內 DoH、Bootstrap DNS、IPv6、MTU、QUIC），依據與可信度見 [docs/NETWORK-ENV.md](docs/NETWORK-ENV.md)。
 - **隱私**：全部在本機執行，無伺服器、無統計。
 
 ## 截圖 / Screenshots
@@ -55,7 +56,7 @@ xcodebuild -project LowexNative.xcodeproj -scheme LowexNative -configuration Rel
 或直接執行 GitHub Actions 的 *Build Lowex IPA*（macOS runner，輸出未簽名 IPA）。
 
 ## 版本 / Versioning
-版本號與 GitHub tag 一致：當前 **v1.6.0**（App 首頁顯示 `v1.6 (build 17)`）。舊的內部 3.6 版本線記為 v1.0.x，見 [CHANGELOG.md](CHANGELOG.md)。
+版本號與 GitHub tag 一致：當前 **v1.7.0**（App 首頁顯示 `v1.7 (build 18)`）。舊的內部 3.6 版本線記為 v1.0.x，見 [CHANGELOG.md](CHANGELOG.md)。
 
 ## FAQ
 - **為什麼沒有節點 / 訂閱？** 本工具不提供任何節點，只整理你自己的。
