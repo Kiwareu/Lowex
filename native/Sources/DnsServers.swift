@@ -104,7 +104,7 @@ struct DnsRow: View {
                     Text(hint).font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.leading)
                 }
                 Spacer(minLength: Space.s)
-                Text(summary).font(.footnote).foregroundStyle(Brand.pink).lineLimit(1).minimumScaleFactor(0.8)
+                Text(summary).font(.footnote).foregroundStyle(Brand.pink).lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.trailing).frame(maxWidth: 150, alignment: .trailing)
                 Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(Brand.pink.opacity(0.8))
             }
             .frame(minHeight: 40).contentShape(Rectangle())

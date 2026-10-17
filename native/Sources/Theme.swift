@@ -370,6 +370,7 @@ struct StepBadge: View {
             }
             Text(label).font(.caption.weight(active ? .semibold : .regular))
                 .foregroundStyle(active || done ? Brand.ink : .secondary)
+                .lineLimit(1).minimumScaleFactor(0.7)
         }
     }
 }
@@ -415,6 +416,22 @@ struct ChoiceTabs<T: Hashable>: View {
             }
         }
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// 两列网格：所有格子等宽等高；数量为奇数时最后一格占满整行，不留空洞。
+struct PairGrid<T: Identifiable, Cell: View>: View {
+    let items: [T]; var spacing: CGFloat = 8; let height: CGFloat
+    @ViewBuilder var cell: (T) -> Cell
+    var body: some View {
+        VStack(spacing: spacing) {
+            ForEach(Array(stride(from: 0, to: items.count, by: 2)), id: \.self) { i in
+                HStack(spacing: spacing) {
+                    cell(items[i]).frame(maxWidth: .infinity).frame(height: height)
+                    if i + 1 < items.count { cell(items[i + 1]).frame(maxWidth: .infinity).frame(height: height) }
+                }
+            }
+        }
     }
 }
 

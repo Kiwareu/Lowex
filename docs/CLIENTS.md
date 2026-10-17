@@ -18,7 +18,7 @@
 | Karing（sing-box 内核） | singbox | ios / android / windows / macos | 只能写进配置 | high | 是 | .json |
 | Surge | surge | ios / macos | 只能写进配置 | medium | 是 | .conf |
 | Quantumult X | qx | ios | 写进配置 或 App 内自己添加（可选） | high | 是 | .conf |
-| Shadowrocket（小火箭） | shadowrocket | ios / macos | 写进配置 或 App 内自己添加（可选） | medium | 是 | .conf |
+| Shadowrocket | shadowrocket | ios / macos | 写进配置 或 App 内自己添加（可选） | medium | 是 | .conf |
 | Loon | loon | ios | 只能写进配置 | high | 是 | .conf |
 | Stash | stash | ios / macos | 只能写进配置 | high | 是 | .yaml |
 | Egern | egern | ios / macos | 只能写进配置 | medium | 否/部分 | .yaml |
@@ -148,7 +148,7 @@
 - 导入步骤（App 内添加）：先在「设置 → 节点 → 引用」添加订阅（长按「节点」也可）；再导入生成的 conf。策略组用 server-tag-regex 按节点名里的地区收纳。
 - 来源：<https://github.com/crossutility/Quantumult-X/blob/master/url-scheme.md>、<https://raw.githubusercontent.com/crossutility/Quantumult-X/master/sample.conf>、<https://qx.atlucky.me/shi-yong-fang-fa/pei-zhi-wen-jian-xiang-jie/jie-dian/serverremote-jie-dian-zi-yuan>
 
-### Shadowrocket（小火箭）
+### Shadowrocket
 
 - 置信度：**medium**；一手来源核实：**是**
 - App 内添加订阅/节点：首页 ＋ → 类型 Subscribe → 粘贴 URL（可设备注、正则筛选、自动更新）；扫码 / 粘贴节点链接 / 手动填写；配置里的订阅分组：策略组可按订阅收纳
@@ -225,7 +225,7 @@
 
 不支持故障转移的客户端（sing-box、Karing）：App 里不显示「故障转移」选项，生成的配置里也不含该组；自动组使用 urltest。
 
-Karing 的自有分组能力未核实，按 sing-box 内核能力处理。QX / 小火箭 / Egern / Loon / Surge / Stash 没有离线校验器，未做真机验证。
+Karing 的自有分组能力未核实，按 sing-box 内核能力处理。QX / Shadowrocket / Egern / Loon / Surge / Stash 没有离线校验器，未做真机验证。
 
 ## Clash Mi「内置-不覆写」
 

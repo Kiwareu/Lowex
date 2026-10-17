@@ -64,7 +64,7 @@ export function makePlan(s:State):Plan{
   const parsed0=parseNodes(s.nodesText);const bad=parsed0.bad;
   const reOf=(x:string)=>{try{return x.trim()?new RegExp(x.trim(),'i'):null}catch{return null}};
   const inc=reOf(o.nodeInclude||''),exc=reOf(o.nodeExclude||'');
-  // 「在客户端 App 内自己添加」：只有订阅 / 节点能在 App 里全局生效、配置靠名称正则收纳的客户端（QX、小火箭）支持
+  // 「在客户端 App 内自己添加」：只有订阅 / 节点能在 App 里全局生效、配置靠名称正则收纳的客户端（QX、Shadowrocket）支持
   const appMode=s.nodeMode==='app'&&RESEARCH[client.id]?.placement==='both';
   const parsedOk=parsed0.nodes.filter(n=>(!inc||inc.test(n.name))&&(!exc||!exc.test(n.name)));
   // 手动节点：不受包含 / 排除过滤；客户端写不出的会被剔除并给出原因
@@ -168,8 +168,8 @@ export function makePlan(s:State):Plan{
   if(!appMode&&!subs.length&&!nodes.length&&client.subInConfig)warnings.push('还没有填订阅或节点：配置里使用了占位符 {{SUB_URL_1}}，导入前请替换。');
   warnings.push(...manualWarn);
   if(client.family==='shadowrocket'&&!appMode){
-    if(subs.length||parsedOk.length)warnings.push('小火箭：本配置不会写入节点链接或订阅 URL（只会写入手动添加的 SOCKS5/HTTP 节点）。请在 Shadowrocket 首页单独添加节点/订阅；策略组用正则从 App 内节点自动收纳。');
-    else warnings.push('小火箭：请先在 App 首页添加节点或订阅，再导入本配置（只含规则与策略组）。');
+    if(subs.length||parsedOk.length)warnings.push('Shadowrocket：本配置不会写入节点链接或订阅 URL（只会写入手动添加的 SOCKS5/HTTP 节点）。请在 Shadowrocket 首页单独添加节点/订阅；策略组用正则从 App 内节点自动收纳。');
+    else warnings.push('Shadowrocket：请先在 App 首页添加节点或订阅，再导入本配置（只含规则与策略组）。');
   }
   if(client.family==='singbox'&&!nodes.length)warnings.push('sing-box / Karing 没有订阅字段：请粘贴节点链接或订阅正文（ss://、vmess://、vless:// 等），单独的订阅 URL 无法写进 JSON。');
   void customDirect;

@@ -226,7 +226,7 @@ final class Store: ObservableObject {
     var nodeModeHint: String {
         switch family {
         case "shadowrocket":
-            return L("小火箭特殊：节点/订阅必须在 App「首页」单独添加，本配置只写规则与策略组（用正则按地区名收纳首页节点）。此处粘贴不会写进 .conf。")
+            return L("Shadowrocket 特殊：节点/订阅必须在 App「首页」单独添加，本配置只写规则与策略组（用正则按地区名收纳首页节点）。此处粘贴不会写进 .conf。")
         case "singbox":
             return L("sing-box / Karing 无订阅字段：请粘贴节点链接（ss://、vmess://、vless://、trojan:// 等）或订阅正文；单独的 https 订阅 URL 无法写进 JSON。")
         case "surge":
@@ -324,10 +324,10 @@ final class Store: ObservableObject {
             // 不写入配置；仅提示用户去 App 添加
             if !urls.isEmpty {
                 UIPasteboard.general.string = urls.joined(separator: "\n")
-                pasteNote = L("已复制 {} 条订阅 URL 到剪贴板。请打开小火箭首页 → 右上角 + → 用「类型：Subscribe」添加。本 conf 不会包含这些 URL。", urls.count)
+                pasteNote = L("已复制 {} 条订阅 URL 到剪贴板。请打开 Shadowrocket 首页 → 右上角 + → 用「类型：Subscribe」添加。本 conf 不会包含这些 URL。", urls.count)
             } else if !body.isEmpty {
                 UIPasteboard.general.string = body.joined(separator: "\n")
-                pasteNote = L("已复制节点正文到剪贴板。请在小火箭首页手动添加；本 conf 只含规则与策略组。")
+                pasteNote = L("已复制节点正文到剪贴板。请在 Shadowrocket 首页手动添加；本 conf 只含规则与策略组。")
             } else {
                 pasteNote = L("没有可识别内容。")
             }
@@ -473,7 +473,7 @@ final class Store: ObservableObject {
         return f.joined(separator: " · ")
     }
 
-    /// 同时支持「写入配置」与「在客户端 App 内自己添加」的客户端（QX、小火箭）
+    /// 同时支持「写入配置」与「在客户端 App 内自己添加」的客户端（QX、Shadowrocket）
     var nodeModeChoice: Bool { clientInfo?.placement == "both" }
     var nodeMode: String { nodeModeChoice && str("nodeMode") == "app" ? "app" : "config" }
     var appMode: Bool { nodeMode == "app" }
@@ -539,7 +539,7 @@ final class Store: ObservableObject {
     // MARK: 流程进度
     var hasNodes: Bool { !nodesText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !subs.isEmpty || manualActiveCount > 0 }
     var stepClientDone: Bool { clientInfo != nil && (clientInfo?.platforms.contains(platform) ?? false) }
-    /// 小火箭的节点在 App 内添加，这一步对本 App 视为「无需」，计为完成
+    /// Shadowrocket 的节点在 App 内添加，这一步对本 App 视为「无需」，计为完成
     var stepNodesDone: Bool { (family == "shadowrocket" || appMode) ? true : hasNodes }
     var stepRulesDone: Bool { catalog.groups.contains { isOn($0) } }
     var stepGenerateDone: Bool { !result.text.isEmpty }

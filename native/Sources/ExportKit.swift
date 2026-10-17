@@ -80,7 +80,7 @@ enum ClientOpen {
     }
     static func hint(for client: String) -> String? {
         switch client {
-        case "shadowrocket": return L("小火箭：先在首页加节点 / 订阅，再导入 conf。策略组靠正则收纳，conf 内不含节点。")
+        case "shadowrocket": return L("Shadowrocket：先在首页加节点 / 订阅，再导入 conf。策略组靠正则收纳，conf 内不含节点。")
         case "surge": return L("Surge：配置 → 新建 → 从文件 / 粘贴导入。")
         case "qx": return L("Quantumult X：设置 → 配置文件 → 下载 / 编辑，粘贴或导入。")
         case "loon": return L("Loon：配置 → 新建 → 本地文件。")
@@ -144,7 +144,7 @@ struct GenerateView: View {
                 PlainCard {
                     Text(L("还没有生成结果")).font(.subheadline.weight(.medium))
                     Text(store.family == "shadowrocket"
-                         ? L("小火箭可直接生成：配置只含规则与策略组。请先在 App 首页加好节点。")
+                         ? L("Shadowrocket 可直接生成：配置只含规则与策略组。请先在 App 首页加好节点。")
                          : L("即使不粘贴节点也可以生成（部分客户端会留订阅占位）；导入后再补节点。"))
                         .font(.footnote).foregroundStyle(.secondary)
                 }
@@ -275,7 +275,7 @@ struct GenerateView: View {
         VStack(alignment: .leading, spacing: 4) {
             Label((store.platform == "windows" ? "Windows" : (store.platform == "android" ? "Android" : "iOS")) + " · " + (store.clientInfo?.name ?? store.client), systemImage: "app.badge")
             Label(L("配置名 {}", store.profileName), systemImage: "doc.badge.gearshape")
-            Label(store.family == "shadowrocket" ? L("节点：请在小火箭首页添加")
+            Label(store.family == "shadowrocket" ? L("节点：请在 Shadowrocket 首页添加")
                   : (store.stepNodesDone ? L("已含节点 / 订阅") : L("未粘贴节点（仍可生成）")),
                   systemImage: store.stepNodesDone ? "checkmark.circle" : "info.circle")
             Label(store.stepRulesHint, systemImage: "list.bullet")
@@ -290,7 +290,7 @@ struct GenerateView: View {
 
     private func actionBtn(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
         Button(action: { Haptics.light(); action() }) {
-            Label(title, systemImage: icon).font(.caption.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 10)
+            Label(title, systemImage: icon).font(.caption.weight(.semibold)).lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.center).frame(maxWidth: .infinity, minHeight: 36)
         }
         .buttonStyle(.bordered)
     }

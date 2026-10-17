@@ -323,7 +323,7 @@ struct NodesView: View {
     private var showManual: Bool { !store.appMode }
     private var hiddenNote: String? {
         if store.appMode { return nil }
-        if isSR { return L("小火箭的 conf 只能携带手动节点（[Proxy]）；订阅与节点链接请在 App 内添加，已隐藏这两块。") }
+        if isSR { return L("Shadowrocket 的 conf 只能携带手动节点（[Proxy]）；订阅与节点链接请在 App 内添加，已隐藏这两块。") }
         if !store.embedsSub { return L("{} 没有订阅字段，已隐藏订阅 URL 区；节点链接 / Base64 生成时展开写入。", store.clientInfo?.name ?? L("该客户端")) }
         return nil
     }
@@ -359,7 +359,7 @@ struct NodesView: View {
                     Text(L("节点放在哪里")).font(.headline)
                     ChoiceTabs(options: [("config", L("写入配置")), ("app", L("客户端内添加"))],
                                selection: Binding(get: { store.nodeMode }, set: { store.setNodeMode($0) }))
-                    Text(store.appMode ? appGuide : L("输入的内容会在生成时直接写进配置文件，导入后即可使用。{}", store.family == "shadowrocket" ? L("（小火箭 conf 只能带手动节点，订阅请选「在客户端 App 内自己添加」。）") : "")).font(.caption).foregroundStyle(.secondary)
+                    Text(store.appMode ? appGuide : L("输入的内容会在生成时直接写进配置文件，导入后即可使用。{}", store.family == "shadowrocket" ? L("（Shadowrocket conf 只能带手动节点，订阅请选「在客户端 App 内自己添加」。）") : "")).font(.caption).foregroundStyle(.secondary)
                 }
             }
 
@@ -426,23 +426,23 @@ struct NodesView: View {
             PlainCard {
                 Text(L("地区分组")).font(.headline)
                 Text(L("打开的地区会出现在规则出口与策略组里（含故转/自动/手动）。手动节点按名称里的地区关键词（如「香港」「日本」）归入对应地区。")).font(.caption).foregroundStyle(.secondary)
-                // 地区只有十来个：自适应宽度的胶囊网格，不跟随规则页的显示模式
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 6)], spacing: 6) {
-                    ForEach(store.catalog.regions) { r in
-                        let on = store.regions.contains(r.id)
-                        Button { Haptics.selection(); store.toggleRegion(r.id) } label: {
-                            HStack(spacing: 5) {
-                                RemoteIcon(url: r.icon, name: r.name, size: 18)
-                                Text(r.name).font(.footnote.weight(on ? .semibold : .regular)).lineLimit(1).minimumScaleFactor(0.8)
-                                Spacer(minLength: 0)
-                                if on { Image(systemName: "checkmark").font(.caption2.weight(.bold)).foregroundStyle(Brand.pink) }
-                            }
-                            .foregroundStyle(Brand.ink)
-                            .padding(.horizontal, 9).padding(.vertical, 8)
-                            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(on ? Brand.pink.opacity(0.14) : Color.primary.opacity(0.06)))
-                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Brand.pink.opacity(on ? 0.55 : 0), lineWidth: 1))
-                        }.buttonStyle(.plain)
-                    }
+                // 地区只有十来个：两列、尺寸一致的大卡片；数量为奇数时最后一个占满整行（不留空格），不跟随规则页的显示模式
+                PairGrid(items: store.catalog.regions, spacing: 8, height: 56) { r in
+                    let on = store.regions.contains(r.id)
+                    Button { Haptics.selection(); store.toggleRegion(r.id) } label: {
+                        HStack(spacing: 8) {
+                            RemoteIcon(url: r.icon, name: r.name, size: 30)
+                            Text(r.name).font(.subheadline.weight(on ? .semibold : .regular)).lineLimit(1).minimumScaleFactor(0.8)
+                            Spacer(minLength: 0)
+                            Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Brand.pink : Color.secondary.opacity(0.5))
+                        }
+                        .foregroundStyle(Brand.ink)
+                        .padding(.horizontal, 12)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(on ? Brand.pink.opacity(0.14) : Color.primary.opacity(0.06)))
+                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Brand.pink.opacity(on ? 0.55 : 0), lineWidth: 1.2))
+                        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }.buttonStyle(.plain)
                 }
             }
 
@@ -616,6 +616,7 @@ struct RulesView: View {
     @State private var onlyFav = false
     @State private var expanded: Set<String> = []
     @State private var policyTarget: Catalog.Group?
+    @State private var detailTarget: Catalog.Group?
     @ObservedObject private var ap = LayoutPrefs.shared
 
     enum RuleSection: String, CaseIterable, Identifiable {
@@ -627,8 +628,20 @@ struct RulesView: View {
         var title: String { L(rawValue) }
     }
 
+    /// 常用度排序（只影响界面顺序，不影响生成结果）：越常用越靠前，未列出的保持原顺序排在后面。
+    private static let popularity: [String: Int] = {
+        let order = ["ai", "ai-more", "telegram", "youtube", "netflix", "google", "apple", "microsoft", "discord", "twitter", "meta",
+                     "tiktok", "github", "steam", "disney", "spotify", "primevideo", "twitch", "reddit", "paypal", "bank-overseas",
+                     "crypto", "crypto-more", "xbox", "playstation", "epic", "nintendo", "blizzard", "onedrive", "cloudflare",
+                     "notion", "slack", "zoom", "dropbox", "linkedin", "signal", "amazon", "ebay", "docker", "npm", "gitlab",
+                     "wikimedia", "scholar", "bilibili", "games-cn", "pt", "p2p-private", "ads", "telemetry", "cn", "proxy-fallback"]
+        return Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+    }()
     var filteredGroups: [Catalog.Group] {
-        var list = store.catalog.groups
+        var list = store.catalog.groups.enumerated().sorted {
+            let a = Self.popularity[$0.element.id] ?? 1000 + $0.offset, b = Self.popularity[$1.element.id] ?? 1000 + $1.offset
+            return a < b
+        }.map { $0.element }
         if onlyFav { list = list.filter { store.favoriteIds.contains($0.id) } }
         if query.isEmpty { return list }
         return list.filter {
@@ -657,8 +670,8 @@ struct RulesView: View {
                     }
                     DensityBar()
                 }
+                // 三种模式各自是「全部同一种行」：单列 / 紧凑 = 每项一行；双列 = 每两项一行（奇数时最后一格留空，尺寸相同）
                 if ap.density == .dual {
-                    // 两列：按对分行放进同一个 LazyVStack（不嵌套 LazyVGrid），滚动时只实例化可见行
                     ForEach(pairs(filteredGroups), id: \.0.id) { pair in
                         HStack(alignment: .top, spacing: Space.s) {
                             row(pair.0)
@@ -696,6 +709,7 @@ struct RulesView: View {
                 Button(L("{} 节点", r.name)) { store.setGroup(g, policy: "R:" + r.id) }
             }
         } message: { g in Text(g.name) }
+        .sheet(item: $detailTarget) { g in GroupDetailSheet(group: g, cat: store.catalog.cats[g.cat] ?? g.cat) }
     }
 
     private func pairs(_ l: [Catalog.Group]) -> [(Catalog.Group, Catalog.Group?)] {
@@ -720,6 +734,7 @@ struct RulesView: View {
             density: ap.density, open: expanded.contains(g.id),
             onOpen: {
                 Haptics.light()
+                if ap.density == .dual { detailTarget = g; return }     // 双列：弹出详情，不撑高单元格
                 withAnimation(.easeInOut(duration: 0.2)) {
                     if expanded.contains(g.id) { expanded.remove(g.id) } else { expanded.insert(g.id) }
                 }
@@ -727,11 +742,11 @@ struct RulesView: View {
             onFav: { store.toggleFavorite(g.id) },
             onOn: { store.setGroup(g, on: $0) },
             onPolicy: { policyTarget = g }
-        ).equatable()
+        ).equatable().id(g.id + ap.density.rawValue)   // 模式变化时该行整体重建，不保留旧样式
     }
 }
 
-/// 服务分组行（三种密度）。已开启的项有品牌色底色 + 描边。
+/// 服务分组行（三种密度，同一模式下所有行尺寸一致；只有用户主动展开详情时单列 / 紧凑行才会变高）。
 struct GroupRow: View, Equatable {
     let name: String, icon: String?, cat: String, detail: [String]
     let on: Bool, policy: String, fav: Bool, density: LayoutDensity, open: Bool
@@ -740,61 +755,85 @@ struct GroupRow: View, Equatable {
         a.name == b.name && a.icon == b.icon && a.cat == b.cat && a.detail == b.detail && a.on == b.on
             && a.policy == b.policy && a.fav == b.fav && a.density == b.density && a.open == b.open
     }
-    private var radius: CGFloat { max(8, Brand.radius * 0.7) }
+    private var radius: CGFloat { max(10, Brand.radius * 0.7) }
+    private var rowHeight: CGFloat { density == .single ? 60 : (density == .compact ? 44 : 84) }
 
     var body: some View {
-        let d = density
-        VStack(alignment: .leading, spacing: 2) {
-            if d == .dual {
-                HStack(spacing: 4) { title; starButton }
-                HStack(spacing: 4) {
-                    if on { policyChip } else { Text(L("未启用")).font(.caption2).foregroundStyle(.secondary) }
-                    Spacer(minLength: 0)
-                    toggle
-                }
-            } else {
-                HStack(spacing: Space.s) {
-                    title
-                    if d == .compact && on { policyChip }
-                    starButton
-                    toggle
-                }
-                if d == .single && on { HStack { policyChip; Spacer() } }
+        VStack(alignment: .leading, spacing: 4) {
+            Group {
+                if density == .dual { dualBody } else { lineBody }
             }
-            if open && !detail.isEmpty {
+            .frame(height: rowHeight)
+            if open && density != .dual && !detail.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(detail, id: \.self) { Text($0).font(.caption2).foregroundStyle(.secondary) }
                 }
-                .padding(.top, 2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 8)
             }
         }
-        .padding(.horizontal, Space.s + 2).padding(.vertical, d == .single ? 6 : 3)
+        .padding(.horizontal, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Color.white.opacity(0.28)))
         .background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Brand.pink.opacity(on ? 0.12 : 0)))
         .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(on ? Brand.pink.opacity(0.55) : Color.white.opacity(0.4), lineWidth: on ? 1.2 : 0.6))
     }
 
-    private var title: some View {
-        Button(action: onOpen) {
-            HStack(spacing: 6) {
-                RemoteIcon(url: icon, name: name, size: density == .single ? 26 : 22)
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(name).font(density == .single ? .subheadline.weight(.semibold) : .footnote.weight(.semibold))
-                        .foregroundStyle(Brand.ink).lineLimit(density == .dual ? 2 : 1)
-                    if density == .single { Text(cat).font(.caption2).foregroundStyle(.secondary) }
+    /// 单列 / 紧凑：图标 + 名称（单列多一行分类）+ 出口 + 收藏 + 开关，一行
+    private var lineBody: some View {
+        HStack(spacing: 6) {
+            Button(action: onOpen) {
+                HStack(spacing: 8) {
+                    RemoteIcon(url: icon, name: name, size: density == .single ? 30 : 24)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(name).font(density == .single ? .subheadline.weight(.semibold) : .footnote.weight(.semibold))
+                            .foregroundStyle(Brand.ink).lineLimit(1).minimumScaleFactor(0.8)
+                        if density == .single { Text(cat).font(.caption2).foregroundStyle(.secondary).lineLimit(1) }
+                    }
+                    Spacer(minLength: 0)
+                    if !detail.isEmpty { ChevronBadge(open: open) }
                 }
-                if density != .dual { Spacer(minLength: 0) }
-                if !detail.isEmpty && density != .dual { ChevronBadge(open: open) }
-            }
-            .frame(maxWidth: .infinity, minHeight: density == .single ? 38 : 30, alignment: .leading)
-            .contentShape(Rectangle())
-        }.buttonStyle(.plain)
+                .frame(maxHeight: .infinity).contentShape(Rectangle())
+            }.buttonStyle(.plain)
+            if on { policyChip }
+            starButton
+            toggle
+        }
     }
+
+    /// 双列：上排图标 + 名称（固定两行高）+ 收藏；下排出口 / 未启用 + 开关；有详情时右上角 ⓘ 弹出详情
+    private var dualBody: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .top, spacing: 6) {
+                Button(action: onOpen) {
+                    HStack(spacing: 6) {
+                        RemoteIcon(url: icon, name: name, size: 24)
+                        Text(name).font(.footnote.weight(.semibold)).foregroundStyle(Brand.ink)
+                            .lineLimit(2).minimumScaleFactor(0.85).multilineTextAlignment(.leading)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading).contentShape(Rectangle())
+                }.buttonStyle(.plain)
+                if !detail.isEmpty {
+                    Button(action: onOpen) { Image(systemName: "info.circle").font(.footnote).foregroundStyle(.secondary).frame(width: 24, height: 30) }
+                        .buttonStyle(.plain)
+                }
+                starButton
+            }
+            HStack(spacing: 4) {
+                if on { policyChip } else { Text(L("未启用")).font(.caption2).foregroundStyle(.secondary) }
+                Spacer(minLength: 0)
+                toggle
+            }
+            .frame(height: 34)
+        }
+        .padding(.top, 4)
+    }
+
     private var starButton: some View {
         Button(action: onFav) {
             Image(systemName: fav ? "star.fill" : "star").foregroundStyle(Brand.pink).font(.footnote)
-                .frame(width: 26, height: 30)
+                .frame(width: 32, height: 36).contentShape(Rectangle())
         }.buttonStyle(.plain)
     }
     private var toggle: some View {
@@ -804,13 +843,41 @@ struct GroupRow: View, Equatable {
     private var policyChip: some View {
         Button(action: onPolicy) {
             HStack(spacing: 2) {
-                Text(policy).lineLimit(1)
+                Text(policy).lineLimit(1).minimumScaleFactor(0.8)
                 Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .bold))
             }
             .font(.caption2.weight(.semibold)).foregroundStyle(Brand.pink)
-            .padding(.horizontal, 7).padding(.vertical, 3)
+            .padding(.horizontal, 8).padding(.vertical, 5)
             .background(Brand.pink.opacity(0.12), in: Capsule())
+            .frame(maxWidth: 110)
         }.buttonStyle(.plain)
+    }
+}
+
+/// 分组详情（双列模式下点名称 / ⓘ 弹出）。
+struct GroupDetailSheet: View {
+    let group: Catalog.Group; let cat: String
+    @Environment(\.presentationMode) private var pm
+    var body: some View {
+        NavStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Space.m) {
+                    HStack(spacing: Space.m) {
+                        RemoteIcon(url: group.icon, name: group.name, size: 40)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(group.name).font(.headline).foregroundStyle(Brand.ink)
+                            Text(cat).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    if let n = group.notes, !n.isEmpty { Text(n).font(.footnote) }
+                    if let r = group.risk, !r.isEmpty { Text(L("误判拦截风险：{}", r)).font(.footnote).foregroundStyle(.secondary) }
+                }
+                .padding(Space.l).frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .background(PinkBackground())
+            .navigationTitle(group.name).navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("完成")) { pm.wrappedValue.dismiss() } } }
+        }
     }
 }
 
@@ -882,25 +949,23 @@ struct ClientGrid: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(L("当前选择：{} · {}", platformLabel, store.clientInfo?.name ?? "—"))
                 .font(.caption.weight(.semibold)).foregroundStyle(Brand.pink)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 8)], spacing: 8) {
-                ForEach(store.clientsForPlatform) { c in
-                    let on = store.client == c.id
-                    Button {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) { store.setClient(c.id) }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: on ? "checkmark.circle.fill" : "circle").font(.footnote)
-                            Text(c.name).font(.footnote.weight(.semibold)).lineLimit(2).multilineTextAlignment(.leading)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, 10).padding(.vertical, 10)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                        .foregroundStyle(on ? Color.white : Brand.ink)
-                        .background(on ? Brand.pink : Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            PairGrid(items: store.clientsForPlatform, spacing: 8, height: 52) { c in
+                let on = store.client == c.id
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) { store.setClient(c.id) }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: on ? "checkmark.circle.fill" : "circle").font(.footnote)
+                        Text(c.name).font(.footnote.weight(.semibold)).lineLimit(2).minimumScaleFactor(0.85).multilineTextAlignment(.leading)
+                        Spacer(minLength: 0)
                     }
-                    .buttonStyle(PressableStyle())
+                    .padding(.horizontal, 10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                    .foregroundStyle(on ? Color.white : Brand.ink)
+                    .background(on ? Brand.pink : Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
+                .buttonStyle(PressableStyle())
             }
         }
     }
