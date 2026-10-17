@@ -7,6 +7,7 @@ struct BackupView: View {
     @EnvironmentObject var store: Store
     @State private var includeNodes = false
     @State private var exporting = false
+    @State private var sharing = false
     @State private var importing = false
     @State private var note = ""
 
@@ -29,7 +30,7 @@ struct BackupView: View {
                 HStack {
                     Button { exporting = true } label: { Label(L("导出备份"), systemImage: "square.and.arrow.up") }.buttonStyle(.borderedProminent).tint(Brand.pink)
                     Button { importing = true } label: { Label(L("导入备份"), systemImage: "square.and.arrow.down") }.buttonStyle(.bordered)
-                    ShareLink(item: backupText) { Label(L("分享"), systemImage: "square.and.arrow.up.on.square") }.buttonStyle(.bordered)
+                    Button { sharing = true } label: { Label(L("分享"), systemImage: "square.and.arrow.up.on.square") }.buttonStyle(.bordered)
                 }
                 if !note.isEmpty { Text(note).font(.caption).foregroundStyle(.secondary) }
             }
@@ -39,6 +40,7 @@ struct BackupView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
+        .sheet(isPresented: $sharing) { ActivityView(items: [backupText]) }
         .fileExporter(isPresented: $exporting, document: ConfigDocument(text: backupText), contentType: .json,
                       defaultFilename: "Lowex-backup") { r in
             switch r { case .success: note = L("已保存备份到「文件」"); case .failure(let e): note = L("保存失败：{}", e.localizedDescription) }
