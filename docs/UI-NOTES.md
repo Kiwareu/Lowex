@@ -40,7 +40,7 @@
 - 列表密度只在规则页切换（`LayoutPrefs`，独立小对象）；从「更多」与外观设置移除。之前它挂在 `Appearance.revision` 上，每次切换都会 `.id()` 重建整个界面树，是滚动卡顿的一个来源。
 - 规则页性能：行 `GroupRow` 只吃值类型并 `.equatable()`；出口选择用一个 `confirmationDialog` 代替每行一个 `Picker(.menu)`；双列按对分行放进同一个 `LazyVStack`（不嵌套 `LazyVGrid`）；滚动期间 `ScrollActivity` 暂停背景网格渐变（15fps）。未做 Instruments 实测。
 - 节点页地区分组：自适应宽度的胶囊网格，与规则页显示模式无关。
-- DNS：国内 / 海外各一行摘要，点开弹层多选；自定义地址与 Bootstrap 在折叠的「高级」里，文案区分「服务器列表」「当前网络自带 DNS」「Bootstrap」三个概念。
+- DNS：本地 / 海外各一行摘要，点开弹层多选；自定义地址与 Bootstrap 在折叠的「高级」里，文案区分「服务器列表」「当前网络自带 DNS」「Bootstrap」三个概念。
 
 ## v1.4.2 一致性规则
 

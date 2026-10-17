@@ -5,7 +5,7 @@ struct DnsServer: Identifiable {
     let id: String
     let name: String
     let url: String
-    let overseas: Bool          // true = 海外（经代理访问）；false = 国内（直连）
+    let overseas: Bool          // true = 海外（经代理访问）；false = 本地（直连）
     let note: String
 }
 
@@ -154,7 +154,7 @@ struct DnsPickerSheet: View {
                                     Text(s.note).font(.caption2).foregroundStyle(.secondary)
                                 }
                                 Spacer(minLength: 0)
-                                Text(s.overseas ? L("海外") : L("国内")).font(.caption2.weight(.bold))
+                                Text(s.overseas ? L("海外") : L("本地")).font(.caption2.weight(.bold))
                                     .padding(.horizontal, 6).padding(.vertical, 2)
                                     .background((s.overseas ? Brand.lilac : Brand.pink).opacity(0.18), in: Capsule())
                                     .foregroundStyle(s.overseas ? Brand.lilac : Brand.pink)
@@ -213,7 +213,7 @@ struct DnsAdvanced: View {
                 Text(L("填你自己的 DNS 服务器，例如自建或公司提供的 DoH 地址（https://…）、DoT 地址（tls://…）或 IP。它会和上面勾选的服务器一起使用，不会替换它们；想只用自己的，请先在列表里取消其他项。"))
                     .font(.caption2).foregroundStyle(.secondary)
                 if store.supports("dnsRemote") {
-                    ChoiceTabs(options: [("dnsCn", L("用于国内域名")), ("dnsRemote", L("用于海外域名"))], selection: $target)
+                    ChoiceTabs(options: [("dnsCn", L("用于直连域名")), ("dnsRemote", L("用于海外域名"))], selection: $target)
                 }
                 HStack {
                     TextField("https://dns.example.com/dns-query", text: $draft)

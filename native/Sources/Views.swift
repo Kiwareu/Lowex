@@ -6,13 +6,13 @@ struct HomeView: View {
     @EnvironmentObject var store: Store
     @State private var showRecs = false
     private let networks = [
-        ("mobile", L("中国移动宽带")), ("telecom", L("中国电信宽带")), ("unicom", L("中国联通宽带")), ("cbn", L("中国广电宽带 / 5G")),
-        ("cell-cmcc", L("中国移动 手机流量")), ("cell-unicom", L("中国联通 手机流量")), ("cell-telecom", L("中国电信 手机流量")),
+        ("mobile", L("移动宽带")), ("telecom", L("电信宽带")), ("unicom", L("联通宽带")), ("cbn", L("广电宽带 / 5G")),
+        ("cell-cmcc", L("移动 手机流量")), ("cell-unicom", L("联通 手机流量")), ("cell-telecom", L("电信 手机流量")),
         ("cellular", L("其他蜂窝数据")), ("campus", L("校园网")), ("company", L("公司网络")),
         ("overseas", L("海外网络")), ("other", L("其他 / 不确定"))
     ]
     private let locations = [
-        ("cn", L("中国大陆")), ("hk", L("香港")), ("mo", L("澳门")), ("tw", L("台湾")), ("overseas", L("海外"))
+        ("cn", L("中国")), ("hk", L("香港")), ("mo", L("澳门")), ("tw", L("台湾")), ("overseas", L("海外"))
     ]
 
     var body: some View {
@@ -251,7 +251,7 @@ struct PresetButtons: View {
     }
 }
 
-/// DNS：国内 / 海外各一行（点开选择）、可选「用当前网络自带 DNS」、高级折叠区（自定义地址、Bootstrap）。
+/// DNS：本地 / 海外各一行（点开选择）、可选「用当前网络自带 DNS」、高级折叠区（自定义地址、Bootstrap）。
 struct DnsCard: View {
     @EnvironmentObject var store: Store
     @State private var advanced = false
@@ -259,15 +259,15 @@ struct DnsCard: View {
         if store.supports("dnsCn") {
             PlainCard {
                 SectionHeader(title: L("DNS"), subtitle: L("决定域名由谁来解析。默认已选好，一般不用改。依据见 docs/NETWORK-ENV.md。"))
-                DnsRow(title: L("国内域名"), hint: L("国内网站直连时用的公共 DNS"), key: "dnsCn", catalog: DnsCatalog.cn)
+                DnsRow(title: L("直连域名"), hint: L("本地网站直连时用的公共 DNS"), key: "dnsCn", catalog: DnsCatalog.cn)
                 if store.supports("dnsRemote") {
                     Divider().opacity(0.4)
                     DnsRow(title: L("海外域名"), hint: L("国外网站经代理解析时用的公共 DNS"), key: "dnsRemote", catalog: DnsCatalog.remote)
                 }
                 if store.supports("cnDnsMode") {
                     Divider().opacity(0.4)
-                    OptToggle(title: L("国内域名改用当前网络自带的 DNS"), key: "cnDnsMode", feature: "cnDnsMode", systemMode: true)
-                    Text(L("即运营商 / 校园网 / 公司网络分配给你的 DNS。DoH 被拦、或要解析内网域名时再开；它是明文 DNS，节点域名仍走 DoH。开启后「国内域名」那一行不再生效。"))
+                    OptToggle(title: L("直连域名改用当前网络自带的 DNS"), key: "cnDnsMode", feature: "cnDnsMode", systemMode: true)
+                    Text(L("即运营商 / 校园网 / 公司网络分配给你的 DNS。DoH 被拦、或要解析内网域名时再开；它是明文 DNS，节点域名仍走 DoH。开启后「直连域名」那一行不再生效。"))
                         .font(.caption2).foregroundStyle(.secondary)
                 }
                 Divider().opacity(0.4)

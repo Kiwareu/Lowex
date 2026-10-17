@@ -27,13 +27,13 @@ function leakBase(s:State):LeakItem[]{
     why:rich?(o.tun?`TUN 已开：所有 53 端口的 DNS 请求被内核接管（${sb?'hijack-dns':'dns-hijack any:53'}），再按 DoH 规则转发，不会以明文离开设备。`:'没开 TUN：只有设了系统代理的程序会走内核，其他程序的 DNS 仍可能明文发给运营商。请开启 TUN。'):`${c.name} 靠系统 VPN 接管流量，并用配置里的加密 DNS（DoH）；个别不走 VPN 的系统服务仍可能用系统 DNS，属客户端限制。`,
     link:[LEAK_SITES.dns,LEAK_SITES.dnsleaktest]});
   add({id:'dns-enc',group:'DNS',title:'DNS 使用 DoH / DoT 加密',status:dnsAllEnc?'ok':'partial',
-    why:dnsAllEnc?'配置里的国内、境外 DNS 都是 https:// 或 tls://，运营商只看得到「连了 DNS 服务器」，看不到查询内容。':'你填的 DNS 里有明文地址，请改成 https:// 或 tls:// 形式。',});
+    why:dnsAllEnc?'配置里的本地、境外 DNS 都是 https:// 或 tls://，运营商只看得到「连了 DNS 服务器」，看不到查询内容。':'你填的 DNS 里有明文地址，请改成 https:// 或 tls:// 形式。',});
   add({id:'dns-proxy',group:'DNS',title:'境外域名的 DNS 查询走代理发出',status:rich?'ok':'partial',
-    why:core?'respect-rules: true：DNS 连接也按分流规则走，境外 DoH 经代理发出，国内 DoH 直连；proxy-server-nameserver 只负责解析节点自己的域名，避免绕圈。':sb?'境外 DNS 服务器设了 detour 到代理出站；国内规则命中的域名走国内 DoH 直连。':'该客户端没有「DNS 随规则走代理」选项，境外域名的解析可能由国内 DoH 完成（不会泄露内容，但会暴露你在查什么域名给国内 DNS）。'});
+    why:core?'respect-rules: true：DNS 连接也按分流规则走，境外 DoH 经代理发出，直连 DoH 直连；proxy-server-nameserver 只负责解析节点自己的域名，避免绕圈。':sb?'境外 DNS 服务器设了 detour 到代理出站；本地规则命中的域名走直连 DoH 直连。':'该客户端没有「DNS 随规则走代理」选项，境外域名的解析可能由直连 DoH 完成（不会泄露内容，但会暴露你在查什么域名给直连 DNS）。'});
   add({id:'dns-mode',group:'DNS',title:'fake-ip（默认）或 redir-host',status:o.fakeIp?'ok':'partial',
-    why:o.fakeIp?'fake-ip：应用拿到的是假 IP，真正的 DNS 解析由代理端完成，最不容易泄漏，也更快。国内 / 局域网 / NTP / 连通性检测域名已加入 fake-ip-filter。':'当前是 redir-host（真实解析）：兼容性更好，但本地会先做一次真实 DNS 解析，泄漏面更大。仅在个别程序不兼容 fake-ip 时使用。'});
-  add({id:'dns-policy',group:'DNS',title:'nameserver-policy：国内与局域网域名分开解析',status:rich?'ok':'na',
-    why:rich?'国内域名用国内 DoH，局域网域名用系统 DNS，其余走境外加密 DNS；direct-nameserver 负责「直连」出口的域名解析。':'此客户端没有按域名指定 DNS 的字段。'});
+    why:o.fakeIp?'fake-ip：应用拿到的是假 IP，真正的 DNS 解析由代理端完成，最不容易泄漏，也更快。本地 / 局域网 / NTP / 连通性检测域名已加入 fake-ip-filter。':'当前是 redir-host（真实解析）：兼容性更好，但本地会先做一次真实 DNS 解析，泄漏面更大。仅在个别程序不兼容 fake-ip 时使用。'});
+  add({id:'dns-policy',group:'DNS',title:'nameserver-policy：本地与局域网域名分开解析',status:rich?'ok':'na',
+    why:rich?'直连域名用直连 DoH，局域网域名用系统 DNS，其余走境外加密 DNS；direct-nameserver 负责「直连」出口的域名解析。':'此客户端没有按域名指定 DNS 的字段。'});
   add({id:'ecs',group:'DNS',title:'ECS（EDNS Client Subnet）',status:'ok',
     why:'生成的配置不发送 ECS（mihomo 不加 #ecs= 参数、sing-box 不设 client_subnet），所以不会把你的真实网段带给 DNS 服务商。需要「让 CDN 就近返回」时，才建议手动加上代理出口所在地的网段，而不是你本地的。'});
   add({id:'ipv6',group:'IP',title:'IPv6 泄漏',status:o.ipv6?'off':'ok',
@@ -52,7 +52,7 @@ function leakBase(s:State):LeakItem[]{
     how:'Firefox：地址栏输入 about:config，把 media.peerconnection.enabled 设为 false（会让网页视频通话失效）。Chrome / Edge：没有内置开关，安装 uBlock Origin 并在设置里勾选「阻止 WebRTC 泄漏本地 IP」，或安装「WebRTC Leak Prevent」类扩展；Edge 还可在 edge://flags 搜索 WebRTC 相关选项。Safari / iOS：无需处理，系统不暴露局域网 IP。',
     link:[LEAK_SITES.webrtc,LEAK_SITES.ipleak]});
   add({id:'quic',group:'WebRTC',title:'QUIC（UDP 443）',status:o.blockQuic==='foreign'?'ok':'off',
-    why:o.blockQuic==='foreign'?'境外 QUIC 被拒绝，浏览器会回落到 TCP+TLS，更稳也更容易被规则识别；国内 QUIC 不拦。':'没有拦截 QUIC：节点不支持 UDP 或 UDP 不稳时，网页可能忽快忽慢。'});
+    why:o.blockQuic==='foreign'?'境外 QUIC 被拒绝，浏览器会回落到 TCP+TLS，更稳也更容易被规则识别；直连 QUIC 不拦。':'没有拦截 QUIC：节点不支持 UDP 或 UDP 不稳时，网页可能忽快忽慢。'});
   add({id:'lan',group:'本机/局域网',title:'控制端口与局域网暴露',status:o.allowLan?'off':'ok',
     why:o.allowLan?'allow-lan 已开：局域网内其他设备可以用你的代理，也可能扫到端口。':'只监听 127.0.0.1，随机控制密钥，控制 API 的跨域白名单只含本机与常用面板，不用 *。'});
   add({id:'process',group:'本机/局域网',title:'按进程 / 包名识别',status:rich?'ok':'na',
@@ -60,7 +60,7 @@ function leakBase(s:State):LeakItem[]{
   add({id:'captive',group:'其他',title:'强制门户 / 校时 / 连通性检测',status:core?'ok':'partial',
     why:core?'time.*.com、ntp.*.com、+.pool.ntp.org、connectivitycheck 等已加入 fake-ip-filter，不会因为假 IP 导致校时失败或系统误判「无网络」；校园网认证域名可在「规则 → 特殊网络」里填，会放在规则最前直连。':'已把 captive.apple.com 等放进跳过列表；校园网认证域名请在「特殊网络」填写。'});
   add({id:'sub-dl',group:'其他',title:'订阅 / 规则集的下载出口',status:core?'ok':'partial',
-    why:core?'「资源更新」组：首次默认直连，节点就绪后切到「一键代理」，之后不再直连暴露机场域名。':'该客户端的订阅更新走它自己的机制，无法单独指定出口。'});
+    why:core?'「资源更新」组：首次默认直连，节点就绪后切到「一键代理」，之后不再直连暴露服务商域名。':'该客户端的订阅更新走它自己的机制，无法单独指定出口。'});
   return out;
 }
 

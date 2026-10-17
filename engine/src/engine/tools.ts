@@ -71,7 +71,7 @@ export const PRESETS:Preset[]=[
    return{groups:only(ids,pol),opts:{...s.opts,unknown:'proxy',failover:true,ipv6:false,fakeIp:true,blockQuic:'foreign',stun:'proxy',ads:'lite',telemetry:true,trackers:true,urlTestInterval:1800}}}},
  {id:'antileak',name:'通用防泄漏',desc:'IPv6 关、境外 QUIC 拦、STUN 走代理、fake-ip + 广告/追踪/遥测拦截、故障转移开；保留常用服务组。对齐作者 DNS/防泄漏模板（无私人信息）。',apply:s=>({opts:{...s.opts,ipv6:false,fakeIp:true,tun:true,mtu:1420,blockQuic:'foreign',stun:'proxy',unknown:'proxy',ads:'lite',telemetry:true,trackers:true,failover:true,keepAlive:true,urlTestInterval:1800,icons:true},
    groups:only(['ai','youtube','netflix','disney','spotify','telegram','twitter','meta','discord','github','google','microsoft','apple','paypal','crypto','bilibili','steam','tiktok','onedrive','ads','telemetry','trackers','cn-bank-direct'],{onedrive:'DIRECT',microsoft:'DIRECT',apple:'DIRECT','cn-bank-direct':'DIRECT',ads:'REJECT',telemetry:'REJECT',trackers:'REJECT'})})},
- {id:'cn',name:'国内优先（省流量）',desc:'未知域名直连，只有被墙服务走代理：适合流量有限的套餐。',apply:s=>({groups:only(['ai','google','telegram','twitter','youtube','github','apple','microsoft','bilibili']),opts:{...s.opts,unknown:'direct',ads:'lite'}})},
+ {id:'cn',name:'直连优先（省流量）',desc:'未知域名直连，只有需要代理的服务走代理：适合流量有限的套餐。',apply:s=>({groups:only(['ai','google','telegram','twitter','youtube','github','apple','microsoft','bilibili']),opts:{...s.opts,unknown:'direct',ads:'lite'}})},
  {id:'all',name:'全开（不推荐）',desc:'把所有服务分组都打开，规则最多，仅用于测试。',apply:()=>({groups:Object.fromEntries(GROUPS.filter(g=>g.category!=='reject'&&g.id!=='games-cn'&&g.id!=='pt'&&g.id!=='p2p-private').map(g=>[g.id,{on:true,policy:g.def}]))})},
 ];
 

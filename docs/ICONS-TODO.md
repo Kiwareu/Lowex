@@ -17,7 +17,7 @@
 | AI（更多：Claude / Gemini / Grok 等） | `ai-more.png` | Gemini 星芒图标（组里还有 Claude / Grok 等） | 已补（Lowex-Icons） | 「AI（更多）」组图标 |
 | 金融科技 / 新银行 | `fintech.png` | Wise 图标（组里有多个品牌） | 已补（Lowex-Icons） | 「金融科技 / 新银行」组通用图标（如 Wise / Revolut / N26 的拼合或中性图标） |
 | 欧洲 / 国际银行与券商 | `bank-eu.png` | 通用银行图标（¥ 符号） | 已补（Lowex-Icons） | 「欧洲 / 国际银行与券商」组图标 |
-| 国内银行 / 支付 / 政务（直连） | `cn-bank-direct.png` | 银联 UnionPay 图标（只代表银联） | 已补（Lowex-Icons） | 「国内银行 / 支付 / 政务」组图标 |
+| 本地银行 / 支付 / 政务（直连） | `cn-bank-direct.png` | 银联 UnionPay 图标（只代表银联） | 已补（Lowex-Icons） | 「本地银行 / 支付 / 政务」组图标 |
 | 社交 / 去中心化（更多） | `social-more.png` | Bluesky 图标（只代表 Bluesky） | 已补（Lowex-Icons） | 「社交 / 去中心化」组图标 |
 | 隐私 / 密码 / 邮箱工具 | `privacy.png` | Proton Mail 图标（只代表 Proton） | 已补（Lowex-Icons） | 「隐私 / 密码 / 邮箱工具」组图标 |
 | 购物（更多海外） | `shop-more.png` | Etsy 图标（只代表 Etsy） | 已补（Lowex-Icons） | 「购物（更多海外）」组图标 |
@@ -92,7 +92,7 @@
 | `ai-more` | AI（更多：Claude / Gemini / Grok 等） | Koolson/Qure/…/IconSet/Color/AI.png | 已补（Lowex-Icons） |
 | `fintech` | 金融科技 / 新银行 | lige47/QuanX-icon-rule/…/icon/04ProxySoft/wise.png | 已补（Lowex-Icons） |
 | `bank-eu` | 欧洲 / 国际银行与券商 | luestr/IconResource/…/Other_icon/120px/Bank.png | 已补（Lowex-Icons） |
-| `cn-bank-direct` | 国内银行 / 支付 / 政务（直连） | Orz-3/mini/…/Color/unipay.png | 已补（Lowex-Icons） |
+| `cn-bank-direct` | 本地银行 / 支付 / 政务（直连） | Orz-3/mini/…/Color/unipay.png | 已补（Lowex-Icons） |
 | `social-more` | 社交 / 去中心化（更多） | lige47/QuanX-icon-rule/…/icon/04ProxySoft/BlueskySocial.png | 已补（Lowex-Icons） |
 | `media-more` | 影音 / 阅读（更多） | Koolson/Qure/…/IconSet/Color/Streaming.png | 已重绘（统一风格） |
 | `travel` | 出行 / 旅行 / 外卖 | Semporia/Hand-Painted-icon/…/Accommodation/Online_Booking.png | 已重绘（统一风格） |
