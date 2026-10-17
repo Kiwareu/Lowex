@@ -53,7 +53,7 @@ export function genSingbox(s:State,plan?:Plan):string{
   outs.push({type:'selector',tag:N.final,outbounds:[o.unknown==='proxy'?N.proxy:'direct',N.proxy,'direct'],default:o.unknown==='proxy'?N.proxy:'direct'});
   // rules
   const rs:Record<string,any>={};const rules:any[]=[{action:'sniff'},{protocol:'dns',action:'hijack-dns'}];
-  const rsAdd=(kind:'site'|'ip',name:string)=>{const t=(kind==='site'?'gs-':'gi-')+tag(name);if(!rs[t])rs[t]={type:'remote',tag:t,format:'binary',url:kind==='site'?MC.ssite(name):MC.sip(name),update_interval:o.lowMemory?'3d':'1d'};return t};
+  const rsAdd=(kind:'site'|'ip',name:string)=>{const t=(kind==='site'?'gs-':'gi-')+tag(name);if(!rs[t])rs[t]={type:'remote',tag:t,format:'binary',url:kind==='site'?MC.ssite(name):MC.sip(name),update_interval:o.lowMemory?'3d':'1d',download_detour:'direct'};return t};
   const act=(t:string)=>t==='REJECT'?{action:'reject'}:{action:'route',outbound:t};
   const outbound=(t:string)=>t==='REJECT'?{action:'reject'}:{outbound:t};
   const svc=(g:any,pol:string)=>{if(pol==='REJECT')return'REJECT';const x=p.services.find(y=>y.g.id===g.id);return x?x.g.name:tg(pol)};
@@ -64,7 +64,7 @@ export function genSingbox(s:State,plan?:Plan):string{
       case'ipcidr':rules.push({ip_cidr:[r.v],...outbound(tg(r.p))});break;
       case'process':rules.push({process_name:[r.v],...outbound(tg(r.p))});break;
       case'package':rules.push({package_name:[r.v],...outbound(tg(r.p))});break;
-      case'rset':{const t='cs-'+tag(r.id);rs[t]={type:'remote',tag:t,format:setFmt(r.url)==='srs'?'binary':'source',url:r.url,update_interval:o.lowMemory?'3d':'1d'};rules.push({rule_set:[t],...outbound(tg(r.p))});break}
+      case'rset':{const t='cs-'+tag(r.id);rs[t]={type:'remote',tag:t,format:setFmt(r.url)==='srs'?'binary':'source',url:r.url,update_interval:o.lowMemory?'3d':'1d',download_detour:'direct'};rules.push({rule_set:[t],...outbound(tg(r.p))});break}
       case'quic':rules.push({type:'logical',mode:'and',rules:[{network:'udp'},{port:443},{rule_set:[rsAdd('site','cn'),rsAdd('ip','cn')],invert:true}],action:'reject'});break;
       case'stun':rules.push({network:'udp',port:[3478,3479,5349],port_range:['19302:19309'],...outbound(tg(r.p))});break;
       case'wifi':rules.push({type:'logical',mode:'and',rules:[{network:'udp'},{port:[500,4500]},{domain_suffix:r.domains}],...outbound(tg(r.p))});rules.push({domain_suffix:r.domains,...outbound(tg(r.p))});break;
@@ -92,11 +92,10 @@ export function genSingbox(s:State,plan?:Plan):string{
     dns:{servers:dnsServers,rules:dnsRules,final:'dns-remote',reverse_mapping:true,...(o.ipv6?{}:{strategy:'ipv4_only'})},
     inbounds:[...(o.tun?[{type:'tun',tag:'tun-in',address:tunAddr,mtu:o.mtu,auto_route:true,strict_route:true,stack:'mixed'}]:[]),...(mobile?[]:[{type:'mixed',tag:'mixed-in',listen:o.allowLan?'0.0.0.0':'127.0.0.1',listen_port:o.mixedPort}])],
     outbounds:outs,
-    route:{rules,rule_set:Object.values(rs),final:N.final,default_domain_resolver:'dns-cn',auto_detect_interface:true,default_http_client:'dl',...(p.rules.some(r=>r.t==='process'||r.t==='package')?{find_process:true}:{})},
-    http_clients:[{tag:'dl',detour:'direct'}],
+    route:{rules,rule_set:Object.values(rs),final:N.final,default_domain_resolver:'dns-cn',auto_detect_interface:true,...(p.rules.some(r=>r.t==='process'||r.t==='package')?{find_process:true}:{})},
     experimental:{cache_file:{enabled:true,...(o.fakeIp?{store_fakeip:true}:{})}},
   };
-  const hdr=`// Lowex 生成 · sing-box 1.14 · ${new Date().toISOString().slice(0,10)}\n`;
+  const hdr=`// Lowex 生成 · sing-box 1.12+ · ${new Date().toISOString().slice(0,10)}\n`;
   void hdr;
   return JSON.stringify(cfg,null,2);
 }
