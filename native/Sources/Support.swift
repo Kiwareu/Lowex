@@ -18,7 +18,7 @@ final class KeyboardHelper: NSObject, UIGestureRecognizerDelegate {
     private lazy var bar: UIToolbar = {
         let tb = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 44))
         tb.sizeToFit()
-        let done = UIBarButtonItem(title: "完成", style: .done, target: self, action: #selector(dismissKeyboard))
+        let done = UIBarButtonItem(title: L("完成"), style: .done, target: self, action: #selector(dismissKeyboard))
         tb.items = [UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil), done]
         return tb
     }()

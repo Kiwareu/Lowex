@@ -12,11 +12,14 @@ struct LowexApp: App {
     }
     @StateObject private var store = Store()
     @StateObject private var appearance = Appearance.shared
+    @StateObject private var lang = Lang.shared
     var body: some Scene {
         WindowGroup {
             RootContainer()
                 .environmentObject(store)
                 .environmentObject(appearance)
+                .environmentObject(lang)
+                .environment(\.locale, lang.resolved.locale)
         }
     }
 }
@@ -24,9 +27,10 @@ struct LowexApp: App {
 struct RootContainer: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var appearance: Appearance
+    @EnvironmentObject var lang: Lang
     var body: some View {
         ZStack {
-            RootView().id(appearance.revision)
+            RootView().id("\(appearance.revision)-\(lang.revision)")
             ConfettiView(trigger: store.celebrate)
             if store.showSplash {
                 SplashView().allowsHitTesting(false).transition(.opacity).zIndex(5)
@@ -34,6 +38,7 @@ struct RootContainer: View {
         }
         .preferredColorScheme(appearance.scheme)
         .fontDesign(appearance.fontStyle.design)
+        .onChange(of: lang.revision) { _, _ in store.reloadLanguage() }
         .onChange(of: store.celebrate) { _, _ in Haptics.success() }
         .submitLabel(.done)
         .onSubmit { KeyboardHelper.shared.dismissKeyboard() }
@@ -46,10 +51,10 @@ struct RootContainer: View {
             NavigationStack {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("免责声明").font(.title2.weight(.bold))
+                        Text(L("免责声明")).font(.title2.weight(.bold))
                         Text(DisclaimerText.body).font(.footnote)
                         Button { store.acceptDisclaimer() } label: {
-                            Text("我已阅读并知悉上述内容").frame(maxWidth: .infinity).padding(.vertical, 12)
+                            Text(L("我已阅读并知悉上述内容")).frame(maxWidth: .infinity).padding(.vertical, 12)
                         }
                         .buttonStyle(.borderedProminent).tint(Brand.pink)
                     }
@@ -74,15 +79,15 @@ struct RootView: View {
     var body: some View {
         TabView(selection: $store.tab) {
             HomeView().tag(AppTab.home)
-                .tabItem { Label("首页", systemImage: "house.fill") }
+                .tabItem { Label(L("首页"), systemImage: "house.fill") }
             NodesView().tag(AppTab.nodes)
-                .tabItem { Label("节点", systemImage: "server.rack") }
+                .tabItem { Label(L("节点"), systemImage: "server.rack") }
             RulesView().tag(AppTab.rules)
-                .tabItem { Label("规则", systemImage: "list.bullet.rectangle") }
+                .tabItem { Label(L("规则"), systemImage: "list.bullet.rectangle") }
             GenerateView().tag(AppTab.generate)
-                .tabItem { Label("生成", systemImage: "sparkles") }
+                .tabItem { Label(L("生成"), systemImage: "sparkles") }
             MoreView().tag(AppTab.more)
-                .tabItem { Label("更多", systemImage: "ellipsis.circle") }
+                .tabItem { Label(L("更多"), systemImage: "ellipsis.circle") }
         }
         .tint(Brand.pink)
     }

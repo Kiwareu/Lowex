@@ -7,19 +7,19 @@ final class Appearance: ObservableObject {
     static let shared = Appearance()
     enum Mode: String, CaseIterable, Identifiable { case system, light, dark
         var id: String { rawValue }
-        var label: String { self == .system ? "跟随系统" : (self == .light ? "浅色" : "深色") } }
+        var label: String { self == .system ? L("跟随系统") : (self == .light ? L("浅色") : L("深色")) } }
     enum FontStyle: String, CaseIterable, Identifiable { case rounded, standard, serif, mono
         var id: String { rawValue }
-        var label: String { switch self { case .rounded: return "圆润"; case .standard: return "标准"; case .serif: return "衬线"; case .mono: return "等宽" } }
+        var label: String { switch self { case .rounded: return L("圆润"); case .standard: return L("标准"); case .serif: return L("衬线"); case .mono: return L("等宽") } }
         var design: Font.Design { switch self { case .rounded: return .rounded; case .standard: return .default; case .serif: return .serif; case .mono: return .monospaced } } }
 
-    static let swatches: [(String, Color)] = [
-        ("樱粉", Color(red: 0.95, green: 0.28, blue: 0.56)),
-        ("紫罗兰", Color(red: 0.56, green: 0.38, blue: 0.98)),
-        ("海蓝", Color(red: 0.12, green: 0.50, blue: 1.0)),
-        ("薄荷", Color(red: 0.08, green: 0.72, blue: 0.58)),
-        ("橘橙", Color(red: 1.0, green: 0.52, blue: 0.18)),
-        ("绯红", Color(red: 0.93, green: 0.22, blue: 0.30))
+    static var swatches: [(String, Color)] = [
+        (L("樱粉"), Color(red: 0.95, green: 0.28, blue: 0.56)),
+        (L("紫罗兰"), Color(red: 0.56, green: 0.38, blue: 0.98)),
+        (L("海蓝"), Color(red: 0.12, green: 0.50, blue: 1.0)),
+        (L("薄荷"), Color(red: 0.08, green: 0.72, blue: 0.58)),
+        (L("橘橙"), Color(red: 1.0, green: 0.52, blue: 0.18)),
+        (L("绯红"), Color(red: 0.93, green: 0.22, blue: 0.30))
     ]
 
     @Published var revision = 0
@@ -88,13 +88,13 @@ struct AppearanceView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 12) {
                         PlainCard {
-                            Text("主题").font(.headline)
-                            Picker("主题", selection: Binding(get: { ap.mode }, set: { ap.mode = $0 })) {
+                            Text(L("主题")).font(.headline)
+                            Picker(L("主题"), selection: Binding(get: { ap.mode }, set: { ap.mode = $0 })) {
                                 ForEach(Appearance.Mode.allCases) { Text($0.label).tag($0) }
                             }.pickerStyle(.segmented)
                         }
                         PlainCard {
-                            Text("强调色").font(.headline)
+                            Text(L("强调色")).font(.headline)
                             HStack(spacing: 12) {
                                 ForEach(0..<Appearance.swatches.count, id: \.self) { i in
                                     Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { ap.accentIndex = i } } label: {
@@ -105,45 +105,45 @@ struct AppearanceView: View {
                             }
                         }
                         PlainCard {
-                            Toggle("触感反馈", isOn: Binding(get: { ap.haptics }, set: { ap.haptics = $0; if $0 { Haptics.light() } })).tint(Brand.pink)
-                            Text("按钮、开关、选择与生成成功时的轻微震动。").font(.caption2).foregroundStyle(.secondary)
+                            Toggle(L("触感反馈"), isOn: Binding(get: { ap.haptics }, set: { ap.haptics = $0; if $0 { Haptics.light() } })).tint(Brand.pink)
+                            Text(L("按钮、开关、选择与生成成功时的轻微震动。")).font(.caption2).foregroundStyle(.secondary)
                         }
                         PlainCard {
-                            Text("字体").font(.headline)
-                            Picker("字体", selection: Binding(get: { ap.fontStyle }, set: { ap.fontStyle = $0 })) {
+                            Text(L("字体")).font(.headline)
+                            Picker(L("字体"), selection: Binding(get: { ap.fontStyle }, set: { ap.fontStyle = $0 })) {
                                 ForEach(Appearance.FontStyle.allCases) { Text($0.label).tag($0) }
                             }.pickerStyle(.segmented)
                         }
                         PlainCard {
-                            slider("圆角", value: $radius, range: 8...32, text: "\(Int(radius))") { ap.cornerRadius = CGFloat(radius) }
-                            slider("玻璃 / 模糊强度", value: $glass, range: 0...1, text: "\(Int(glass * 100))%") { ap.glassIntensity = glass }
-                            slider("背景渐变速度（0 = 静止）", value: $speed, range: 0...1.5, text: String(format: "%.1f×", speed)) { ap.gradientSpeed = speed }
-                            Text("松手后生效。开启系统「减弱动态效果」时背景自动静止。").font(.caption2).foregroundStyle(.secondary)
+                            slider(L("圆角"), value: $radius, range: 8...32, text: "\(Int(radius))") { ap.cornerRadius = CGFloat(radius) }
+                            slider(L("玻璃 / 模糊强度"), value: $glass, range: 0...1, text: "\(Int(glass * 100))%") { ap.glassIntensity = glass }
+                            slider(L("背景渐变速度（0 = 静止）"), value: $speed, range: 0...1.5, text: String(format: "%.1f×", speed)) { ap.gradientSpeed = speed }
+                            Text(L("松手后生效。开启系统「减弱动态效果」时背景自动静止。")).font(.caption2).foregroundStyle(.secondary)
                         }
                         PlainCard {
-                            Text("自定义壁纸").font(.headline)
+                            Text(L("自定义壁纸")).font(.headline)
                             HStack {
                                 PhotosPicker(selection: $pick, matching: .images) {
-                                    Label("从相册选择", systemImage: "photo.on.rectangle").frame(maxWidth: .infinity)
+                                    Label(L("从相册选择"), systemImage: "photo.on.rectangle").frame(maxWidth: .infinity)
                                 }.buttonStyle(.borderedProminent).tint(Brand.pink)
                                 if ap.wallpaper != nil {
-                                    Button(role: .destructive) { ap.clearWallpaper() } label: { Text("移除") }.buttonStyle(.bordered)
+                                    Button(role: .destructive) { ap.clearWallpaper() } label: { Text(L("移除")) }.buttonStyle(.bordered)
                                 }
                             }
-                            Text("图片只保存在本机（已压缩到长边 1600px），不上传。").font(.caption2).foregroundStyle(.secondary)
+                            Text(L("图片只保存在本机（已压缩到长边 1600px），不上传。")).font(.caption2).foregroundStyle(.secondary)
                         }
                         Button(role: .destructive) {
                             ap.resetAll()
                             radius = 20; glass = 0.6; speed = 0.6
-                        } label: { Label("恢复默认外观", systemImage: "arrow.counterclockwise").frame(maxWidth: .infinity) }
+                        } label: { Label(L("恢复默认外观"), systemImage: "arrow.counterclockwise").frame(maxWidth: .infinity) }
                             .buttonStyle(.bordered)
                     }
                     .padding(16)
                 }
             }
-            .navigationTitle("外观与主题")
+            .navigationTitle(L("外观与主题"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("完成")) { dismiss() } } }
             .onChange(of: pick) { _, item in
                 guard let item else { return }
                 Task {
@@ -190,7 +190,7 @@ struct SplashView: View {
                 }
                 .scaleEffect(appear ? 1 : 0.55)
                 .opacity(appear ? 1 : 0)
-                Text("本机生成 · 不上传")
+                Text(L("本机生成 · 不上传"))
                     .font(.footnote).foregroundStyle(.secondary)
                     .opacity(appear ? 1 : 0).offset(y: appear ? 0 : 12)
             }

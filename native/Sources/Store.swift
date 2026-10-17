@@ -5,7 +5,7 @@ import UIKit
 /// 方案以 [String: Any] 保存，字段与网页版 / 引擎一致，方案 JSON 可互通。
 final class Store: ObservableObject {
     let engine = Engine.shared
-    let catalog: Catalog
+    @Published var catalog: Catalog
     @Published var state: [String: Any] {
         didSet { if !result.text.isEmpty || result.error != nil { result = GenResult(text: "", name: "", warnings: []) } }
     }
@@ -96,6 +96,12 @@ final class Store: ObservableObject {
         }.resume()
     }
 
+    /// 切换界面语言后：重新取目录（组名 / 说明等由引擎提供的文案按新语言翻译）
+    func reloadLanguage() {
+        catalog = engine.catalog()
+        objectWillChange.send()
+    }
+
     func finishSplash() {
         withAnimation(.easeOut(duration: 0.45)) { showSplash = false }
         if needsDisclaimer { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.showDisclaimer = true } }
@@ -173,7 +179,7 @@ final class Store: ObservableObject {
         if !supports("wifi") { o["wifiCalling"] = false }
         s["opts"] = o
         if !nodeModeChoice, (s["nodeMode"] as? String) == "app" { s["nodeMode"] = "config" }
-        if !reset.isEmpty { notes.append("\(reset.count) 个当前客户端不支持的选项已恢复默认") }
+        if !reset.isEmpty { notes.append(L("{} 个当前客户端不支持的选项已恢复默认", reset.count)) }
         // 按应用规则：进程名只属于 Windows，包名只属于 Android
         let apps = (s["apps"] as? [[String: Any]]) ?? []
         let kept = apps.filter { a in
@@ -183,17 +189,17 @@ final class Store: ObservableObject {
             default: return true
             }
         }
-        if kept.count != apps.count { s["apps"] = kept; notes.append("\(apps.count - kept.count) 条不适用本系统的按应用规则已移除") }
+        if kept.count != apps.count { s["apps"] = kept; notes.append(L("{} 条不适用本系统的按应用规则已移除", apps.count - kept.count)) }
         // 模块只属于支持模块的客户端
         if !engine.supportsModules(client: client), let m = s["modules"] as? [Any], !m.isEmpty {
-            s["modules"] = []; notes.append("模块已清空（当前客户端不支持）")
+            s["modules"] = []; notes.append(L("模块已清空（当前客户端不支持）"))
         }
         state = s
         result = GenResult(text: "", name: "", warnings: [])
         pasteNote = ""
         qrNote = ""
         if !silent {
-            recommendNote = notes.isEmpty ? "" : "已按「\(clientInfo?.name ?? client)」调整：" + notes.joined(separator: "；") + "。"
+            recommendNote = notes.isEmpty ? "" : L("已按「{}」调整：", clientInfo?.name ?? client) + notes.joined(separator: "；") + "。"
         }
         save()
     }
@@ -209,21 +215,21 @@ final class Store: ObservableObject {
     var nodeModeHint: String {
         switch family {
         case "shadowrocket":
-            return "小火箭特殊：节点/订阅必须在 App「首页」单独添加，本配置只写规则与策略组（用正则按地区名收纳首页节点）。此处粘贴不会写进 .conf。"
+            return L("小火箭特殊：节点/订阅必须在 App「首页」单独添加，本配置只写规则与策略组（用正则按地区名收纳首页节点）。此处粘贴不会写进 .conf。")
         case "singbox":
-            return "sing-box / Karing 无订阅字段：请粘贴节点链接（ss://、vmess://、vless://、trojan:// 等）或订阅正文；单独的 https 订阅 URL 无法写进 JSON。"
+            return L("sing-box / Karing 无订阅字段：请粘贴节点链接（ss://、vmess://、vless://、trojan:// 等）或订阅正文；单独的 https 订阅 URL 无法写进 JSON。")
         case "surge":
-            return "Surge：订阅 URL 会写成 policy-path；节点链接会展开进 [Proxy]。也可导入后在 Surge 里再加订阅。"
+            return L("Surge：订阅 URL 会写成 policy-path；节点链接会展开进 [Proxy]。也可导入后在 Surge 里再加订阅。")
         case "qx":
-            return "Quantumult X：订阅写在 [server_remote]；节点写在 [server_local]。"
+            return L("Quantumult X：订阅写在 [server_remote]；节点写在 [server_local]。")
         case "loon":
-            return "Loon：订阅写在 [Remote Proxy]；节点写在 [Proxy]。"
+            return L("Loon：订阅写在 [Remote Proxy]；节点写在 [Proxy]。")
         case "stash", "mihomo":
-            return "Clash / Mihomo / Stash：订阅写成 proxy-providers；节点展开进 proxies。"
+            return L("Clash / Mihomo / Stash：订阅写成 proxy-providers；节点展开进 proxies。")
         case "egern":
-            return "Egern：订阅用 external 策略组收纳；节点展开进配置。"
+            return L("Egern：订阅用 external 策略组收纳；节点展开进配置。")
         default:
-            return "粘贴节点链接、订阅正文或（若客户端支持）订阅 URL。生成时按该客户端语法写入。"
+            return L("粘贴节点链接、订阅正文或（若客户端支持）订阅 URL。生成时按该客户端语法写入。")
         }
     }
 
@@ -307,12 +313,12 @@ final class Store: ObservableObject {
             // 不写入配置；仅提示用户去 App 添加
             if !urls.isEmpty {
                 UIPasteboard.general.string = urls.joined(separator: "\n")
-                pasteNote = "已复制 \(urls.count) 条订阅 URL 到剪贴板。请打开小火箭首页 → 右上角 + → 用「类型：Subscribe」添加。本 conf 不会包含这些 URL。"
+                pasteNote = L("已复制 {} 条订阅 URL 到剪贴板。请打开小火箭首页 → 右上角 + → 用「类型：Subscribe」添加。本 conf 不会包含这些 URL。", urls.count)
             } else if !body.isEmpty {
                 UIPasteboard.general.string = body.joined(separator: "\n")
-                pasteNote = "已复制节点正文到剪贴板。请在小火箭首页手动添加；本 conf 只含规则与策略组。"
+                pasteNote = L("已复制节点正文到剪贴板。请在小火箭首页手动添加；本 conf 只含规则与策略组。")
             } else {
-                pasteNote = "没有可识别内容。"
+                pasteNote = L("没有可识别内容。")
             }
             // 清空，避免误以为写进了方案
             s["subs"] = []
@@ -324,7 +330,7 @@ final class Store: ObservableObject {
         if family == "singbox" {
             // URL 对 sing-box 无用；只收节点正文
             if !urls.isEmpty && body.isEmpty {
-                pasteNote = "sing-box / Karing 不能把订阅 URL 写进 JSON。请先在别处下载订阅，把节点链接或 base64 正文粘贴到这里。"
+                pasteNote = L("sing-box / Karing 不能把订阅 URL 写进 JSON。请先在别处下载订阅，把节点链接或 base64 正文粘贴到这里。")
                 return
             }
             if !body.isEmpty {
@@ -334,9 +340,9 @@ final class Store: ObservableObject {
             }
             s["subs"] = []
             state = s
-            if !urls.isEmpty { pasteNote = "其中 \(urls.count) 条订阅 URL 已忽略（sing-box / Karing 不能写订阅 URL）。"; return }
+            if !urls.isEmpty { pasteNote = L("其中 {} 条订阅 URL 已忽略（sing-box / Karing 不能写订阅 URL）。", urls.count); return }
             let nLinks = ((s["nodesText"] as? String) ?? "").split(whereSeparator: \.isNewline).filter { $0.contains("://") }.count
-            pasteNote = "已写入节点正文" + (nLinks > 0 ? "（约 \(nLinks) 条链接）" : "") + "，生成时展开进 outbounds。"
+            pasteNote = L("已写入节点正文") + (nLinks > 0 ? L("（约 {} 条链接）", nLinks) : "") + L("，生成时展开进 outbounds。")
             return
         }
 
@@ -353,16 +359,16 @@ final class Store: ObservableObject {
         if !embedsSub { s["subs"] = [] }
         state = s
         var parts: [String] = []
-        if embedsSub && !urls.isEmpty { parts.append("\(urls.count) 条订阅 URL（将写进配置）") }
+        if embedsSub && !urls.isEmpty { parts.append(L("{} 条订阅 URL（将写进配置）", urls.count)) }
         let nLinks = ((s["nodesText"] as? String) ?? "").split(whereSeparator: \.isNewline).filter { $0.contains("://") }.count
-        if nLinks > 0 { parts.append("约 \(nLinks) 条节点链接") }
-        else if !body.isEmpty { parts.append("节点正文") }
-        pasteNote = parts.isEmpty ? "没有可识别内容。" : "已写入 " + parts.joined(separator: " · ") + "。"
+        if nLinks > 0 { parts.append(L("约 {} 条节点链接", nLinks)) }
+        else if !body.isEmpty { parts.append(L("节点正文")) }
+        pasteNote = parts.isEmpty ? L("没有可识别内容。") : L("已写入 ") + parts.joined(separator: " · ") + "。"
     }
 
     func clearNodes() {
         var s = state; s["subs"] = []; s["nodesText"] = ""; state = s
-        pasteNote = "已清空节点与订阅。"
+        pasteNote = L("已清空节点与订阅。")
         result = GenResult(text: "", name: "", warnings: [])
     }
 
@@ -389,14 +395,14 @@ final class Store: ObservableObject {
         state = fresh
         result = GenResult(text: "", name: "", warnings: [])
         pasteNote = ""
-        recommendNote = "已恢复默认选项（保留客户端与配置名）。"
+        recommendNote = L("已恢复默认选项（保留客户端与配置名）。")
         save()
     }
 
     // MARK: 推荐 / 生成
     func applyPreset(_ id: String) {
         guard let patched = engine.applyPreset(id: id, state: state) else {
-            recommendNote = "预设应用失败。"
+            recommendNote = L("预设应用失败。")
             return
         }
         var s = patched
@@ -406,7 +412,7 @@ final class Store: ObservableObject {
         s["platform"] = state["platform"] ?? "ios"
         state = s
         reconcile(silent: true)
-        recommendNote = "已应用预设。"
+        recommendNote = L("已应用预设。")
     }
 
     func applyRecommend() {
@@ -420,7 +426,7 @@ final class Store: ObservableObject {
             var s = state; s["regions"] = regs; state = s
         }
         let n = (r["list"] as? [[String: Any]])?.count ?? 0
-        recommendNote = "已按所选网络与地区应用 \(n) 项推荐。"
+        recommendNote = L("已按所选网络与地区应用 {} 项推荐。", n)
         save()
     }
 
@@ -471,9 +477,9 @@ final class Store: ObservableObject {
         pasteNote = ""; save()
     }
     var unsupportedOptionNames: [String] {
-        let all: [(String, String)] = [("故障转移", "failover"), ("广告拦截", "ads"), ("拦截追踪器", "trackers"), ("拦截遥测", "telemetry"),
-            ("策略组图标", "icons"), ("关闭 IPv6", "ipv6"), ("TUN", "tun"), ("fake-ip", "fakeIp"), ("QUIC 拦截", "quic"), ("STUN 防护", "stun"),
-            ("局域网连接", "allowLan"), ("Wi-Fi 通话", "wifi")]
+        let all: [(String, String)] = [(L("故障转移"), "failover"), (L("广告拦截"), "ads"), (L("拦截追踪器"), "trackers"), (L("拦截遥测"), "telemetry"),
+            (L("策略组图标"), "icons"), (L("关闭 IPv6"), "ipv6"), ("TUN", "tun"), ("fake-ip", "fakeIp"), (L("QUIC 拦截"), "quic"), (L("STUN 防护"), "stun"),
+            (L("局域网连接"), "allowLan"), (L("Wi-Fi 通话"), "wifi")]
         return all.filter { !supports($0.1) }.map { $0.0 }
     }
 
@@ -507,16 +513,16 @@ final class Store: ObservableObject {
         let lines = raw.split(whereSeparator: \.isNewline).map { String($0).trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         let urls = lines.filter { $0.lowercased().hasPrefix("http://") || $0.lowercased().hasPrefix("https://") }
         let other = lines.count - urls.count
-        if urls.isEmpty { pasteNote = "没有识别到 http(s):// 订阅 URL" + (other > 0 ? "；节点链接请粘贴到下面的「节点链接」区。" : "。"); return }
+        if urls.isEmpty { pasteNote = L("没有识别到 http(s):// 订阅 URL") + (other > 0 ? L("；节点链接请粘贴到下面的「节点链接」区。") : "。"); return }
         applyPaste(urls.joined(separator: "\n"))
-        if other > 0 { pasteNote += "（另有 \(other) 行不是订阅 URL，已忽略，节点链接请放到「节点链接」区。）" }
+        if other > 0 { pasteNote += L("（另有 {} 行不是订阅 URL，已忽略，节点链接请放到「节点链接」区。）", other) }
     }
     func removeSub(_ i: Int) {
         var s = state; var cur = (s["subs"] as? [[String: Any]]) ?? []
         guard cur.indices.contains(i) else { return }
         cur.remove(at: i); s["subs"] = cur; state = s
     }
-    func clearNodeText() { var s = state; s["nodesText"] = ""; state = s; pasteNote = "已清空节点链接。" }
+    func clearNodeText() { var s = state; s["nodesText"] = ""; state = s; pasteNote = L("已清空节点链接。") }
 
     // MARK: 流程进度
     var hasNodes: Bool { !nodesText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !subs.isEmpty || manualActiveCount > 0 }
@@ -528,6 +534,6 @@ final class Store: ObservableObject {
     var activeStep: Int { !stepClientDone ? 1 : (!stepNodesDone ? 2 : (!stepRulesDone ? 3 : 4)) }
     var stepRulesHint: String {
         let on = catalog.groups.filter { isOn($0) }.count
-        return "\(on)/\(catalog.groups.count) 分组开"
+        return L("{}/{} 分组开", on, catalog.groups.count)
     }
 }

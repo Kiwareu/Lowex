@@ -1,5 +1,7 @@
 # Lowex
 
+**语言 / Language：** 简体中文 · [繁體中文](README.zh-Hant.md) · [English](README.en.md)
+
 > **账号改名说明**：作者的 GitHub 账号已由 `wenxu184` 改名为 **Kiwareu**，仓库现在位于 https://github.com/Kiwareu/Lowex 。旧链接会被 GitHub 自动重定向，但本项目内的所有地址已更新为新名。
 
 > 本机生成的代理配置工具 · iOS 原生 SwiftUI · 支持 Windows / iOS / Android 三个目标平台
@@ -19,6 +21,7 @@
 - **一键预设**：数字游民、加密货币、通用防泄漏等。
 - **导出**：复制、系统分享、保存到「文件」、二维码；多数客户端支持 URL scheme 导入（见 [docs/IMPORT-SCHEMES.md](docs/IMPORT-SCHEMES.md)）。
 - **外观**：浅色 / 深色 / 跟随系统、强调色、圆角、玻璃强度、渐变速度、字体、自定义壁纸；启动动画和生成成功烟花（遵守「减弱动态效果」）。
+- **多语言（v1.6.0）**：界面支持 简体中文 / 繁體中文（台灣）/ 繁體中文（香港）/ English；默认跟随系统语言，也可在「更多 → 语言」里切换，立即生效。详见 [docs/LOCALIZATION.md](docs/LOCALIZATION.md)。生成的配置正文与策略组名称保持中文，不随界面语言变化。
 - **隐私**：全部在本机运行，无服务器、无统计。
 
 ## 截图 / Screenshots
@@ -50,7 +53,7 @@ xcodebuild -project LowexNative.xcodeproj -scheme LowexNative -configuration Rel
 或直接运行 GitHub Actions 的 *Build Lowex IPA*（macOS runner，输出未签名 IPA）。
 
 ## 版本 / Versioning
-版本号与 GitHub tag 一致：当前 **v1.5.2**（App 首页显示 `v1.5 (build 16)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
+版本号与 GitHub tag 一致：当前 **v1.6.0**（App 首页显示 `v1.6 (build 17)`）。旧的内部 3.6 版本线记为 v1.0.x，见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## FAQ
 - **为什么没有节点 / 订阅？** 本工具不提供任何节点，只整理你自己的。

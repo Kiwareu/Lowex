@@ -6,8 +6,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.5.2"
-    CURRENT_PROJECT_VERSION: "16"
+    MARKETING_VERSION: "1.6.0"
+    CURRENT_PROJECT_VERSION: "17"
     CODE_SIGNING_ALLOWED: "NO"
     CODE_SIGNING_REQUIRED: "NO"
     CODE_SIGN_IDENTITY: ""
@@ -25,15 +25,19 @@ targets:
     sources:
       - Sources
       - path: Resources
-        excludes: ["Info.plist", "BundledIcons/**"]
+        excludes: ["Info.plist", "BundledIcons/**", "Lang/**"]
       - path: Resources/BundledIcons
+        type: folder
+      - path: Resources/Lang
         type: folder
     info:
       path: Info.plist
       properties:
         CFBundleDisplayName: Lowex
-        CFBundleShortVersionString: "1.5.2"
-        CFBundleVersion: "16"
+        CFBundleDevelopmentRegion: zh-Hans
+        CFBundleLocalizations: [zh-Hans, zh-Hant, en]
+        CFBundleShortVersionString: "1.6.0"
+        CFBundleVersion: "17"
         UILaunchScreen: {}
         UIRequiredDeviceCapabilities: [arm64]
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]

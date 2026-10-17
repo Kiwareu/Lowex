@@ -138,7 +138,7 @@ struct BrandHeader: View {
                     .foregroundStyle(
                         LinearGradient(colors: [Brand.pink, Brand.lilac],
                                        startPoint: .leading, endPoint: .trailing))
-                Text(subtitle ?? "本机生成 · 不上传")
+                Text(subtitle ?? L("本机生成 · 不上传"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

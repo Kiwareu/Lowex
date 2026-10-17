@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.6.0 (build 17)
+App 内显示 `v1.6 (build 17)`。
+- **界面多语言**：简体中文 / 繁體中文（台灣）/ 繁體中文（香港）/ English。默认跟随系统语言；「更多 → 语言」可切换（跟随系统 / 简体 / 繁體台灣 / 繁體香港 / English），立即生效。覆盖标签页、各页面、按钮、说明、弹窗、关于、免责声明、分组名与说明、客户端说明，以及引擎给出的防泄漏评分文案和校验 / 警告消息。
+- 台灣 / 香港繁體分表：用词确有差异（軟體 / 軟件、網路 / 網絡 …），见 [`docs/LOCALIZATION.md`](docs/LOCALIZATION.md)。
+- 刻意不翻译：生成的配置正文与策略组名称保持中文；App 名称库、更新日志条目保持原文。
+- 新增 `tools/check-i18n.py` 检查翻译表完整性；README 增加繁體中文与 English 版本。
+- 引擎行为不变（mihomo / sing-box 校验器与随机选项测试仍通过）。
+
 ## v1.5.2 (build 16)
 App 内显示 `v1.5 (build 16)`。
 - **账号改名**：GitHub 账号 `wenxu184` → **Kiwareu**。仓库现为 [Kiwareu/Lowex](https://github.com/Kiwareu/Lowex)、[Kiwareu/Lowex-Icons](https://github.com/Kiwareu/Lowex-Icons)。App 内的 GitHub 链接、生成配置里的图标地址（`raw.githubusercontent.com/Kiwareu/Lowex-Icons/main/icons/<文件名>.png`）、文档、图标仓库说明全部改为新名，不依赖 GitHub 的旧名重定向。

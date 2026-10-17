@@ -5,35 +5,35 @@ import UIKit
 struct HomeView: View {
     @EnvironmentObject var store: Store
     private let networks = [
-        ("mobile", "中国移动宽带"), ("telecom", "中国电信宽带"), ("unicom", "中国联通宽带"),
-        ("cellular", "手机蜂窝数据"), ("campus", "校园网"), ("company", "公司网络"),
-        ("overseas", "海外网络"), ("other", "其他 / 不确定")
+        ("mobile", L("中国移动宽带")), ("telecom", L("中国电信宽带")), ("unicom", L("中国联通宽带")),
+        ("cellular", L("手机蜂窝数据")), ("campus", L("校园网")), ("company", L("公司网络")),
+        ("overseas", L("海外网络")), ("other", L("其他 / 不确定"))
     ]
     private let locations = [
-        ("cn", "中国大陆"), ("hk", "香港"), ("mo", "澳门"), ("tw", "台湾"), ("overseas", "海外")
+        ("cn", L("中国大陆")), ("hk", L("香港")), ("mo", L("澳门")), ("tw", L("台湾")), ("overseas", L("海外"))
     ]
 
     var body: some View {
         PageChrome(showBrand: true) {
             Text(store.versionLabel).font(.caption2.monospaced()).foregroundStyle(.secondary)
             HeroCard {
-                Text("代理配置生成器")
+                Text(L("代理配置生成器"))
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Brand.ink)
-                Text("Windows / iOS / Android · 选系统与客户端 → 节点 → 规则 → 生成。全部本机完成。")
+                Text(L("Windows / iOS / Android · 选系统与客户端 → 节点 → 规则 → 生成。全部本机完成。"))
                     .font(.footnote).foregroundStyle(.secondary)
                 HStack(spacing: 10) {
-                    StepBadge(n: 1, label: "客户端", done: store.stepClientDone, active: store.activeStep == 1)
-                    StepBadge(n: 2, label: "节点", done: store.stepNodesDone, active: store.activeStep == 2)
-                    StepBadge(n: 3, label: "规则", done: store.stepRulesDone, active: store.activeStep == 3)
-                    StepBadge(n: 4, label: "生成", done: store.stepGenerateDone, active: store.activeStep == 4)
+                    StepBadge(n: 1, label: L("客户端"), done: store.stepClientDone, active: store.activeStep == 1)
+                    StepBadge(n: 2, label: L("节点"), done: store.stepNodesDone, active: store.activeStep == 2)
+                    StepBadge(n: 3, label: L("规则"), done: store.stepRulesDone, active: store.activeStep == 3)
+                    StepBadge(n: 4, label: L("生成"), done: store.stepGenerateDone, active: store.activeStep == 4)
                 }
                 .padding(.top, 4)
             }
 
             PlainCard {
-                Text("① 选择系统与客户端").font(.headline)
-                Text("先选目标设备系统，再选客户端。生成的规则只含该系统有效的内容，不会混入其他平台。")
+                Text(L("① 选择系统与客户端")).font(.headline)
+                Text(L("先选目标设备系统，再选客户端。生成的规则只含该系统有效的内容，不会混入其他平台。"))
                     .font(.caption).foregroundStyle(.secondary)
                 PlatformSelector()
                 ClientGrid()
@@ -42,29 +42,29 @@ struct HomeView: View {
                     if let h = store.importHow {
                         Text(h).font(.caption2).foregroundStyle(Brand.pink.opacity(0.9)).padding(.top, 2)
                     }
-                    Text((c.placement == "both" ? "订阅 / 节点：可写进配置，也可在客户端 App 内自己添加（在「节点」页选择）" : (c.embedsSubscription ? "订阅 / 节点：写进配置文件" : "订阅 / 节点：展开成节点写进配置（无订阅字段）")) + " · 资料可信度：" + c.confLabel)
+                    Text((c.placement == "both" ? L("订阅 / 节点：可写进配置，也可在客户端 App 内自己添加（在「节点」页选择）") : (c.embedsSubscription ? L("订阅 / 节点：写进配置文件") : L("订阅 / 节点：展开成节点写进配置（无订阅字段）"))) + L(" · 资料可信度：") + c.confLabel)
                         .font(.caption2).foregroundStyle(.secondary)
-                    Text("按应用分流：" + platformRuleText).font(.caption2).foregroundStyle(.secondary)
+                    Text(L("按应用分流：") + platformRuleText).font(.caption2).foregroundStyle(.secondary)
                 }
             }
 
             CapMatrixCard()
 
             PlainCard {
-                Text("配置名称").font(.headline)
+                Text(L("配置名称")).font(.headline)
                 ProfileNameField()
             }
 
             PlainCard {
-                Text("网络环境与所在地").font(.headline)
-                Picker("网络", selection: Binding(get: { store.str("network") }, set: { store.set("network", $0) })) {
+                Text(L("网络环境与所在地")).font(.headline)
+                Picker(L("网络"), selection: Binding(get: { store.str("network") }, set: { store.set("network", $0) })) {
                     ForEach(networks, id: \.0) { Text($0.1).tag($0.0) }
                 }.pickerStyle(.menu)
-                Picker("所在地", selection: Binding(get: { store.str("location") }, set: { store.set("location", $0) })) {
+                Picker(L("所在地"), selection: Binding(get: { store.str("location") }, set: { store.set("location", $0) })) {
                     ForEach(locations, id: \.0) { Text($0.1).tag($0.0) }
                 }.pickerStyle(.menu)
                 Button { store.applyRecommend() } label: {
-                    Label("按环境智能推荐", systemImage: "wand.and.stars").frame(maxWidth: .infinity)
+                    Label(L("按环境智能推荐"), systemImage: "wand.and.stars").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent).tint(Brand.pink)
                 if !store.recommendNote.isEmpty {
@@ -73,38 +73,38 @@ struct HomeView: View {
             }
 
             PlainCard {
-                Text("一键预设").font(.headline)
-                Text("对齐作者 Clash Meta v4 结构并加强：故障转移、防泄漏、数字游民银行与加密货币规则包。不含私人订阅。")
+                Text(L("一键预设")).font(.headline)
+                Text(L("对齐作者 Clash Meta v4 结构并加强：故障转移、防泄漏、数字游民银行与加密货币规则包。不含私人订阅。"))
                     .font(.caption).foregroundStyle(.secondary)
                 PresetButtons()
             }
 
             PlainCard {
-                Text("② 生成选项（仅当前客户端支持）").font(.headline)
-                OptToggle(title: "故障转移（地区故转组）", key: "failover", feature: "failover")
+                Text(L("② 生成选项（仅当前客户端支持）")).font(.headline)
+                OptToggle(title: L("故障转移（地区故转组）"), key: "failover", feature: "failover")
                 if store.supports("failover") {
-                    Text("开启后为每个地区生成「手动 / 自动 / 故转」：故转优先用手动，失败再落到自动测速。")
+                    Text(L("开启后为每个地区生成「手动 / 自动 / 故转」：故转优先用手动，失败再落到自动测速。"))
                         .font(.caption2).foregroundStyle(.secondary)
                 }
                 if store.supports("ads") {
-                    Picker("广告拦截", selection: Binding<String>(
+                    Picker(L("广告拦截"), selection: Binding<String>(
                         get: { store.adsMode },
                         set: { store.setOpt("ads", $0) }
                     )) {
-                        Text("关闭").tag("off")
+                        Text(L("关闭")).tag("off")
                         Text("Lite").tag("lite")
-                        Text("完整").tag("full")
+                        Text(L("完整")).tag("full")
                     }
                     .pickerStyle(.segmented)
                 }
-                OptToggle(title: "拦截追踪器", key: "trackers", feature: "trackers")
-                OptToggle(title: "拦截遥测", key: "telemetry", feature: "telemetry")
-                OptToggle(title: "策略组图标", key: "icons", feature: "icons")
-                OptToggle(title: "关闭 IPv6（防泄漏）", key: "ipv6", feature: "ipv6", invert: true)
-                OptToggle(title: "TUN 虚拟网卡", key: "tun", feature: "tun")
+                OptToggle(title: L("拦截追踪器"), key: "trackers", feature: "trackers")
+                OptToggle(title: L("拦截遥测"), key: "telemetry", feature: "telemetry")
+                OptToggle(title: L("策略组图标"), key: "icons", feature: "icons")
+                OptToggle(title: L("关闭 IPv6（防泄漏）"), key: "ipv6", feature: "ipv6", invert: true)
+                OptToggle(title: L("TUN 虚拟网卡"), key: "tun", feature: "tun")
                 OptToggle(title: "DNS fake-ip", key: "fakeIp", feature: "fakeIp")
                 if store.supports("quic") {
-                    Toggle("拦截境外 QUIC", isOn: Binding(
+                    Toggle(L("拦截境外 QUIC"), isOn: Binding(
                         get: {
                             let v = store.opts["blockQuic"]
                             if let s = v as? String { return s != "off" }
@@ -114,7 +114,7 @@ struct HomeView: View {
                     )).tint(Brand.pink)
                 }
                 if store.supports("stun") {
-                    Toggle("STUN / WebRTC 防护", isOn: Binding(
+                    Toggle(L("STUN / WebRTC 防护"), isOn: Binding(
                         get: {
                             let v = store.opts["stun"]
                             if let s = v as? String { return s != "off" }
@@ -123,28 +123,28 @@ struct HomeView: View {
                         set: { store.setOpt("stun", $0 ? "proxy" : "off") }
                     )).tint(Brand.pink)
                 }
-                OptToggle(title: "允许局域网连接", key: "allowLan", feature: "allowLan")
-                OptToggle(title: "Wi-Fi 通话规则", key: "wifiCalling", feature: "wifi")
+                OptToggle(title: L("允许局域网连接"), key: "allowLan", feature: "allowLan")
+                OptToggle(title: L("Wi-Fi 通话规则"), key: "wifiCalling", feature: "wifi")
                 if store.supports("wifi") {
-                    Text("打开后请到「规则」页选择运营商；规则会写入生成配置。")
+                    Text(L("打开后请到「规则」页选择运营商；规则会写入生成配置。"))
                         .font(.caption2).foregroundStyle(.secondary)
                 }
             }
 
             if !store.unsupportedOptionNames.isEmpty {
-                Text("当前客户端不支持（已隐藏）：" + store.unsupportedOptionNames.joined(separator: "、"))
+                Text(L("当前客户端不支持（已隐藏）：") + store.unsupportedOptionNames.joined(separator: "、"))
                     .font(.caption2).foregroundStyle(.secondary).padding(.horizontal, 4)
             }
             PlainCard {
                 Button(role: .destructive) { store.restoreDefaults() } label: {
-                    Label("恢复默认选项", systemImage: "arrow.counterclockwise")
+                    Label(L("恢复默认选项"), systemImage: "arrow.counterclockwise")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
             }
 
             Button { store.tab = .nodes } label: {
-                Label("下一步：节点", systemImage: "arrow.right").frame(maxWidth: .infinity)
+                Label(L("下一步：节点"), systemImage: "arrow.right").frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent).tint(Brand.pink)
         }
@@ -154,9 +154,9 @@ struct HomeView: View {
 extension HomeView {
     var platformRuleText: String {
         switch store.platform {
-        case "windows": return (store.clientInfo?.processRules ?? false) ? "支持 PROCESS-NAME（.exe 进程名）" : "此客户端不支持进程规则，将按域名 / 服务组"
-        case "android": return (store.clientInfo?.processRules ?? false) || store.family == "mihomo" || store.family == "singbox" ? "支持按包名（Android 包名）" : "此客户端不支持包名规则，将按域名 / 服务组"
-        default: return "iOS 无进程 / 包名规则，一律按域名 / 服务组"
+        case "windows": return (store.clientInfo?.processRules ?? false) ? L("支持 PROCESS-NAME（.exe 进程名）") : L("此客户端不支持进程规则，将按域名 / 服务组")
+        case "android": return (store.clientInfo?.processRules ?? false) || store.family == "mihomo" || store.family == "singbox" ? L("支持按包名（Android 包名）") : L("此客户端不支持包名规则，将按域名 / 服务组")
+        default: return L("iOS 无进程 / 包名规则，一律按域名 / 服务组")
         }
     }
 }
@@ -168,7 +168,7 @@ struct CapMatrixCard: View {
         PlainCard {
             Button { withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { open.toggle() } } label: {
                 HStack {
-                    Text("能力矩阵 · \(store.clientInfo?.name ?? "")").font(.headline).foregroundStyle(Brand.ink)
+                    Text(L("能力矩阵 · {}", store.clientInfo?.name ?? "")).font(.headline).foregroundStyle(Brand.ink)
                     Spacer()
                     Image(systemName: "chevron.down").rotationEffect(.degrees(open ? 180 : 0)).foregroundStyle(.secondary)
                 }
@@ -184,7 +184,7 @@ struct CapMatrixCard: View {
                     }
                 }
                 .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .top)))
-                Text("灰色 = 该客户端的语法不支持，生成时自动省略。").font(.caption2).foregroundStyle(.secondary)
+                Text(L("灰色 = 该客户端的语法不支持，生成时自动省略。")).font(.caption2).foregroundStyle(.secondary)
             }
         }
     }
@@ -258,32 +258,32 @@ struct NodesView: View {
     private var showManual: Bool { !store.appMode }
     private var hiddenNote: String? {
         if store.appMode { return nil }
-        if isSR { return "小火箭的 conf 只能携带手动节点（[Proxy]）；订阅与节点链接请在 App 内添加，已隐藏这两块。" }
-        if !store.embedsSub { return "\(store.clientInfo?.name ?? "该客户端") 没有订阅字段，已隐藏订阅 URL 区；节点链接 / Base64 生成时展开写入。" }
+        if isSR { return L("小火箭的 conf 只能携带手动节点（[Proxy]）；订阅与节点链接请在 App 内添加，已隐藏这两块。") }
+        if !store.embedsSub { return L("{} 没有订阅字段，已隐藏订阅 URL 区；节点链接 / Base64 生成时展开写入。", store.clientInfo?.name ?? L("该客户端")) }
         return nil
     }
     private var singleModeNote: String? {
-        store.nodeModeChoice ? nil : "该客户端的订阅 / 节点只能写进配置文件（资料可信度：\(store.clientInfo?.confLabel ?? "低")）。"
+        store.nodeModeChoice ? nil : L("该客户端的订阅 / 节点只能写进配置文件（资料可信度：{}）。", store.clientInfo?.confLabel ?? L("低"))
     }
     private var appGuide: String { store.clientInfo?.howApp ?? "" }
     private func target(_ kind: String) -> String {
         switch store.family {
         case "mihomo": return kind == "sub" ? "proxy-providers" : "proxies"
         case "stash": return kind == "sub" ? "proxy-providers" : "proxies"
-        case "surge": return kind == "sub" ? "[Proxy Group] 的 policy-path" : "[Proxy]"
+        case "surge": return kind == "sub" ? L("[Proxy Group] 的 policy-path") : "[Proxy]"
         case "qx": return kind == "sub" ? "[server_remote]" : "[server_local]"
         case "loon": return kind == "sub" ? "[Remote Proxy]" : "[Proxy]"
-        case "egern": return kind == "sub" ? "external 策略组" : "proxies"
+        case "egern": return kind == "sub" ? L("external 策略组") : "proxies"
         case "singbox": return "outbounds"
-        default: return "配置文件"
+        default: return L("配置文件")
         }
     }
 
     var body: some View {
-        PageChrome(title: "节点") {
+        PageChrome(title: L("节点")) {
             HeroCard {
-                Text("节点来源，可同时使用").font(.title3.weight(.semibold))
-                Text("当前客户端：\(store.clientInfo?.name ?? "")。填写的内容会在生成时自动写入配置对应位置，导入文件即可用。")
+                Text(L("节点来源，可同时使用")).font(.title3.weight(.semibold))
+                Text(L("当前客户端：{}。填写的内容会在生成时自动写入配置对应位置，导入文件即可用。", store.clientInfo?.name ?? ""))
                     .font(.footnote).foregroundStyle(.secondary)
                 if let n = singleModeNote { Text(n).font(.caption2).foregroundStyle(.secondary) }
                 if let n = hiddenNote { Text(n).font(.caption2).foregroundStyle(.secondary) }
@@ -291,31 +291,31 @@ struct NodesView: View {
 
             if store.nodeModeChoice {
                 PlainCard {
-                    Text("节点放在哪里").font(.headline)
-                    Picker("模式", selection: Binding(get: { store.nodeMode }, set: { store.setNodeMode($0) })) {
-                        Text("写入配置文件").tag("config")
-                        Text("在客户端 App 内自己添加").tag("app")
+                    Text(L("节点放在哪里")).font(.headline)
+                    Picker(L("模式"), selection: Binding(get: { store.nodeMode }, set: { store.setNodeMode($0) })) {
+                        Text(L("写入配置文件")).tag("config")
+                        Text(L("在客户端 App 内自己添加")).tag("app")
                     }.pickerStyle(.segmented)
-                    Text(store.appMode ? appGuide : "输入的内容会在生成时直接写进配置文件，导入后即可使用。\(store.family == "shadowrocket" ? "（小火箭 conf 只能带手动节点，订阅请选「在客户端 App 内自己添加」。）" : "")").font(.caption).foregroundStyle(.secondary)
+                    Text(store.appMode ? appGuide : L("输入的内容会在生成时直接写进配置文件，导入后即可使用。{}", store.family == "shadowrocket" ? L("（小火箭 conf 只能带手动节点，订阅请选「在客户端 App 内自己添加」。）") : "")).font(.caption).foregroundStyle(.secondary)
                 }
             }
 
             // A. 订阅 URL
             if showSubs { PlainCard {
-                Label("① 订阅链接 URL", systemImage: "link").font(.headline)
+                Label(L("① 订阅链接 URL"), systemImage: "link").font(.headline)
                 Text(subHelper).font(.caption).foregroundStyle(.secondary)
-                inputBox($subDraft, placeholder: "https://example.com/sub?token=…\n可一行一个，多个订阅")
+                inputBox($subDraft, placeholder: L("https://example.com/sub?token=…\n可一行一个，多个订阅"))
                 HStack {
                     Button {
                         store.addSubscriptions(subDraft)
                         if !isSR { subDraft = "" }
                     } label: {
-                        Label(isSR ? "复制到剪贴板" : "添加订阅", systemImage: isSR ? "doc.on.clipboard" : "plus.circle.fill")
+                        Label(isSR ? L("复制到剪贴板") : L("添加订阅"), systemImage: isSR ? "doc.on.clipboard" : "plus.circle.fill")
                     }
                     .buttonStyle(.borderedProminent).tint(Brand.pink)
                     .disabled(subDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     if !store.subs.isEmpty {
-                        Button("清空订阅", role: .destructive) { var s = store.state; s["subs"] = []; store.state = s }.buttonStyle(.bordered)
+                        Button(L("清空订阅"), role: .destructive) { var s = store.state; s["subs"] = []; store.state = s }.buttonStyle(.bordered)
                     }
                 }
                 if !store.subs.isEmpty && !isSR {
@@ -332,26 +332,26 @@ struct NodesView: View {
             }
             // B. 节点链接
             if showLinks { PlainCard {
-                Label(showSubs ? "② 节点链接 / Base64" : "① 节点链接 / Base64", systemImage: "text.alignleft").font(.headline)
+                Label(showSubs ? L("② 节点链接 / Base64") : L("① 节点链接 / Base64"), systemImage: "text.alignleft").font(.headline)
                 Text(linkHelper).font(.caption).foregroundStyle(.secondary)
-                inputBox($linkDraft, placeholder: "ss://… vmess://… vless://… trojan://… hysteria2://… tuic://…\n每行一条，或整段 Base64")
+                inputBox($linkDraft, placeholder: L("ss://… vmess://… vless://… trojan://… hysteria2://… tuic://…\n每行一条，或整段 Base64"))
                 HStack {
                     Button {
                         store.applyPaste(linkDraft)
                         if !isSR { linkDraft = "" }
                     } label: {
-                        Label(isSR ? "复制到剪贴板" : "写入方案", systemImage: isSR ? "doc.on.clipboard" : "plus.circle.fill")
+                        Label(isSR ? L("复制到剪贴板") : L("写入方案"), systemImage: isSR ? "doc.on.clipboard" : "plus.circle.fill")
                     }
                     .buttonStyle(.borderedProminent).tint(Brand.pink)
                     .disabled(linkDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     if !store.nodesText.isEmpty && !isSR {
-                        Button("清空链接", role: .destructive) { store.clearNodeText() }.buttonStyle(.bordered)
+                        Button(L("清空链接"), role: .destructive) { store.clearNodeText() }.buttonStyle(.bordered)
                     }
                 }
                 if !store.nodesText.isEmpty && !isSR {
                     let lines = store.nodesText.split(whereSeparator: \.isNewline)
                     let n = lines.filter { $0.contains("://") }.count
-                    Text("已写入 \(lines.count) 行" + (n > 0 ? "（约 \(n) 条链接）" : "")).font(.caption.weight(.medium))
+                    Text(L("已写入 {} 行", lines.count) + (n > 0 ? L("（约 {} 条链接）", n) : "")).font(.caption.weight(.medium))
                 }
                 if !store.pasteNote.isEmpty { Text(store.pasteNote).font(.footnote).foregroundStyle(Brand.pink) }
             }
@@ -361,8 +361,8 @@ struct NodesView: View {
             if showManual { manualCard }
 
             PlainCard {
-                Text("地区分组").font(.headline)
-                Text("打开的地区会出现在规则出口与策略组里（含故转/自动/手动）。手动节点按名称里的地区关键词（如「香港」「日本」）归入对应地区。").font(.caption).foregroundStyle(.secondary)
+                Text(L("地区分组")).font(.headline)
+                Text(L("打开的地区会出现在规则出口与策略组里（含故转/自动/手动）。手动节点按名称里的地区关键词（如「香港」「日本」）归入对应地区。")).font(.caption).foregroundStyle(.secondary)
                 ForEach(store.catalog.regions) { r in
                     Toggle(isOn: Binding(get: { store.regions.contains(r.id) }, set: { _ in store.toggleRegion(r.id) })) {
                         HStack(spacing: 8) { RemoteIcon(url: r.icon, name: r.name, size: 22); Text(r.name) }
@@ -371,7 +371,7 @@ struct NodesView: View {
             }
 
             Button { store.tab = .rules } label: {
-                Label("下一步：规则", systemImage: "arrow.right").frame(maxWidth: .infinity)
+                Label(L("下一步：规则"), systemImage: "arrow.right").frame(maxWidth: .infinity)
             }.buttonStyle(.borderedProminent).tint(Brand.pink)
         }
         .scrollDismissesKeyboard(.interactively)
@@ -381,22 +381,22 @@ struct NodesView: View {
     }
 
     private var subHelper: String {
-        "一行一个 URL，点「添加订阅」→ 下方列表可逐条删除。生成时写入 \(target("sub"))，由客户端自行更新节点。"
+        L("一行一个 URL，点「添加订阅」→ 下方列表可逐条删除。生成时写入 {}，由客户端自行更新节点。", target("sub"))
     }
     private var linkHelper: String {
-        "支持 ss / vmess / vless / trojan / hysteria2 / tuic / anytls 链接（每行一条）或整段 Base64 订阅正文。点「写入方案」→ 生成时写入 \(target("link"))；客户端不支持的协议会跳过并提示。"
+        L("支持 ss / vmess / vless / trojan / hysteria2 / tuic / anytls 链接（每行一条）或整段 Base64 订阅正文。点「写入方案」→ 生成时写入 {}；客户端不支持的协议会跳过并提示。", target("link"))
     }
 
     @ViewBuilder private var manualCard: some View {
         PlainCard {
             HStack {
-                Label((showSubs ? "③ " : (showLinks ? "② " : "① ")) + "手动添加节点（SOCKS5 / HTTP / HTTPS）", systemImage: "network").font(.headline)
+                Label((showSubs ? "③ " : (showLinks ? "② " : "① ")) + L("手动添加节点（SOCKS5 / HTTP / HTTPS）"), systemImage: "network").font(.headline)
                 Spacer()
             }
-            Text("适合家宽 / 住宅代理套餐：点「添加节点」填名称、类型、主机、端口、账号密码，保存后生成时写入 \(isSR ? "[Proxy]" : target("link"))。名称里的地区词决定归入哪个地区；密码存本机钥匙串，不上传。")
+            Text(L("适合家宽 / 住宅代理套餐：点「添加节点」填名称、类型、主机、端口、账号密码，保存后生成时写入 {}。名称里的地区词决定归入哪个地区；密码存本机钥匙串，不上传。", isSR ? "[Proxy]" : target("link")))
                 .font(.caption).foregroundStyle(.secondary)
             if let c = store.manualCaps {
-                Text("当前客户端支持：SOCKS5 \(c.socks5 ? "✓" : "✗") · SOCKS5-TLS \(c.socks5tls ? "✓" : "✗") · HTTP \(c.http ? "✓" : "✗") · HTTPS \(c.https ? "✓" : "✗")")
+                Text(L("当前客户端支持：SOCKS5 {} · SOCKS5-TLS {} · HTTP {} · HTTPS {}", c.socks5 ? "✓" : "✗", c.socks5tls ? "✓" : "✗", c.http ? "✓" : "✗", c.https ? "✓" : "✗"))
                     .font(.caption2).foregroundStyle(Brand.pink)
             }
             ForEach(Array(store.manualNodes.enumerated()), id: \.offset) { _, m in
@@ -407,25 +407,25 @@ struct NodesView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(m["name"] as? String ?? "").font(.subheadline.weight(.semibold))
-                            Text("\(kindLabel(m)) · \(m["host"] as? String ?? ""):\(String(describing: m["port"] ?? 0))" + (((m["user"] as? String) ?? "").isEmpty ? "" : " · 有账号"))
+                            Text("\(kindLabel(m)) · \(m["host"] as? String ?? ""):\(String(describing: m["port"] ?? 0))" + (((m["user"] as? String) ?? "").isEmpty ? "" : L(" · 有账号")))
                                 .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                         }
                         Spacer()
                         Toggle("", isOn: Binding(get: { on }, set: { _ in store.toggleManual(id) })).labelsHidden().tint(Brand.pink)
                     }
-                    if let issue, on { Label("当前客户端不会写入：\(issue)", systemImage: "exclamationmark.triangle.fill").font(.caption2).foregroundStyle(.orange) }
+                    if let issue, on { Label(L("当前客户端不会写入：{}", issue), systemImage: "exclamationmark.triangle.fill").font(.caption2).foregroundStyle(.orange) }
                     HStack(spacing: 14) {
-                        Button("编辑") { editing = ManualNodeDraft(m) }
-                        Button("删除", role: .destructive) { store.removeManual(id) }
+                        Button(L("编辑")) { editing = ManualNodeDraft(m) }
+                        Button(L("删除"), role: .destructive) { store.removeManual(id) }
                     }.font(.caption).buttonStyle(.plain).foregroundStyle(Brand.pink)
                 }
                 .padding(10).background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             Button { editing = ManualNodeDraft(nil) } label: {
-                Label("添加节点", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
+                Label(L("添加节点"), systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
             }.buttonStyle(.borderedProminent).tint(Brand.pink)
             if store.manualBlockedCount > 0 {
-                Text("有 \(store.manualBlockedCount) 个手动节点当前客户端写不出，生成时会跳过并在结果里提示。").font(.caption2).foregroundStyle(.orange)
+                Text(L("有 {} 个手动节点当前客户端写不出，生成时会跳过并在结果里提示。", store.manualBlockedCount)).font(.caption2).foregroundStyle(.orange)
             }
         }
     }
@@ -484,37 +484,37 @@ struct ManualNodeForm: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("名称（决定归入哪个地区）") {
-                    TextField("例如 香港-住宅 / 日本-家宽", text: $draft.name)
+                Section(L("名称（决定归入哪个地区）")) {
+                    TextField(L("例如 香港-住宅 / 日本-家宽"), text: $draft.name)
                 }
-                Section("类型") {
-                    Picker("类型", selection: $type) { Text("SOCKS5").tag(0); Text("HTTP").tag(1); Text("HTTPS").tag(2) }.pickerStyle(.segmented)
+                Section(L("类型")) {
+                    Picker(L("类型"), selection: $type) { Text("SOCKS5").tag(0); Text("HTTP").tag(1); Text("HTTPS").tag(2) }.pickerStyle(.segmented)
                     if type == 0 { Toggle("SOCKS5 over TLS", isOn: $draft.tls).tint(Brand.pink) }
                 }
-                Section("服务器") {
-                    TextField("主机（域名或 IP）", text: $draft.host).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-                    TextField("端口", text: $draft.port).keyboardType(.numberPad)
+                Section(L("服务器")) {
+                    TextField(L("主机（域名或 IP）"), text: $draft.host).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                    TextField(L("端口"), text: $draft.port).keyboardType(.numberPad)
                 }
-                Section("账号（可留空）") {
-                    TextField("用户名", text: $draft.user).textInputAutocapitalization(.never).autocorrectionDisabled()
+                Section(L("账号（可留空）")) {
+                    TextField(L("用户名"), text: $draft.user).textInputAutocapitalization(.never).autocorrectionDisabled()
                     HStack {
-                        Group { if showPass { TextField("密码", text: $draft.pass) } else { SecureField("密码", text: $draft.pass) } }
+                        Group { if showPass { TextField(L("密码"), text: $draft.pass) } else { SecureField(L("密码"), text: $draft.pass) } }
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
                         Button { showPass.toggle() } label: { Image(systemName: showPass ? "eye.slash" : "eye") }.buttonStyle(.plain)
                     }
                 }
                 Section {
                     if let issue { Label(issue, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(.footnote) }
-                    else { Label("当前客户端可以写入这个节点", systemImage: "checkmark.circle.fill").foregroundStyle(.green).font(.footnote) }
-                    Text("密码保存在本机钥匙串（不可用时回退到 App 沙盒私有文件），不会上传。").font(.caption2).foregroundStyle(.secondary)
+                    else { Label(L("当前客户端可以写入这个节点"), systemImage: "checkmark.circle.fill").foregroundStyle(.green).font(.footnote) }
+                    Text(L("密码保存在本机钥匙串（不可用时回退到 App 沙盒私有文件），不会上传。")).font(.caption2).foregroundStyle(.secondary)
                 }
             }
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle(draft.isNew ? "添加节点" : "编辑节点").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(draft.isNew ? L("添加节点") : L("编辑节点")).navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button(L("取消")) { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") { save() }.disabled(!canSave)
+                    Button(L("保存")) { save() }.disabled(!canSave)
                 }
             }
             .onChange(of: type) { _, t in draft.kind = t == 0 ? "socks5" : "http"; draft.tls = t == 2 ? true : (t == 1 ? false : draft.tls) }
@@ -540,10 +540,10 @@ struct RulesView: View {
     @State private var onlyFav = false
 
     enum RuleSection: String, CaseIterable, Identifiable {
-        case groups = "服务分组"
-        case apps = "按 App"
-        case domains = "自定义域名"
-        case wifi = "Wi-Fi 通话"
+        case groups = L("服务分组")
+        case apps = L("按 App")
+        case domains = L("自定义域名")
+        case wifi = L("Wi-Fi 通话")
         var id: String { rawValue }
     }
 
@@ -557,13 +557,13 @@ struct RulesView: View {
     }
 
     var body: some View {
-        PageChrome(title: "规则") {
+        PageChrome(title: L("规则")) {
             HeroCard {
-                Text("③ 分流与增强")
+                Text(L("③ 分流与增强"))
                     .font(.title3.weight(.semibold))
-                Text(store.stepRulesHint + " · 选项会直接进入生成配置")
+                Text(store.stepRulesHint + L(" · 选项会直接进入生成配置"))
                     .font(.footnote).foregroundStyle(.secondary)
-                Picker("分区", selection: $section) {
+                Picker(L("分区"), selection: $section) {
                     ForEach(RuleSection.allCases) { Text($0.rawValue).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -572,10 +572,10 @@ struct RulesView: View {
             switch section {
             case .groups:
                 PlainCard {
-                    TextField("搜索服务分组", text: $query)
+                    TextField(L("搜索服务分组"), text: $query)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    Toggle("只看收藏", isOn: $onlyFav).tint(Brand.pink)
+                    Toggle(L("只看收藏"), isOn: $onlyFav).tint(Brand.pink)
                 }
                 ForEach(filteredGroups) { g in
                     groupRow(g)
@@ -589,14 +589,14 @@ struct RulesView: View {
                     WifiInline()
                 } else {
                     PlainCard {
-                        Text("当前客户端不支持在配置里写 Wi-Fi 通话规则。")
+                        Text(L("当前客户端不支持在配置里写 Wi-Fi 通话规则。"))
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }
             }
 
             Button { store.tab = .generate } label: {
-                Label("下一步：生成", systemImage: "sparkles").frame(maxWidth: .infinity)
+                Label(L("下一步：生成"), systemImage: "sparkles").frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent).tint(Brand.pink)
         }
@@ -627,15 +627,15 @@ struct RulesView: View {
                 .tint(Brand.pink)
             }
             if store.isOn(g) {
-                Picker("出口", selection: Binding(
+                Picker(L("出口"), selection: Binding(
                     get: { store.policy(g) },
                     set: { store.setGroup(g, policy: $0) }
                 )) {
-                    Text("代理").tag("PROXY")
-                    Text("直连").tag("DIRECT")
-                    Text("拦截").tag("REJECT")
+                    Text(L("代理")).tag("PROXY")
+                    Text(L("直连")).tag("DIRECT")
+                    Text(L("拦截")).tag("REJECT")
                     ForEach(store.catalog.regions.filter { store.regions.contains($0.id) }) {
-                        Text("\($0.name) 节点").tag("R:\($0.id)")
+                        Text(L("{} 节点", $0.name)).tag("R:\($0.id)")
                     }
                 }
                 .pickerStyle(.menu)
@@ -656,14 +656,14 @@ struct ProfileNameField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(store.profileNameIsCustom ? "自定义" : "自动")
+                Text(store.profileNameIsCustom ? L("自定义") : L("自动"))
                     .font(.caption2.weight(.bold)).foregroundStyle(.white)
                     .padding(.horizontal, 7).padding(.vertical, 2)
                     .background(store.profileNameIsCustom ? Color.orange : Brand.pink, in: Capsule())
-                Text(store.profileNameIsCustom ? "手动名称，不随客户端变化" : "随所选客户端自动变化").font(.caption2).foregroundStyle(.secondary)
+                Text(store.profileNameIsCustom ? L("手动名称，不随客户端变化") : L("随所选客户端自动变化")).font(.caption2).foregroundStyle(.secondary)
             }
             // 未聚焦时永远直接显示 store 里的当前名字，避免本地缓存过期
-            TextField("配置名称", text: Binding(get: { focused ? text : store.profileName }, set: { text = $0 }))
+            TextField(L("配置名称"), text: Binding(get: { focused ? text : store.profileName }, set: { text = $0 }))
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .focused($focused)
@@ -673,7 +673,7 @@ struct ProfileNameField: View {
                     if f { text = store.profileName } else { store.profileName = text }
                 }
             if store.profileNameIsCustom {
-                Button("恢复自动名称（\(store.autoProfileName)）") { focused = false; store.profileName = "" }
+                Button(L("恢复自动名称（{}）", store.autoProfileName)) { focused = false; store.profileName = "" }
                     .font(.caption).buttonStyle(.plain).foregroundStyle(Brand.pink)
             }
         }
@@ -712,7 +712,7 @@ struct ClientGrid: View {
     @EnvironmentObject var store: Store
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("当前选择：\(platformLabel) · \(store.clientInfo?.name ?? "—")")
+            Text(L("当前选择：{} · {}", platformLabel, store.clientInfo?.name ?? "—"))
                 .font(.caption.weight(.semibold)).foregroundStyle(Brand.pink)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 8)], spacing: 8) {
                 ForEach(store.clientsForPlatform) { c in

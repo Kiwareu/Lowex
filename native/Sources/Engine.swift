@@ -23,7 +23,13 @@ final class Engine {
     var version: String { api.objectForKeyedSubscript("version").toString() }
 
     private func call(_ name: String, _ args: [Any]) -> String {
-        api.objectForKeyedSubscript(name).call(withArguments: args)?.toString() ?? "{}"
+        let raw = api.objectForKeyedSubscript(name).call(withArguments: args)?.toString() ?? "{}"
+        // 这些返回的是状态 / 数据，不是显示文案：不翻译
+        if ["initial", "applyPreset", "version"].contains(name) { return raw }
+        var skip: Set<String> = []
+        if name == "generate" { skip = ["text", "name", "ext", "mime"] }
+        if name == "catalog" { skip = ["apps", "icon", "ext", "id", "family", "platforms"] }
+        return Lang.shared.translateJSON(raw, skip: skip)
     }
 
     func initialState(client: String, platform: String) -> [String: Any] {
@@ -41,7 +47,7 @@ final class Engine {
     }
     func generate(state: [String: Any]) -> GenResult {
         guard let d = try? JSONSerialization.data(withJSONObject: state), let s = String(data: d, encoding: .utf8) else {
-            return GenResult(error: "方案无法序列化")
+            return GenResult(error: L("方案无法序列化"))
         }
         let r = json(call("generate", [s]))
         if let e = r["error"] as? String { return GenResult(error: e) }
@@ -79,7 +85,7 @@ final class Engine {
         (try? JSONDecoder().decode([ManualCap].self, from: Data(call("manualMatrix", []).utf8))) ?? []
     }
     func manualIssue(client: String, node: [String: Any]) -> String? {
-        guard let d = try? JSONSerialization.data(withJSONObject: node), let s = String(data: d, encoding: .utf8) else { return "无法序列化" }
+        guard let d = try? JSONSerialization.data(withJSONObject: node), let s = String(data: d, encoding: .utf8) else { return L("无法序列化") }
         return json(call("manualIssue", [client, s]))["issue"] as? String
     }
     func presets() -> [[String: Any]] {
@@ -108,7 +114,7 @@ struct Catalog: Decodable {
         let blurb: String?; let ext: String?
         let subInConfig: Bool?; let importHint: String?; let processRules: Bool?; let caps: [String]?
         let placement: String?; let howConfig: String?; let howApp: String?; let inApp: [String]?; let conf: String?; let verified: Bool?
-        var confLabel: String { conf == "high" ? "高" : (conf == "medium" ? "中" : "低") }
+        var confLabel: String { conf == "high" ? L("高") : (conf == "medium" ? L("中") : L("低")) }
         var fileExt: String { ext ?? "conf" }
         var embedsSubscription: Bool { subInConfig ?? false }
     }

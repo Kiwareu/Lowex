@@ -20,36 +20,36 @@ struct BackupView: View {
     }
 
     var body: some View {
-        PageChrome(title: "备份与恢复") {
+        PageChrome(title: L("备份与恢复")) {
             PlainCard {
-                Text("Lowex 设置备份").font(.headline)
-                Text("把当前选择（系统、客户端、分组、选项、配置名）存成一个 JSON 文件，换机或重装后导入恢复。订阅链接不会写进备份。")
+                Text(L("Lowex 设置备份")).font(.headline)
+                Text(L("把当前选择（系统、客户端、分组、选项、配置名）存成一个 JSON 文件，换机或重装后导入恢复。订阅链接不会写进备份。"))
                     .font(.footnote).foregroundStyle(.secondary)
-                Toggle("同时备份手动节点（含密码，请妥善保管）", isOn: $includeNodes).font(.subheadline)
+                Toggle(L("同时备份手动节点（含密码，请妥善保管）"), isOn: $includeNodes).font(.subheadline)
                 HStack {
-                    Button { exporting = true } label: { Label("导出备份", systemImage: "square.and.arrow.up") }.buttonStyle(.borderedProminent).tint(Brand.pink)
-                    Button { importing = true } label: { Label("导入备份", systemImage: "square.and.arrow.down") }.buttonStyle(.bordered)
-                    ShareLink(item: backupText) { Label("分享", systemImage: "square.and.arrow.up.on.square") }.buttonStyle(.bordered)
+                    Button { exporting = true } label: { Label(L("导出备份"), systemImage: "square.and.arrow.up") }.buttonStyle(.borderedProminent).tint(Brand.pink)
+                    Button { importing = true } label: { Label(L("导入备份"), systemImage: "square.and.arrow.down") }.buttonStyle(.bordered)
+                    ShareLink(item: backupText) { Label(L("分享"), systemImage: "square.and.arrow.up.on.square") }.buttonStyle(.bordered)
                 }
                 if !note.isEmpty { Text(note).font(.caption).foregroundStyle(.secondary) }
             }
             PlainCard {
-                Text("说明").font(.headline)
-                Text("• 只读取 Lowex 自己导出的文件，未知字段会被忽略。\n• 恢复后会按所选系统 / 客户端自动校正不支持的选项。\n• 生成的配置本身（含订阅 URL）请在「生成」页导出、分享或扫码。")
+                Text(L("说明")).font(.headline)
+                Text(L("• 只读取 Lowex 自己导出的文件，未知字段会被忽略。\n• 恢复后会按所选系统 / 客户端自动校正不支持的选项。\n• 生成的配置本身（含订阅 URL）请在「生成」页导出、分享或扫码。"))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
         .fileExporter(isPresented: $exporting, document: ConfigDocument(text: backupText), contentType: .json,
                       defaultFilename: "Lowex-backup") { r in
-            switch r { case .success: note = "已保存备份到「文件」"; case .failure(let e): note = "保存失败：\(e.localizedDescription)" }
+            switch r { case .success: note = L("已保存备份到「文件」"); case .failure(let e): note = L("保存失败：{}", e.localizedDescription) }
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .plainText]) { r in
             switch r {
-            case .failure(let e): note = "导入失败：\(e.localizedDescription)"
+            case .failure(let e): note = L("导入失败：{}", e.localizedDescription)
             case .success(let url):
                 let ok = url.startAccessingSecurityScopedResource(); defer { if ok { url.stopAccessingSecurityScopedResource() } }
                 guard let d = try? Data(contentsOf: url), let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any],
-                      (o["lowexBackup"] as? Int) != nil, let st = o["state"] as? [String: Any] else { note = "不是 Lowex 备份文件"; return }
+                      (o["lowexBackup"] as? Int) != nil, let st = o["state"] as? [String: Any] else { note = L("不是 Lowex 备份文件"); return }
                 note = store.restore(from: st)
             }
         }
@@ -71,6 +71,6 @@ extension Store {
         state = s
         reconcile(silent: true)
         save()
-        return "已恢复：\(clientInfo?.name ?? client)"
+        return L("已恢复：{}", clientInfo?.name ?? client)
     }
 }
