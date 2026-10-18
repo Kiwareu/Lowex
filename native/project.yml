@@ -6,8 +6,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.5.1"
-    CURRENT_PROJECT_VERSION: "45"
+    MARKETING_VERSION: "1.5.2"
+    CURRENT_PROJECT_VERSION: "46"
     CODE_SIGNING_ALLOWED: "NO"
     CODE_SIGNING_REQUIRED: "NO"
     CODE_SIGN_IDENTITY: ""
@@ -36,8 +36,8 @@ targets:
         CFBundleDisplayName: Lowex
         CFBundleDevelopmentRegion: zh-Hans
         CFBundleLocalizations: [zh-Hans, zh-Hant, en]
-        CFBundleShortVersionString: "1.5.1"
-        CFBundleVersion: "45"
+        CFBundleShortVersionString: "1.5.2"
+        CFBundleVersion: "46"
         UILaunchScreen: {UIColorName: LaunchBackground}
         UIAppFonts: [GreatVibes-Regular.ttf]
         UIRequiredDeviceCapabilities: [arm64]
