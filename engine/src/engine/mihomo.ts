@@ -75,7 +75,7 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   const inc:any=stash?{use:Object.keys(providers)}:{'include-all':true};
   const stashProxies=stash&&p.nodes.length?{proxies:p.nodes.map(n=>n.name)}:{};
   void stashProxies;
-  pg.push({name:N.update,type:'select',proxies:['DIRECT',N.proxy],hidden:true});
+  pg.push({name:N.update,type:'select',proxies:['DIRECT',N.proxy]});
   const reg=p.regions;
   const allNodes=()=>p.nodes.map(n=>n.name);
   const regionHas=(r:{regex:string})=>{if(!p.nodes.length||p.subs.length)return true;const re=safeRe(r.regex);return p.nodes.some(n=>re.test(n.name))};
