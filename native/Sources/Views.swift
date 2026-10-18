@@ -662,6 +662,11 @@ struct RulesView: View {
 
             switch section {
             case .groups:
+                if store.family == "mihomo" || store.family == "stash" {
+                    PlainCard {
+                        Text("💡 " + L("「资源更新」组需要先在客户端的控制面板里手动选中一个具体节点（或「一键代理」），选好之后才会生效；没选之前它默认直连。")).font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
                 PlainCard {
                     TextField(L("搜索服务分组"), text: $query)
                         .textInputAutocapitalization(.never)

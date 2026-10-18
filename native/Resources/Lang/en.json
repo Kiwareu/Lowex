@@ -1197,5 +1197,6 @@
 "，出口一样，可以删一条": ", same exit, you can delete one",
 "，出口不同：靠前的生效，后面那条不会被用到": ", different exits: the earlier one takes effect and the later one is never used",
 "，生成时展开进 outbounds。": ", expanded into outbounds when generating.",
-"；节点链接请粘贴到下面的「节点链接」区。": "; paste node links into the \"Node links\" box below."
+"；节点链接请粘贴到下面的「节点链接」区。": "; paste node links into the \"Node links\" box below.",
+"「资源更新」组需要先在客户端的控制面板里手动选中一个具体节点（或「一键代理」），选好之后才会生效；没选之前它默认直连。": "The \"Resource update\" group only takes effect after you open the client's dashboard and select a specific node (or \"One-tap proxy\") for it; until then it stays on direct."
 }
