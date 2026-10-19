@@ -10,7 +10,7 @@ final class Engine {
 
     private init() {
         ctx.exceptionHandler = { _, e in NSLog("Lowex JS error: %@", e?.toString() ?? "?") }
-        installSecureRandom()
+        Self.installSecureRandom(into: ctx)
         let url = Bundle.main.url(forResource: "engine", withExtension: "js")!
         let src = try! String(contentsOf: url, encoding: .utf8)
         ctx.evaluateScript(src)
@@ -19,7 +19,7 @@ final class Engine {
 
     /// 真随机：把 SecRandomCopyBytes 注入 JSC，供 prelude.js 的 crypto.getRandomValues 使用。
     /// 注入失败时 prelude 会直接抛错（绝不回退 Math.random），App 会在启动时失败而不是静默生成可预测的密钥。
-    private func installSecureRandom() {
+    private static func installSecureRandom(into ctx: JSContext) {
         let secureRandom: @convention(block) (Int) -> [NSNumber]? = { count in
             guard count > 0, count <= 4096 else { return nil }
             var bytes = [UInt8](repeating: 0, count: count)
