@@ -264,7 +264,7 @@ export function egernProxy(n:Node):Record<string,any>|null{
   const tr=()=>{if(n.network==='ws')return n.tls?{wss:{path:n.path||'/',sni:n.sni||n.host||n.server}}:{ws:{path:n.path||'/'}};return undefined};
   switch(n.type){
     case'socks5':if(n.tls)return null;return{socks5:{...base,...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{}),udp_relay:true}};
-    case'http':return{[n.tls?'https':'http']:{...base,...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{}),...(n.tls?{sni:n.server}:{})}};
+    case'http':return{[n.tls?'https':'http']:{...base,...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{}),...(n.tls?{sni:n.sni??n.server}:{})}};
     case'ss':if(n.plugin)return null;return{shadowsocks:{...base,method:n.cipher,password:n.password,udp_relay:true}};
     case'trojan':if(n.network&&n.network!=='tcp')return null;return{trojan:{...base,password:n.password,sni:n.sni,...(n.insecure?{skip_tls_verify:true}:{}),udp_relay:true}};
     case'vmess':{if(n.network&&n.network!=='tcp'&&n.network!=='ws')return null;const t=tr();return{vmess:{...base,user_id:n.uuid,security:n.cipher||'auto',legacy:!!n.alterId,...(t?{transport:t}:{}),udp_relay:true}}}
