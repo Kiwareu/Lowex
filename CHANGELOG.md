@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- 订阅历史记录 + 清空二次确认（分支 `feat/upgrade-98`，未合并到 main）：
+  - 节点页订阅卡片新增「历史记录」区：用户贴过的订阅 URL 自动记入历史（UserDefaults 持久化，最多 30 条、最新在前、按字符串去重，无论客户端家族都记录）；历史逐条可删除，也可点一条恢复导入到上方订阅列表（已在列表中的显示「已添加」且整行禁用）。
+  - 「清空订阅」「清空历史」均加二次确认弹窗，杜绝误触一下全删；清空订阅不影响历史记录。
+
 - 远程 JS「脚本库」分享区（分支 `feat/upgrade-98`，未合并到 main）：
   - 新增 `engine/src/engine/remoteJsLibrary.ts`：三种类型按客户端 gating——config-overwrite（JS 配置覆写，仅 Party/Verge/FlClash）、http-rewrite（HTTP 重写 .js，仅 Surge/Loon/QX/Shadowrocket/Stash）、config-override（覆写配置链接 .yaml；经核实支持 merge 键 prepend-rules/append-rules 等的 Mihomo 系：clashmi/verge/clashparty/flclash；Stash 的 Override 用另一套语法暂不收录；Surge/Loon/QX/Shadowrocket 等价机制未核实留空）。
   - 种子只放两类：本仓库 `remote-scripts/` 自建（raw 链接，SHA256 待合并到 main 后填入）+ 一个格式示例空条目；绝不硬编码任何未核验的第三方 URL。4 条种子：Mihomo DNS 防泄漏加固覆写（.js）、Surge 系空重写脚本（.js）、Mihomo 覆写配置（.yaml：DNS 防泄漏整段 + fallback 精确化注释 + 规则骨架，基于 Lowex 9.8+ 分析优化）、示例分享条目。
