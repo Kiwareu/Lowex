@@ -15,6 +15,7 @@ import {makePlan} from '../src/engine/plan';
 import {leakChecklist,leakScore,STATUS_TEXT} from '../src/engine/leak';
 import {CARRIERS} from '../src/data/carriers';
 import {parseModule,safety,KIND_NAME,supportsModules} from '../src/engine/modules';
+import {validate} from '../src/engine/validate';
 import {PRESETS} from '../src/engine/tools';
 import {CLIENTS as CL2} from '../src/data/clients';
 const J=(x:unknown)=>JSON.stringify(x);
@@ -35,6 +36,8 @@ const J=(x:unknown)=>JSON.stringify(x);
   sharedList:()=>J(SHARED),
   modInfo:(name:string,url:string,content:string)=>{try{const P=content.trim()?parseModule(content):null;const S=safety({name,url,content},P);return J({fmt:P?P.fmt:'unknown',name:P?P.name:'',rw:P?P.rewrites.length:0,sc:P?P.scripts.length:0,blocked:S.blocked,warns:S.warns})}catch(e:any){return J({error:String(e)})}},
   supportsModules:(client:string)=>{const c=CL2.find(x=>x.id===client);return !!c&&supportsModules(c.family)},
+  /** 校验生成的配置文本（结构/引用/白名单 + fallback 精确性断言）。之前 validate.ts 未被接入，是死代码。 */
+  validateConfig:(family:string,text:string)=>{try{return J(validate(family as any,text))}catch(e:any){return J([{level:'error',msg:String(e&&e.message||e)}])}},
   recommend:(net:string,loc:string,platform:string)=>J(recommend(net as any,loc as any,platform)),
   supports:(client:string,feat:string)=>has(client,feat as any),
   presets:()=>J(PRESETS.map(p=>({id:p.id,name:p.name,desc:p.desc}))),
