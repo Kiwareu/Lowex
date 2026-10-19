@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased（feat/upgrade-98 分支，未合并，未发布）
+## v1.6.0 — 2026-10-20
 
 9.8+ 升级（分支 `feat/upgrade-98`，全部改动在该分支上，未动 main）：
 
