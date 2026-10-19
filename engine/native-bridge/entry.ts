@@ -11,6 +11,7 @@ import {RESEARCH} from '../src/data/research';
 import {resolveIcon,setIconsReady,ICON_AUDIT} from '../src/data/icon-audit';
 import {VERSION} from '../src/version';
 import {has,CAPS} from '../src/data/caps';
+import {QUIC_TIERS,STUN_TIERS} from '../src/data/caps';
 import {makePlan} from '../src/engine/plan';
 import {leakChecklist,leakScore,STATUS_TEXT} from '../src/engine/leak';
 import {CARRIERS} from '../src/data/carriers';
@@ -40,6 +41,8 @@ const J=(x:unknown)=>JSON.stringify(x);
   validateConfig:(family:string,text:string)=>{try{return J(validate(family as any,text))}catch(e:any){return J([{level:'error',msg:String(e&&e.message||e)}])}},
   recommend:(net:string,loc:string,platform:string)=>J(recommend(net as any,loc as any,platform)),
   supports:(client:string,feat:string)=>has(client,feat as any),
+  /** QUIC / STUN 三档（caps.ts），供界面按档显示，不再用一个“支持”概括 */
+  tiers:(client:string)=>{const c=CL2.find(x=>x.id===client);if(!c)return J({});return J({quic:QUIC_TIERS[c.family],stun:STUN_TIERS[c.family]})},
   presets:()=>J(PRESETS.map(p=>({id:p.id,name:p.name,desc:p.desc}))),
   applyPreset:(id:string,stateJson:string)=>{try{const s=JSON.parse(stateJson);const pr=PRESETS.find(x=>x.id===id);if(!pr)return J({error:'unknown preset'});const patch=pr.apply(s);return J({...s,...patch,opts:{...s.opts,...(patch.opts||{})},groups:{...s.groups,...(patch.groups||{})}})}catch(e:any){return J({error:String(e&&e.message||e)})}},
   /** 入参：方案 JSON；返回 {text,ext,mime,name,warnings} 或 {error} */
