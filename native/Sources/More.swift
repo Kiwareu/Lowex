@@ -507,7 +507,7 @@ struct RemoteJsView: View {
                 Text(sup.reason).font(.caption).foregroundStyle(.secondary)
                 Toggle(L("启用远程 JS 模式（与生成配置互斥）"), isOn: Binding(
                     get: { store.remoteJsMode },
-                    set: { store.remoteJsMode = $0; store.saveRemoteJs() }
+                    set: { store.remoteJsMode = $0; if $0 { store.clearResult() }; store.saveRemoteJs() }
                 )).tint(Brand.pink).disabled(sup.kind == "none")
                 if sup.kind == "none" {
                     Text(L("该客户端不支持远程 JS，已禁用。")).font(.caption2).foregroundStyle(.secondary)
