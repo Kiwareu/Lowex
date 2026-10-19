@@ -96,6 +96,7 @@ final class Store: ObservableObject {
             state = Engine.shared.initialState(client: first, platform: "ios")
         }
         loadRemoteJs()
+        loadSubHistory()
     }
 
     static let iconsReadyKey = "lowex.icons.ready.v1"
@@ -328,6 +329,9 @@ final class Store: ObservableObject {
     }
 
     // MARK: 节点 / 订阅
+    /// 订阅历史（防误删：用户贴过的订阅 URL，持久化，可逐条恢复；最多 30 条）
+    private let subHistoryKey = "lowex.subs.history.v1"
+    @Published var subHistory: [String] = []
     var nodesText: String {
         get { str("nodesText") }
         set { var s = state; s["nodesText"] = newValue; state = s }
@@ -641,6 +645,7 @@ final class Store: ObservableObject {
         let urls = lines.filter { $0.lowercased().hasPrefix("http://") || $0.lowercased().hasPrefix("https://") }
         let other = lines.count - urls.count
         if urls.isEmpty { pasteNote = L("没有识别到 http(s):// 订阅 URL") + (other > 0 ? L("；节点链接请粘贴到下面的「节点链接」区。") : "。"); return }
+        recordSubHistory(urls)
         applyPaste(urls.joined(separator: "\n"))
         if other > 0 { pasteNote += L("（另有 {} 行不是订阅 URL，已忽略，节点链接请放到「节点链接」区。）", other) }
     }
@@ -649,6 +654,38 @@ final class Store: ObservableObject {
         guard cur.indices.contains(i) else { return }
         cur.remove(at: i); s["subs"] = cur; state = s
     }
+    private func loadSubHistory() {
+        subHistory = UserDefaults.standard.stringArray(forKey: subHistoryKey) ?? []
+    }
+    private func saveSubHistory() {
+        UserDefaults.standard.set(subHistory, forKey: subHistoryKey)
+    }
+    /// 记录用户贴过的订阅 URL：去重、最新在前、最多 30 条（无论客户端家族都记录）
+    func recordSubHistory(_ urls: [String]) {
+        var h = subHistory
+        for u in urls { h.removeAll { $0 == u }; h.insert(u, at: 0) }
+        subHistory = Array(h.prefix(30))
+        saveSubHistory()
+    }
+    /// 从历史恢复一条订阅到上方列表
+    func restoreSub(_ url: String) {
+        let urls = subs.compactMap { $0["url"] as? String }
+        if urls.contains(url) { pasteNote = L("该订阅已在列表中"); return }
+        if family == "shadowrocket" {
+            UIPasteboard.general.string = url
+            pasteNote = L("已复制订阅 URL 到剪贴板。请打开 Shadowrocket 首页 → 右上角 + → 用「类型：Subscribe」添加。")
+            return
+        }
+        var s = state; var cur = (s["subs"] as? [[String: Any]]) ?? []
+        cur.append(["name": "", "url": url])
+        s["subs"] = cur; state = s
+        pasteNote = L("已恢复导入 1 条订阅")
+    }
+    func removeSubHistory(at i: Int) {
+        guard subHistory.indices.contains(i) else { return }
+        subHistory.remove(at: i); saveSubHistory()
+    }
+    func clearSubHistory() { subHistory = []; saveSubHistory() }
     func clearNodeText() { var s = state; s["nodesText"] = ""; state = s; pasteNote = L("已清空节点链接。") }
 
     // MARK: 流程进度
