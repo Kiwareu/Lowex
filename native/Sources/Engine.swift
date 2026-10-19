@@ -1,5 +1,6 @@
 import Foundation
 import JavaScriptCore
+import Security
 
 /// 生成引擎 = 网页版同一份 TypeScript 引擎（engine.js），在 JavaScriptCore 运行。界面原生，规则逻辑不重写。
 final class Engine {
@@ -9,10 +10,24 @@ final class Engine {
 
     private init() {
         ctx.exceptionHandler = { _, e in NSLog("Lowex JS error: %@", e?.toString() ?? "?") }
+        installSecureRandom()
         let url = Bundle.main.url(forResource: "engine", withExtension: "js")!
         let src = try! String(contentsOf: url, encoding: .utf8)
         ctx.evaluateScript(src)
         api = ctx.objectForKeyedSubscript("Lowex")
+    }
+
+    /// 真随机：把 SecRandomCopyBytes 注入 JSC，供 prelude.js 的 crypto.getRandomValues 使用。
+    /// 注入失败时 prelude 会直接抛错（绝不回退 Math.random），App 会在启动时失败而不是静默生成可预测的密钥。
+    private func installSecureRandom() {
+        let secureRandom: @convention(block) (Int) -> [NSNumber]? = { count in
+            guard count > 0, count <= 4096 else { return nil }
+            var bytes = [UInt8](repeating: 0, count: count)
+            let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+            guard status == errSecSuccess else { return nil }
+            return bytes.map { NSNumber(value: $0) }
+        }
+        ctx.setObject(secureRandom as AnyObject, forKeyedSubscript: "__lowexSecureRandom" as NSString)
     }
 
     /// Lowex-Icons 仓库里已上传的组 id 列表（JSON 数组字符串）；引擎据此改用仓库图标
