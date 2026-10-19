@@ -212,6 +212,8 @@ final class Store: ObservableObject {
             ("allowLan", "allowLan"), ("wifiCalling", "wifi")]
         var reset: [String] = []
         for (k, f) in map where !supports(f) {
+            // sing-box 的 failover 开关 = 分层预设 A/B 选择（A 降级为地区-自动），有实际意义，不重置
+            if k == "failover" && family == "singbox" { continue }
             if let d = defOpts[k], "\(o[k] ?? "")" != "\(d)" { o[k] = d; reset.append(k) }
             else if o[k] == nil, let d = defOpts[k] { o[k] = d }
         }
@@ -458,6 +460,8 @@ final class Store: ObservableObject {
     }
 
     // MARK: 推荐 / 生成
+    /// 校验错误（非警告）存在时，导出与导入必须阻止（警告不阻止）
+    var hasValidationErrors: Bool { validationIssues.contains { $0.isError } }
     func applyPreset(_ id: String) {
         guard let patched = engine.applyPreset(id: id, state: state) else {
             recommendNote = L("预设应用失败。")
@@ -531,7 +535,7 @@ final class Store: ObservableObject {
     var presetMode: String { engine.presetMode(state: state) }
     var remoteJsSupport: Engine.RemoteJsSupport { engine.remoteJsSupport(client: client) }
     func remoteJsCheck() -> Engine.RemoteJsCheck {
-        let hosts = remoteJsMITM.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        let hosts = remoteJsMITM.components(separatedBy: CharacterSet(charactersIn: ",，")).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         return engine.remoteJsValidate(url: remoteJsURL, sha256: remoteJsSHA256, name: remoteJsName, mitmHosts: hosts, confirmSensitive: remoteJsConfirmSensitive)
     }
     var quicTierText: String {
@@ -583,7 +587,7 @@ final class Store: ObservableObject {
         let all: [(String, String)] = [(L("故障转移"), "failover"), (L("广告拦截"), "ads"), (L("拦截追踪器"), "trackers"), (L("拦截遥测"), "telemetry"),
             (L("策略组图标"), "icons"), (L("关闭 IPv6"), "ipv6"), ("TUN", "tun"), ("fake-ip", "fakeIp"), (L("QUIC 拦截"), "quic"), (L("STUN 防护"), "stun"),
             (L("局域网连接"), "allowLan"), (L("Wi-Fi 通话"), "wifi")]
-        return all.filter { !supports($0.1) }.map { $0.0 }
+        return all.filter { ($0.1 == "failover" && family == "singbox") ? false : !supports($0.1) }.map { $0.0 }
     }
 
     // MARK: 手动节点（SOCKS5 / HTTP / HTTPS）
