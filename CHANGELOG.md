@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- 远程 JS「脚本库」分享区（分支 `feat/upgrade-98`，未合并到 main）：
+  - 新增 `engine/src/engine/remoteJsLibrary.ts`：三种类型按客户端 gating——config-overwrite（JS 配置覆写，仅 Party/Verge/FlClash）、http-rewrite（HTTP 重写 .js，仅 Surge/Loon/QX/Shadowrocket/Stash）、config-override（覆写配置链接 .yaml；经核实支持 merge 键 prepend-rules/append-rules 等的 Mihomo 系：clashmi/verge/clashparty/flclash；Stash 的 Override 用另一套语法暂不收录；Surge/Loon/QX/Shadowrocket 等价机制未核实留空）。
+  - 种子只放两类：本仓库 `remote-scripts/` 自建（raw 链接，SHA256 待合并到 main 后填入）+ 一个格式示例空条目；绝不硬编码任何未核验的第三方 URL。4 条种子：Mihomo DNS 防泄漏加固覆写（.js）、Surge 系空重写脚本（.js）、Mihomo 覆写配置（.yaml：DNS 防泄漏整段 + fallback 精确化注释 + 规则骨架，基于 Lowex 9.8+ 分析优化）、示例分享条目。
+  - 新增 `remote-scripts/mihomo-dns-leak-fix.js`（只补缺不覆盖，绝不碰 IPv6 与已有规则）、`remote-scripts/surge-noop.js`（$done({}) + [Script]/[MITM] 片段示例）、`remote-scripts/mihomo-override-dns-rules.yaml`（DNS 整段 + health-check/精确 fallback 注释说明 + 注释掉的 prepend-rules 示例；无真实节点/订阅）。
+  - App「远程 JS」页新增第四张卡片「脚本库」：每行显示类型与「原创/分享·作者」徽标；可复制链接、复制来源标注；.js 行在 SHA256 已锁定时可「填入引用」；config-override 行只给复制链接/来源标注（在代理软件的「覆写/Override」里添加配置链接，不走 App 校验）；未哈希锁定的分享条目显示橙色提示；分支未合并的条目提示“待分支合并到 main 后链接生效”；可「添加我的收藏」（类型三选，url 按类型校验 https + .js / .yaml/.yml）。
+  - 入口新增 `remoteJsLibrary` / `remoteJsLibraryAttribution`；`Engine.swift` 加同名桥接；`Store.swift` 加 `libraryCustom`（UserDefaults `lowex.library.custom.v1`）。
+  - 版本号保持 1.6.0 / Build 47，未 bump。
+
 ## v1.6.0 — 2026-10-20
 
 9.8+ 升级（分支 `feat/upgrade-98`，全部改动在该分支上，未动 main）：

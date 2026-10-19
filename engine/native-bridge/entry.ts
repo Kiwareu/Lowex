@@ -15,6 +15,7 @@ import {QUIC_TIERS,STUN_TIERS} from '../src/data/caps';
 import {makePlan} from '../src/engine/plan';
 import {presetMode} from '../src/engine/plan';
 import {remoteJsSupport,validateRemoteJs,MIHOMO_SCRIPT_TEMPLATE,SURGE_SCRIPT_TEMPLATE} from '../src/engine/remoteJs';
+import {libraryList,libraryAttribution} from '../src/engine/remoteJsLibrary';
 import {leakChecklist,leakScore,STATUS_TEXT} from '../src/engine/leak';
 import {CARRIERS} from '../src/data/carriers';
 import {parseModule,safety,KIND_NAME,supportsModules} from '../src/engine/modules';
@@ -51,6 +52,9 @@ const J=(x:unknown)=>JSON.stringify(x);
   remoteJsSupport:(client:string)=>J(remoteJsSupport(client)),
   remoteJsValidate:(json:string)=>{try{return J(validateRemoteJs(JSON.parse(json)))}catch(e:any){return J({blocked:[String(e&&e.message||e)],warns:[]})}},
   remoteJsTemplate:(kind:string)=>J({text:kind==='config-overwrite'?MIHOMO_SCRIPT_TEMPLATE:SURGE_SCRIPT_TEMPLATE}),
+  /** 脚本库：分享区（原创脚本给链接+SHA256 锁定，分享的第三方只给链接+来源标注） */
+  remoteJsLibrary:(client:string)=>J(libraryList(client||'')),
+  remoteJsLibraryAttribution:(id:string)=>J(libraryAttribution(id)),
   presetMode:(stateJson:string)=>{try{const s=JSON.parse(stateJson);return J({mode:presetMode(s)})}catch(e:any){return J({error:String(e&&e.message||e)})}},
   generate:(stateJson:string)=>{try{const s=JSON.parse(stateJson);const r=generate(s);return J({...r,warnings:makePlan(s).warnings})}catch(e:any){return J({error:String(e&&e.message||e)})}},
 };

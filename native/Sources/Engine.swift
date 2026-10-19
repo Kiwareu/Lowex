@@ -149,6 +149,14 @@ final class Engine {
         let r = json(api.objectForKeyedSubscript("remoteJsTemplate")?.call(withArguments: [kind])?.toString() ?? "{}")
         return r["text"] as? String ?? ""
     }
+    func remoteJsLibrary(client: String) -> [[String: Any]] {
+        let s = api.objectForKeyedSubscript("remoteJsLibrary")?.call(withArguments: [client])?.toString() ?? "[]"
+        return (try? JSONSerialization.jsonObject(with: Data(s.utf8))) as? [[String: Any]] ?? []
+    }
+    func remoteJsLibraryAttribution(id: String) -> [String: String] {
+        let r = json(api.objectForKeyedSubscript("remoteJsLibraryAttribution")?.call(withArguments: [id])?.toString() ?? "{}")
+        return ["url": r["url"] as? String ?? "", "text": r["text"] as? String ?? ""]
+    }
     func applyPreset(id: String, state: [String: Any]) -> [String: Any]? {
         guard let d = try? JSONSerialization.data(withJSONObject: state), let s = String(data: d, encoding: .utf8) else { return nil }
         let r = json(call("applyPreset", [id, s]))

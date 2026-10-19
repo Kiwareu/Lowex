@@ -496,6 +496,62 @@ struct RemoteJsView: View {
     @State private var check: Engine.RemoteJsCheck?
     @State private var showTemplate = false
     @State private var toast = ""
+    @State private var showAddForm = false
+    @State private var addName = ""
+    @State private var addUrl = ""
+    @State private var addAuthor = ""
+    @State private var addSourceKind = 1 // 0 原创 / 1 分享
+    @State private var addDesc = ""
+    @State private var addKind = 0 // 0 config-override / 1 config-overwrite / 2 http-rewrite
+    /// kind 的中文显示名
+    func libraryKindName(_ kind: String) -> String {
+        switch kind {
+        case "config-override": return L("覆写配置")
+        case "config-overwrite": return L("JS 配置覆写")
+        case "http-rewrite": return L("HTTP 重写")
+        default: return kind
+        }
+    }
+    /// 脚本库行（引擎种子 + 用户收藏，同一结构）
+    struct LibraryRow: Identifiable {
+        let id: String
+        let name: String
+        let url: String
+        let sha256: String
+        let kind: String
+        let desc: String
+        let sourceKind: String // "original" 原创 / "shared" 分享
+        let author: String
+        let pendingMerge: Bool
+        let custom: Bool // 用户自己收藏的
+    }
+    var libraryRows: [LibraryRow] {
+        let seed = store.engine.remoteJsLibrary(client: store.client).compactMap { d -> LibraryRow? in
+            guard let id = d["id"] as? String, let name = d["name"] as? String else { return nil }
+            let src = d["source"] as? [String: Any]
+            return LibraryRow(id: id, name: name, url: d["url"] as? String ?? "",
+                              sha256: d["sha256"] as? String ?? "", kind: d["kind"] as? String ?? "",
+                              desc: d["desc"] as? String ?? "",
+                              sourceKind: src?["kind"] as? String ?? "shared",
+                              author: src?["author"] as? String ?? "",
+                              pendingMerge: d["pendingMerge"] as? Bool ?? false, custom: false)
+        }
+        let mine = store.libraryCustom.map { d in
+            LibraryRow(id: d["id"] ?? UUID().uuidString, name: d["name"] ?? "", url: d["url"] ?? "",
+                       sha256: "", kind: d["kind"] ?? "", desc: d["desc"] ?? "",
+                       sourceKind: d["sourceKind"] ?? "shared", author: d["author"] ?? "",
+                       pendingMerge: false, custom: true)
+        }
+        return seed + mine
+    }
+    func attributionText(for row: LibraryRow) -> String {
+        if row.custom {
+            let label = row.sourceKind == "original" ? L("原创") : L("分享")
+            let author = row.author.isEmpty ? L("（待填写）") : row.author
+            return "「\(row.name)」\n" + L("链接：") + row.url + "\n" + L("来源：") + "\(author)（\(label)）" + "\n" + L("SHA256：未锁定")
+        }
+        return store.engine.remoteJsLibraryAttribution(id: row.id)["text"] ?? ""
+    }
     var body: some View {
         PageChrome(title: L("远程 JS 覆写 / 重写")) {
             PlainCard {
@@ -563,6 +619,120 @@ struct RemoteJsView: View {
                         Label(L("复制自建模板"), systemImage: "doc.on.doc").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent).tint(Brand.pink)
+                }
+                PlainCard {
+                    Text(L("脚本库")).font(.headline)
+                    Text(L("原创脚本带 SHA256 锁定；分享的第三方脚本只给链接并标注来源，复制即用，不必在 App 里生成校验。绝不内置未核验的第三方脚本。"))
+                        .font(.caption).foregroundStyle(.secondary)
+                    ForEach(libraryRows) { row in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text(row.name).font(.headline)
+                                Spacer()
+                                Text(libraryKindName(row.kind))
+                                    .font(.caption2).foregroundStyle(.secondary)
+                                    .padding(.horizontal, 6).padding(.vertical, 3)
+                                    .background(Color.secondary.opacity(0.12))
+                                    .clipShape(Capsule())
+                                Text(row.sourceKind == "original" ? L("原创") : L("分享 · ") + (row.author.isEmpty ? L("未知作者") : row.author))
+                                    .font(.caption2).padding(.horizontal, 8).padding(.vertical, 3)
+                                    .background((row.sourceKind == "original" ? Brand.pink : Color.orange).opacity(0.15))
+                                    .foregroundStyle(row.sourceKind == "original" ? Brand.pink : Color.orange)
+                                    .clipShape(Capsule())
+                            }
+                            if !row.desc.isEmpty {
+                                Text(row.desc).font(.footnote).foregroundStyle(.secondary)
+                            }
+                            if !row.url.isEmpty {
+                                Text(row.url).font(.caption2.monospaced())
+                                    .lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                            }
+                            if row.pendingMerge {
+                                Text(L("待分支合并到 main 后链接生效")).font(.caption2).foregroundStyle(.orange)
+                            }
+                            if row.sourceKind == "shared" && row.sha256.isEmpty {
+                                Text(L("未哈希锁定：仅复制链接，请在客户端里自行核验来源后使用")).font(.caption2).foregroundStyle(.orange)
+                            }
+                            if row.kind == "config-override" {
+                                Text(L("在代理软件的 覆写/Override 里添加配置链接")).font(.caption2).foregroundStyle(Brand.pink)
+                            }
+                            HStack(spacing: 10) {
+                                Button {
+                                    UIPasteboard.general.string = row.url
+                                    toast = L("链接已复制")
+                                } label: {
+                                    Label(L("复制链接"), systemImage: "link").font(.caption)
+                                }.buttonStyle(.bordered).disabled(row.url.isEmpty)
+                                Button {
+                                    UIPasteboard.general.string = attributionText(for: row)
+                                    toast = L("来源标注已复制")
+                                } label: {
+                                    Label(L("复制来源标注"), systemImage: "quote.bubble").font(.caption)
+                                }.buttonStyle(.bordered)
+                                // 覆写配置链接（.yaml）在代理软件里直接添加，不走 App 内校验，故不提供「填入引用」
+                                if row.kind != "config-override" && !row.sha256.isEmpty {
+                                    Button {
+                                        store.remoteJsURL = row.url
+                                        store.remoteJsSHA256 = row.sha256
+                                        store.remoteJsName = row.name
+                                        store.saveRemoteJs()
+                                        toast = L("已填入引用，可去校验")
+                                    } label: {
+                                        Label(L("填入引用"), systemImage: "arrow.down.doc").font(.caption)
+                                    }.buttonStyle(.bordered)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 6)
+                        Divider()
+                    }
+                    Button { showAddForm.toggle() } label: {
+                        Label(showAddForm ? L("收起") : L("添加我的收藏"), systemImage: "plus").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    if showAddForm {
+                        VStack(spacing: 8) {
+                            TextField(L("名称"), text: $addName)
+                            Picker(L("类型"), selection: $addKind) {
+                                Text(L("覆写配置链接")).tag(0)
+                                Text(L("JS 配置覆写")).tag(1)
+                                Text(L("HTTP 重写")).tag(2)
+                            }.pickerStyle(.segmented)
+                            TextField(addKind == 0 ? L("https://… .yaml 链接") : L("https://… .js 链接"), text: $addUrl)
+                                .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                            TextField(L("作者"), text: $addAuthor).textInputAutocapitalization(.never).autocorrectionDisabled()
+                            Picker(L("来源"), selection: $addSourceKind) {
+                                Text(L("原创")).tag(0)
+                                Text(L("分享")).tag(1)
+                            }.pickerStyle(.segmented)
+                            TextField(L("说明（可选）"), text: $addDesc)
+                            Button {
+                                let u = addUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+                                let lu = u.lowercased()
+                                let kindStr = ["config-override", "config-overwrite", "http-rewrite"][addKind]
+                                let urlOk: Bool
+                                if kindStr == "config-override" {
+                                    urlOk = lu.hasPrefix("https") && (lu.hasSuffix(".yaml") || lu.hasSuffix(".yml"))
+                                } else {
+                                    urlOk = lu.hasPrefix("https") && lu.hasSuffix(".js")
+                                }
+                                guard urlOk else {
+                                    toast = kindStr == "config-override" ? L("链接须以 https 开头、以 .yaml/.yml 结尾") : L("链接须以 https 开头、以 .js 结尾")
+                                    return
+                                }
+                                store.addLibraryCustom(name: addName.trimmingCharacters(in: .whitespacesAndNewlines),
+                                                       url: u, author: addAuthor.trimmingCharacters(in: .whitespacesAndNewlines),
+                                                       sourceKind: addSourceKind == 0 ? "original" : "shared",
+                                                       desc: addDesc, kind: kindStr)
+                                addName = ""; addUrl = ""; addAuthor = ""; addDesc = ""
+                                showAddForm = false
+                                toast = L("已加入我的收藏")
+                            } label: {
+                                Label(L("保存到我的收藏"), systemImage: "bookmark").frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent).tint(Brand.pink)
+                        }
+                    }
                 }
             }
         }

@@ -32,6 +32,8 @@ final class Store: ObservableObject {
     @Published var remoteJsName = ""
     @Published var remoteJsMITM = ""
     @Published var remoteJsConfirmSensitive = false
+    // 脚本库：用户自己收藏的脚本（UserDefaults 持久化，字段 id/name/url/author/sourceKind/desc/kind）
+    @Published var libraryCustom: [[String: String]] = []
     private var needsDisclaimer = false
 
     private let key = "lowex.native.state.v3"
@@ -531,6 +533,24 @@ final class Store: ObservableObject {
         remoteJsName = d.string(forKey: "lowex.remoteJs.name.v1") ?? ""
         remoteJsMITM = d.string(forKey: "lowex.remoteJs.mitm.v1") ?? ""
         remoteJsConfirmSensitive = d.bool(forKey: "lowex.remoteJs.confirmSensitive.v1")
+        libraryCustom = UserDefaults.standard.array(forKey: "lowex.library.custom.v1") as? [[String: String]] ?? []
+    }
+    /// 脚本库：添加用户收藏（id 用 UUID）
+    func addLibraryCustom(name: String, url: String, author: String, sourceKind: String, desc: String, kind: String) {
+        var e: [String: String] = [:]
+        e["id"] = UUID().uuidString
+        e["name"] = name
+        e["url"] = url
+        e["author"] = author
+        e["sourceKind"] = sourceKind // "original" 原创 / "shared" 分享
+        e["desc"] = desc
+        e["kind"] = kind
+        libraryCustom.append(e)
+        UserDefaults.standard.set(libraryCustom, forKey: "lowex.library.custom.v1")
+    }
+    func removeLibraryCustom(id: String) {
+        libraryCustom.removeAll { $0["id"] == id }
+        UserDefaults.standard.set(libraryCustom, forKey: "lowex.library.custom.v1")
     }
     var presetMode: String { engine.presetMode(state: state) }
     var remoteJsSupport: Engine.RemoteJsSupport { engine.remoteJsSupport(client: client) }
