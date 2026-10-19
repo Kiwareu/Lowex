@@ -371,6 +371,8 @@ struct NodesView: View {
     @EnvironmentObject var store: Store
     @State private var subDraft = ""
     @State private var linkDraft = ""
+    @State private var showClearSubsConfirm = false
+    @State private var showClearHistoryConfirm = false
     @State private var editing: ManualNodeDraft?
     @ObservedObject private var ap = LayoutPrefs.shared
 
@@ -438,7 +440,11 @@ struct NodesView: View {
                     .buttonStyle(.borderedProminent).tint(Brand.pink)
                     .disabled(subDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     if !store.subs.isEmpty {
-                        Button(L("清空订阅"), role: .destructive) { var s = store.state; s["subs"] = []; store.state = s }.buttonStyle(.bordered)
+                        Button(L("清空订阅"), role: .destructive) { showClearSubsConfirm = true }.buttonStyle(.bordered)
+                            .confirmationDialog(L("清空全部订阅？"), isPresented: $showClearSubsConfirm, titleVisibility: .visible) {
+                                Button(L("全部删除"), role: .destructive) { var s = store.state; s["subs"] = []; store.state = s }
+                                Button(L("取消"), role: .cancel) {}
+                            }
                     }
                 }
                 if !store.subs.isEmpty && !isSR {
@@ -448,6 +454,35 @@ struct NodesView: View {
                             Spacer()
                             Button { store.removeSub(i) } label: { Image(systemName: "trash").font(.caption) }.buttonStyle(.plain).foregroundStyle(.red)
                         }
+                    }
+                }
+                // 订阅历史：防误删——清空订阅后可从这里逐条恢复
+                if !store.subHistory.isEmpty {
+                    HStack {
+                        Text(L("历史记录（{}）", store.subHistory.count)).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Spacer()
+                        Button(L("清空历史"), role: .destructive) { showClearHistoryConfirm = true }
+                            .font(.caption).foregroundStyle(.red)
+                    }
+                    .confirmationDialog(L("清空全部历史记录？"), isPresented: $showClearHistoryConfirm, titleVisibility: .visible) {
+                        Button(L("全部删除"), role: .destructive) { store.clearSubHistory() }
+                        Button(L("取消"), role: .cancel) {}
+                    }
+                    Text(L("点一条恢复导入到上方列表；垃圾桶只删这条历史，不影响已添加的订阅。")).font(.caption2).foregroundStyle(.secondary)
+                    ForEach(Array(store.subHistory.enumerated()), id: \.offset) { i, url in
+                        let added = store.subs.contains { ($0["url"] as? String) == url }
+                        HStack {
+                            Text(url).font(.caption2).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                            Spacer()
+                            if added {
+                                Text(L("已添加")).font(.caption2).foregroundStyle(.tertiary)
+                            } else {
+                                Button { store.removeSubHistory(at: i) } label: { Image(systemName: "trash").font(.caption) }.buttonStyle(.plain).foregroundStyle(.red)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture { if !added { store.restoreSub(url) } }
+                        .disabled(added)
                     }
                 }
             }
