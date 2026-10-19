@@ -1,5 +1,5 @@
 /** 规则预览 / 配置对比 / 分享链接 / 预设 / 压缩包（全部在浏览器本地） */
-import type {State} from './types';
+import type {State,Opts} from './types';
 import {STAGES,makePlan,type Plan,type Rule} from './plan';
 import {GROUPS,REGIONS} from '../data/groups';
 import {exportPlan} from '../store';
@@ -54,25 +54,34 @@ export function diffLines(a:string,b:string):DiffLine[]{
 /* ---------- 预设模板 ---------- */
 export interface Preset{id:string;name:string;desc:string;apply:(s:State)=>Partial<State>}
 const only=(on:string[],pol:Record<string,string>={})=>{const g:State['groups']={};for(const x of GROUPS)g[x.id]={on:on.includes(x.id),policy:pol[x.id]||x.def};return g};
+/** 9.8+ 各预设共用安全基线（差异只在定位，不降低标准）：
+ *  未知域名走代理、IPv6 关、fake-ip + TUN 开、境外 QUIC 拦、STUN 走代理、
+ *  广告 Lite + 追踪/遥测拦截、故障转移开、测速间隔 600 秒、容差 50、
+ *  负载均衡关（防流量分散到多节点）、局域网关。 */
+const hardOpts=(s:State,extra:Partial<Opts>={}):Opts=>({...s.opts,unknown:'proxy',ipv6:false,fakeIp:true,tun:true,blockQuic:'foreign',stun:'proxy',ads:'lite',telemetry:true,trackers:true,failover:true,urlTestInterval:600,tolerance:50,lbGroup:false,allowLan:false,...extra});
+/** 预设分组：除定位组外，广告 / 遥测 / 追踪器拦截默认开（REJECT）。
+ *  注意：only() 会枚举全部 GROUPS 把未列出的组关掉；之前多数预设没列这三组，
+ *  等于悄悄关了拦截，而 opts.ads='lite' 成了死配置。onlyB 保证两者一致。 */
+const onlyB=(on:string[],pol:Record<string,string>={})=>only([...on,'ads','telemetry','trackers'],{...pol,ads:'REJECT',telemetry:'REJECT',trackers:'REJECT'});
 export const PRESETS:Preset[]=[
- {id:'balanced',name:'日常均衡',desc:'默认：AI、主流流媒体与社交、GitHub、Google/微软/Apple、PayPal、加密货币、B 站。',apply:()=>({groups:{}})},
- {id:'min',name:'极简',desc:'只开最常用的：AI、Google、Telegram、X、YouTube、GitHub。规则少，iPhone 更省内存。',apply:s=>({groups:only(['ai','google','telegram','twitter','youtube','github','bilibili','apple','microsoft']),opts:{...s.opts,ads:'lite',lowMemory:true}})},
- {id:'stream',name:'流媒体',desc:'YouTube、Netflix、Disney+、Prime Video、Spotify、Twitch、TikTok 全开，出口建议选「某地区-手动」。',apply:s=>({groups:only(['youtube','netflix','disney','primevideo','spotify','twitch','tiktok','google','telegram','ai','github','bilibili','apple','microsoft'])})},
- {id:'dev',name:'开发者',desc:'GitHub、GitLab、Docker、npm、Cloudflare、Google、微软、AI（含更多）、学术。',apply:()=>({groups:only(['github','gitlab','docker','npm','cloudflare','google','microsoft','onedrive','ai','ai-more','ai-agent','ai-cn','scholar','telegram','apple','twitter','reddit','bilibili'])})},
- {id:'ai',name:'AI 重度',desc:'AI、「AI 更多」与智能体走美国线路，国内 AI 直连，Google、GitHub、学术一起开。',apply:s=>{const us=s.regions.includes('US')?'R:US':'PROXY';return{groups:only(['ai','ai-more','ai-agent','ai-cn','google','github','scholar','telegram','twitter','bilibili','apple','microsoft'],{ai:us,'ai-more':us,'ai-agent':us})}}},
- {id:'safe',name:'加密货币 / 银行（稳）',desc:'交易所、钱包、海外银行券商：固定地区出口，避免 IP 乱跳触发风控。',apply:s=>{const r=s.regions.includes('SG')?'R:SG/m':s.regions.includes('HK')?'R:HK/m':'PROXY';return{groups:only(['crypto','crypto-more','bank-overseas','paypal','fintech','google','telegram','twitter','ai','bilibili','apple','microsoft','onedrive'],{crypto:r,'crypto-more':r,'bank-overseas':r,paypal:r,fintech:r}),opts:{...s.opts,unknown:'proxy',failover:true,ipv6:false,blockQuic:'foreign',stun:'proxy'}}}},
- {id:'nomad',name:'数字游民',desc:'对齐作者自用结构：Bunq / SumUp / Maya / Blackcat + Wise/Revolut 等金融科技 + PayPal；微软/Apple/OneDrive 直连；故障转移与防泄漏全开。出口默认某地区「手动」固定 IP。',apply:s=>{const r=s.regions.includes('DE')?'R:DE/m':s.regions.includes('EU')?'R:EU/m':s.regions.includes('SG')?'R:SG/m':s.regions.includes('HK')?'R:HK/m':'PROXY';
-   const ids=['ai','youtube','google','github','steam','tiktok','twitter','telegram','netflix','disney','spotify','paypal','meta','line','whatsapp','fintech','bank-overseas','bank-eu','bunq','sumup','maya','blackcat','cn-bank-direct','onedrive','microsoft','apple','ads','telemetry','trackers'];
-   const pol:Record<string,string>={bunq:r,sumup:r,maya:r,blackcat:r,fintech:r,'bank-overseas':r,'bank-eu':r,paypal:r,onedrive:'DIRECT',microsoft:'DIRECT',apple:'DIRECT','cn-bank-direct':'DIRECT',ads:'REJECT',telemetry:'REJECT',trackers:'REJECT'};
-   return{groups:only(ids,pol),regions:['HK','TW','JP','SG','KR','US','EU','UK','FR','DE','OT'],opts:{...s.opts,unknown:'proxy',failover:true,ipv6:false,fakeIp:true,tun:true,mtu:1420,blockQuic:'foreign',stun:'proxy',ads:'lite',telemetry:true,trackers:true,keepAlive:true,urlTestInterval:600,icons:true}}}},
- {id:'crypto-pack',name:'加密货币',desc:'Binance / Bybit / Bybit EU / OKX / MEXC / Kraken / Krak / Bitget Wallet + 通用加密规则集；固定新加坡或香港手动节点；嗅探与防泄漏加强。',apply:s=>{const r=s.regions.includes('SG')?'R:SG/m':s.regions.includes('HK')?'R:HK/m':s.regions.includes('JP')?'R:JP/m':'PROXY';
-   const ids=['crypto','crypto-more','bybit-eu','mexc','krak','bitget-wallet','paypal','google','telegram','twitter','ai','github','apple','microsoft','ads','telemetry','trackers'];
-   const pol:Record<string,string>={crypto:r,'crypto-more':r,'bybit-eu':r,mexc:r,krak:r,'bitget-wallet':r,paypal:r,ads:'REJECT',telemetry:'REJECT',trackers:'REJECT'};
-   return{groups:only(ids,pol),opts:{...s.opts,unknown:'proxy',failover:true,ipv6:false,fakeIp:true,blockQuic:'foreign',stun:'proxy',ads:'lite',telemetry:true,trackers:true,urlTestInterval:600}}}},
- {id:'antileak',name:'通用防泄漏',desc:'IPv6 关、境外 QUIC 拦、STUN 走代理、fake-ip + 广告/追踪/遥测拦截、故障转移开；保留常用服务组。对齐作者 DNS/防泄漏模板（无私人信息）。',apply:s=>({opts:{...s.opts,ipv6:false,fakeIp:true,tun:true,mtu:1420,blockQuic:'foreign',stun:'proxy',unknown:'proxy',ads:'lite',telemetry:true,trackers:true,failover:true,keepAlive:true,urlTestInterval:600,icons:true},
-   groups:only(['ai','youtube','netflix','disney','spotify','telegram','twitter','meta','discord','github','google','microsoft','apple','paypal','crypto','bilibili','steam','tiktok','onedrive','ads','telemetry','trackers','cn-bank-direct'],{onedrive:'DIRECT',microsoft:'DIRECT',apple:'DIRECT','cn-bank-direct':'DIRECT',ads:'REJECT',telemetry:'REJECT',trackers:'REJECT'})})},
- {id:'cn',name:'直连优先（省流量）',desc:'未知域名直连，只有需要代理的服务走代理：适合流量有限的套餐。',apply:s=>({groups:only(['ai','google','telegram','twitter','youtube','github','apple','microsoft','bilibili']),opts:{...s.opts,unknown:'direct',ads:'lite'}})},
- {id:'all',name:'全开（不推荐）',desc:'把所有服务分组都打开，规则最多，仅用于测试。',apply:()=>({groups:Object.fromEntries(GROUPS.filter(g=>g.category!=='reject'&&g.id!=='games-cn'&&g.id!=='pt'&&g.id!=='p2p-private').map(g=>[g.id,{on:true,policy:g.def}]))})},
+ {id:'balanced',name:'日常均衡',desc:'默认（平衡/完美）：与全新方案默认开启的分组一致——AI、流媒体、社交、GitHub、Google/微软/Apple、PayPal、加密货币、B 站、金融科技、国内银行直连；故障转移 + 防泄漏基线全开。',apply:s=>({groups:onlyB(['ai','ai-more','ai-agent','ai-cn','youtube','netflix','disney','spotify','telegram','twitter','meta','discord','github','google','microsoft','apple','paypal','crypto','bilibili','games-cn','pt','bank-overseas','fintech','cn-bank-direct','steam']),opts:hardOpts(s,{keepAlive:false})})},
+ {id:'min',name:'极简',desc:'只开最常用的：AI、Google、Telegram、X、YouTube、GitHub；广告 Lite + 拦截全开（规则仍精简），低内存模式，iPhone 更省内存。',apply:s=>({groups:onlyB(['ai','google','telegram','twitter','youtube','github','bilibili','apple','microsoft'],{apple:'DIRECT',microsoft:'DIRECT'}),opts:hardOpts(s,{lowMemory:true})})},
+ {id:'stream',name:'流媒体',desc:'YouTube、Netflix、Disney+、Prime Video、Spotify、Twitch、TikTok + 更多影音（Hulu / Crunchyroll 等）全开；流媒体组建议在规则页选「某地区-手动」固定片库防跳区；保活开、测速 600 秒。',apply:s=>({groups:onlyB(['youtube','netflix','disney','primevideo','spotify','twitch','tiktok','media-more','google','telegram','ai','github','bilibili','apple','microsoft'],{apple:'DIRECT',microsoft:'DIRECT'}),opts:hardOpts(s,{keepAlive:true})})},
+ {id:'dev',name:'开发者',desc:'GitHub、GitLab、Docker、npm、Cloudflare、云平台（AWS / Azure / GCP / Vercel 等）、Google、微软、AI（含更多）、学术；保活开，低延迟地区优先。',apply:s=>({groups:onlyB(['github','gitlab','docker','npm','cloudflare','cloud-dev','google','microsoft','onedrive','ai','ai-more','ai-agent','ai-cn','scholar','telegram','apple','twitter','reddit','bilibili'],{apple:'DIRECT',microsoft:'DIRECT',onedrive:'DIRECT','ai-cn':'DIRECT'}),opts:hardOpts(s,{keepAlive:true})})},
+ {id:'ai',name:'AI 重度',desc:'AI、「AI 更多」与智能体走美国手动节点（固定 IP，防 AI 风控换 IP 触发验证），不是自动测速；国内 AI 直连，Google、GitHub、学术一起开。',apply:s=>{const us=s.regions.includes('US')?'R:US/m':'PROXY';return{groups:onlyB(['ai','ai-more','ai-agent','ai-cn','google','github','scholar','telegram','twitter','bilibili','apple','microsoft'],{ai:us,'ai-more':us,'ai-agent':us,'ai-cn':'DIRECT',apple:'DIRECT',microsoft:'DIRECT'}),opts:hardOpts(s,{keepAlive:true})}}},
+ {id:'safe',name:'加密货币 / 银行（稳）',desc:'交易所、钱包、海外银行券商：固定地区手动出口，避免 IP 乱跳触发风控；负载均衡关、局域网关、保活开。',apply:s=>{const r=s.regions.includes('SG')?'R:SG/m':s.regions.includes('HK')?'R:HK/m':'PROXY';return{groups:onlyB(['crypto','crypto-more','bank-overseas','paypal','fintech','google','telegram','twitter','ai','bilibili','apple','microsoft','onedrive'],{crypto:r,'crypto-more':r,'bank-overseas':r,paypal:r,fintech:r,apple:'DIRECT',microsoft:'DIRECT',onedrive:'DIRECT'}),opts:hardOpts(s,{keepAlive:true})}}},
+ {id:'nomad',name:'数字游民',desc:'对齐作者自用结构：Bunq / SumUp / Maya / Blackcat + Wise/Revolut 等金融科技 + PayPal；微软/Apple/OneDrive 直连；故障转移与防泄漏全开。出口默认德国「手动」固定 IP。',apply:s=>{const r='R:DE/m'; // 预设本身会开启 DE 地区；用输入 state 的 regions 判断会误取 SG（输入 state 通常没开 DE）。
+   const ids=['ai','youtube','google','github','steam','tiktok','twitter','telegram','netflix','disney','spotify','paypal','meta','whatsapp','fintech','bank-overseas','bank-eu','bunq','sumup','maya','blackcat','cn-bank-direct','onedrive','microsoft','apple'];
+   const pol:Record<string,string>={bunq:r,sumup:r,maya:r,blackcat:r,fintech:r,'bank-overseas':r,'bank-eu':r,paypal:r,onedrive:'DIRECT',microsoft:'DIRECT',apple:'DIRECT','cn-bank-direct':'DIRECT'};
+   return{groups:onlyB(ids,pol),regions:['HK','TW','JP','SG','KR','US','EU','UK','FR','DE','OT'],opts:hardOpts(s,{mtu:1420,keepAlive:true,icons:true})}}},
+ {id:'crypto-pack',name:'加密货币',desc:'Binance / Bybit / Bybit EU / OKX / MEXC / Kraken / Krak / Bitget Wallet + 通用加密规则集；固定新加坡或香港手动节点；负载均衡关、保活开、防泄漏基线全开。',apply:s=>{const r=s.regions.includes('SG')?'R:SG/m':s.regions.includes('HK')?'R:HK/m':s.regions.includes('JP')?'R:JP/m':'PROXY';
+   const ids=['crypto','crypto-more','bybit-eu','mexc','krak','bitget-wallet','paypal','google','telegram','twitter','ai','github','apple','microsoft'];
+   const pol:Record<string,string>={crypto:r,'crypto-more':r,'bybit-eu':r,mexc:r,krak:r,'bitget-wallet':r,paypal:r,apple:'DIRECT',microsoft:'DIRECT'};
+   return{groups:onlyB(ids,pol),opts:hardOpts(s,{keepAlive:true})}}},
+ {id:'antileak',name:'通用防泄漏',desc:'IPv6 关、境外 QUIC 拦、STUN 走代理、fake-ip + 广告/追踪/遥测拦截、故障转移开、局域网关、负载均衡关；保留常用服务组。对齐作者 DNS/防泄漏模板（无私人信息）。',apply:s=>({opts:hardOpts(s,{mtu:1420,keepAlive:true,icons:true}),
+   groups:onlyB(['ai','youtube','netflix','disney','spotify','telegram','twitter','meta','discord','github','google','microsoft','apple','paypal','crypto','bilibili','steam','tiktok','onedrive','cn-bank-direct'],{onedrive:'DIRECT',microsoft:'DIRECT',apple:'DIRECT','cn-bank-direct':'DIRECT'})})},
+ {id:'cn',name:'直连优先（省流量）',desc:'未知域名直连，只有需要代理的服务走代理：适合流量有限的套餐；保活关、拦截仍开（挡广告本身省流量）。',apply:s=>({groups:onlyB(['ai','google','telegram','twitter','youtube','github','apple','microsoft','bilibili'],{apple:'DIRECT',microsoft:'DIRECT'}),opts:hardOpts(s,{unknown:'direct',keepAlive:false})})},
+ {id:'all',name:'全开（不推荐）',desc:'把所有服务分组都打开，规则最多，仅用于测试；日常请切回「日常均衡」。',apply:s=>({groups:{...Object.fromEntries(GROUPS.filter(g=>g.category!=='reject'&&g.id!=='games-cn'&&g.id!=='pt'&&g.id!=='p2p-private').map(g=>[g.id,{on:true,policy:g.def}])),ads:{on:true,policy:'REJECT'},telemetry:{on:true,policy:'REJECT'},trackers:{on:true,policy:'REJECT'}},opts:hardOpts(s)})},
 ];
 
 /* ---------- 分享链接（方案进 URL，不含订阅 / 节点 / 密钥） ---------- */
