@@ -21,7 +21,7 @@ export function defaultOpts():Opts{
   return{ipv6:false,tun:true,mtu:1420,mixedPort:7890,apiPort:9090,secret:Array.from(a,x=>x.toString(16).padStart(2,'0')).join(''),logLevel:'warning',allowLan:false,
   dnsCn:[ALI,TX],dnsPreset:'ali-dnspod',dnsBootstrap:BOOTSTRAP_DEFAULT,cnDnsMode:'doh',dnsRemote:['https://1.1.1.1/dns-query','https://8.8.8.8/dns-query'],fakeIp:true,
   blockQuic:'foreign',stun:'proxy',unknown:'proxy',ads:'lite',telemetry:true,trackers:true,icons:true,lowMemory:false,keepAlive:false,
-  testUrl:'https://www.gstatic.com/generate_204',urlTestInterval:1800,
+  testUrl:'https://www.gstatic.com/generate_204',urlTestInterval:600,
   campusDomain:'',campusCidr:'',homeDomain:'',lanGateway:'',lanDns:'',wifiCalling:false,mcc:'',mnc:'',wifiRegion:'',tunStack:'mixed',
   panelOrigins:['https://metacubexd.pages.dev','https://board.zash.run.place'],nodeInclude:'',nodeExclude:'剩余流量|套餐到期|距离下次重置|官网|过期时间',lbGroup:false,tolerance:50,failover:true};
 }
@@ -46,7 +46,7 @@ export function recommend(net:Network,loc:Location,platform:string):{patch:Parti
   // DNS
   const dnsCn=[ALI,TX];let dwhy='直连域名用阿里 + 腾讯 DNSPod 公共 DoH 直连：加密，运营商看不到查询内容。两家都是跨运营商的公共递归（DNSPod 官方说明 119.29.29.29 通过 BGP Anycast 与本地主要运营商互联，后端递归按省份 / 运营商分区部署，并支持 ECS；阿里公共 DNS 官方说明支持 ECS），所以本地 CDN 就近解析不依赖你用哪家运营商，无需按运营商换 DNS。';
   if(isTelecom)dwhy+=' 没有官方资料表明电信 / 联通 / 移动需要不同的公共 DNS；如果某地对其中一家不稳，可在下方换成「仅阿里」或「仅腾讯」。';
-  let remote=['https://1.1.1.1/dns-query','https://8.8.8.8/dns-query'];let rwhy='境外域名走境外 DoH，经代理发出（respect-rules），避免明文被污染；不用 fallback / fallback-filter。';
+  let remote=['https://1.1.1.1/dns-query','https://8.8.8.8/dns-query'];let rwhy='境外域名走境外 DoH，经代理发出（respect-rules），避免明文被污染；fallback + fallback-filter 防投毒：境外 DNS 返回 CN 结果时走 fallback 重查，只信任非 CN 答案。';
   if(loc==='hk'||loc==='tw'||loc==='mo'){rwhy+=' 港澳台可直连 1.1.1.1/8.8.8.8，不一定需要经代理。'}
   add({key:'dnsCn',label:'直连 DNS（DoH）',value:dnsCn.join('、'),why:dwhy,basis:'官方',patch:{dnsCn,dnsPreset:'ali-dnspod',cnDnsMode:'doh'}});
   add({key:'dnsBootstrap',label:'Bootstrap DNS（解析 DoH 域名本身）',value:BOOTSTRAP_DEFAULT.join('、'),why:'DoH 地址里有域名（doh.pub）时需要先解析它：用纯 IP 的 bootstrap（mihomo 的 default-nameserver 只能写 IP；sing-box 1.12+ 用 domain_resolver 指向它）。阿里 DoH 用 IP 形式，不依赖它。bootstrap 是明文查询，但只涉及 DNS 服务商自己的域名。',basis:'官方',patch:{dnsBootstrap:BOOTSTRAP_DEFAULT}});
