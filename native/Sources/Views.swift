@@ -109,9 +109,17 @@ struct HomeView: View {
 
             PlainCard {
                 Text(L("② 生成选项（仅当前客户端支持）")).font(.headline)
-                OptToggle(title: L("故障转移（地区故转组）"), key: "failover", feature: "failover")
                 if store.supports("failover") {
+                    OptToggle(title: L("故障转移（地区故转组）"), key: "failover", feature: "failover")
                     Text(L("开启后为每个地区生成「手动 / 自动 / 故转」：故转优先用手动，失败再落到自动测速。"))
+                        .font(.caption2).foregroundStyle(.secondary)
+                } else if store.family == "singbox" {
+                    // sing-box 无原生 fallback：开关仍保留 = 分层预设 A/B 选择，A 降级为地区-自动
+                    Toggle(L("故障转移（地区故转组）"), isOn: Binding(
+                        get: { (store.opts["failover"] as? Bool) ?? true },
+                        set: { store.setOpt("failover", $0) }
+                    )).tint(Brand.pink)
+                    Text(L("sing-box 无原生 fallback：开 = 预设 A（降级为地区-自动组，不是真故转），关 = 预设 B（无故转层）。"))
                         .font(.caption2).foregroundStyle(.secondary)
                 }
                 PresetModeCard()
