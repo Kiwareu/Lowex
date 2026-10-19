@@ -109,6 +109,8 @@ xcodebuild -project LowexNative.xcodeproj -scheme LowexNative -configuration Rel
   -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO
 ```
 
+> 正式 Bundle ID 为 `com.wenx.lowex`（见 `native/project.yml` 中的 `PRODUCT_BUNDLE_IDENTIFIER`）；旧的 `com.wenx.lowex.native` 已不再使用。
+
 也可以直接运行 GitHub Actions 的 *Build Lowex IPA*（macOS runner，输出未签名 IPA）。
 
 ## 验证与测试
