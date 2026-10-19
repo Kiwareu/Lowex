@@ -156,7 +156,7 @@ struct GenerateView: View {
                     Label(store.generating ? L("生成中…") : L("生成配置"), systemImage: "sparkles").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent).tint(Brand.pink)
-                .disabled(store.generating)
+                .disabled(store.generating || store.remoteJsMode)
                 Button(role: .destructive) { confirmClear = true } label: {
                     Label(L("清除配置"), systemImage: "trash").frame(maxWidth: .infinity)
                 }
@@ -166,6 +166,16 @@ struct GenerateView: View {
                 if let e = store.result.error { Text(e).foregroundStyle(.red).font(.footnote) }
                 ForEach(store.result.warnings, id: \.self) { w in
                     Text("• \(w)").font(.caption).foregroundStyle(.orange)
+                }
+                if store.remoteJsMode {
+                    Text(L("远程 JS 模式已开：只输出远程 JS 文件，不生成配置文件。关闭后可恢复生成。"))
+                        .font(.caption).foregroundStyle(.orange)
+                }
+                if !store.validationIssues.isEmpty {
+                    Text(L("校验结果")).font(.subheadline.weight(.semibold))
+                    ForEach(store.validationIssues) { issue in
+                        Text("• \(issue.msg)").font(.caption).foregroundStyle(issue.isError ? .red : .orange)
+                    }
                 }
             }
 

@@ -106,6 +106,49 @@ final class Engine {
     func presets() -> [[String: Any]] {
         (try? JSONSerialization.jsonObject(with: Data(call("presets", []).utf8))) as? [[String: Any]] ?? []
     }
+
+    // MARK: 9.8+ 接线（直通引擎 API，不经翻译，避免校验文案 / 脚本模板被改写）
+    struct ValidationIssue: Identifiable {
+        let id = UUID(); let level: String; let msg: String
+        var isError: Bool { level == "error" }
+    }
+    func validateConfig(family: String, text: String) -> [ValidationIssue] {
+        let s = api.objectForKeyedSubscript("validateConfig")?.call(withArguments: [family, text])?.toString() ?? "[]"
+        guard let d = s.data(using: .utf8), let arr = try? JSONSerialization.jsonObject(with: d) as? [[String: Any]] else { return [] }
+        return arr.compactMap { item in
+            guard let msg = item["msg"] as? String else { return nil }
+            return ValidationIssue(level: item["level"] as? String ?? "warn", msg: msg)
+        }
+    }
+    struct Tiers { let quic: String; let stun: String }
+    func tiers(client: String) -> Tiers {
+        let r = json(api.objectForKeyedSubscript("tiers")?.call(withArguments: [client])?.toString() ?? "{}")
+        return Tiers(quic: r["quic"] as? String ?? "unknown", stun: r["stun"] as? String ?? "unknown")
+    }
+    /// 分层预设 A/B：由 opts.failover 决定（true = A，false = B）
+    func presetMode(state: [String: Any]) -> String {
+        guard let d = try? JSONSerialization.data(withJSONObject: state), let s = String(data: d, encoding: .utf8) else { return "A" }
+        let r = json(api.objectForKeyedSubscript("presetMode")?.call(withArguments: [s])?.toString() ?? "{}")
+        return r["mode"] as? String ?? "A"
+    }
+    struct RemoteJsSupport { let kind: String; let reason: String }
+    func remoteJsSupport(client: String) -> RemoteJsSupport {
+        let r = json(api.objectForKeyedSubscript("remoteJsSupport")?.call(withArguments: [client])?.toString() ?? "{}")
+        return RemoteJsSupport(kind: r["kind"] as? String ?? "none", reason: r["reason"] as? String ?? "")
+    }
+    struct RemoteJsCheck { let blocked: [String]; let warns: [String] }
+    func remoteJsValidate(url: String, sha256: String, name: String, mitmHosts: [String], confirmSensitive: Bool) -> RemoteJsCheck {
+        let input: [String: Any] = ["url": url, "sha256": sha256, "name": name, "mitmHosts": mitmHosts, "confirmSensitive": confirmSensitive]
+        guard let d = try? JSONSerialization.data(withJSONObject: input), let s = String(data: d, encoding: .utf8) else {
+            return RemoteJsCheck(blocked: ["无法序列化"], warns: [])
+        }
+        let r = json(api.objectForKeyedSubscript("remoteJsValidate")?.call(withArguments: [s])?.toString() ?? "{}")
+        return RemoteJsCheck(blocked: r["blocked"] as? [String] ?? [], warns: r["warns"] as? [String] ?? [])
+    }
+    func remoteJsTemplate(kind: String) -> String {
+        let r = json(api.objectForKeyedSubscript("remoteJsTemplate")?.call(withArguments: [kind])?.toString() ?? "{}")
+        return r["text"] as? String ?? ""
+    }
     func applyPreset(id: String, state: [String: Any]) -> [String: Any]? {
         guard let d = try? JSONSerialization.data(withJSONObject: state), let s = String(data: d, encoding: .utf8) else { return nil }
         let r = json(call("applyPreset", [id, s]))

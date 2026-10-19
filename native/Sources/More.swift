@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - 更多（轻量：模块 / 防泄漏 / 作者分享 / 关于）
 struct MoreView: View {
@@ -43,6 +44,7 @@ struct MoreView: View {
                         if store.engine.supportsModules(client: store.client) {
                             navCard(L("模块与脚本"), icon: "puzzlepiece.extension", dest: ModulesView())
                         }
+                        navCard(L("远程 JS 覆写 / 重写"), icon: "link", dest: RemoteJsView())
                         navCard(L("作者自用规则分享"), icon: "person.crop.circle.badge.checkmark", dest: SharedView())
                         navCard(L("历史记录"), icon: "clock.arrow.circlepath", dest: HistoryView())
                         navCard(L("备份与恢复 Lowex 设置"), icon: "externaldrive.badge.icloud", dest: BackupView())
@@ -484,6 +486,85 @@ struct ModulesView: View {
             store.set("modules", l); msg = L("已添加"); url = ""; name = ""
         } catch {
             msg = L("拉取失败：{}", error.localizedDescription)
+        }
+    }
+}
+
+// MARK: 远程 JS（独立模块，与生成配置互斥，不写进配置文件）
+struct RemoteJsView: View {
+    @EnvironmentObject var store: Store
+    @State private var check: Engine.RemoteJsCheck?
+    @State private var showTemplate = false
+    @State private var toast = ""
+    var body: some View {
+        PageChrome(title: L("远程 JS 覆写 / 重写")) {
+            PlainCard {
+                Text(L("与「生成配置」互斥独立：只想要 JS 远程文件时用这里，不要同时生成配置。"))
+                    .font(.footnote).foregroundStyle(.secondary)
+                let sup = store.remoteJsSupport
+                Text(L("当前客户端：") + (sup.kind == "config-overwrite" ? L("配置级 JS 覆写（Mihomo 系）") : (sup.kind == "http-rewrite" ? L("HTTP 重写（Surge 系）") : L("不支持"))))
+                    .font(.subheadline.weight(.semibold))
+                Text(sup.reason).font(.caption).foregroundStyle(.secondary)
+                Toggle(L("启用远程 JS 模式（与生成配置互斥）"), isOn: Binding(
+                    get: { store.remoteJsMode },
+                    set: { store.remoteJsMode = $0; store.saveRemoteJs() }
+                )).tint(Brand.pink).disabled(sup.kind == "none")
+                if sup.kind == "none" {
+                    Text(L("该客户端不支持远程 JS，已禁用。")).font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+            if store.remoteJsSupport.kind != "none" {
+                PlainCard {
+                    Text(L("远程 JS 引用")).font(.headline)
+                    TextField(L("https://… .js 链接"), text: $store.remoteJsURL)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                    TextField(L("SHA256 锁定（64 位 hex）"), text: $store.remoteJsSHA256)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    TextField(L("名称（可选）"), text: $store.remoteJsName)
+                    TextField(L("MITM hostname（逗号分隔，只写必需域名，绝不写 *）"), text: $store.remoteJsMITM)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Toggle(L("MITM 含敏感域名（支付 / 账号类），我已显式确认"), isOn: $store.remoteJsConfirmSensitive).tint(Brand.pink)
+                    Button { check = store.remoteJsCheck(); store.saveRemoteJs() } label: {
+                        Label(L("校验引用"), systemImage: "checkmark.shield").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent).tint(Brand.pink)
+                    if let c = check {
+                        if !c.blocked.isEmpty {
+                            ForEach(c.blocked, id: \.self) { Text(L("已拦截：{}", $0)).font(.caption).foregroundStyle(.red) }
+                        }
+                        if !c.warns.isEmpty {
+                            ForEach(c.warns, id: \.self) { Text(L("需确认：{}", $0)).font(.caption).foregroundStyle(.orange) }
+                        }
+                        if c.blocked.isEmpty && c.warns.isEmpty {
+                            Text(L("校验通过：可使用（仍需你确认来源可信）。")).font(.caption).foregroundStyle(Brand.pink)
+                        }
+                    }
+                    if !toast.isEmpty { Text(toast).font(.footnote).foregroundStyle(Brand.pink) }
+                }
+                PlainCard {
+                    Text(L("自建模板")).font(.headline)
+                    Text(L("不要直接用网上不明作者的脚本。把模板复制到你自己的 GitHub 仓库，填 URL + 该文件的 SHA256。"))
+                        .font(.caption).foregroundStyle(.secondary)
+                    Button { showTemplate.toggle() } label: {
+                        Label(showTemplate ? L("收起模板") : L("查看模板"), systemImage: "eye").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    if showTemplate {
+                        ScrollView {
+                            Text(store.engine.remoteJsTemplate(kind: store.remoteJsSupport.kind))
+                                .font(.caption2.monospaced()).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .frame(height: 220)
+                    }
+                    Button {
+                        UIPasteboard.general.string = store.engine.remoteJsTemplate(kind: store.remoteJsSupport.kind)
+                        toast = L("模板已复制")
+                    } label: {
+                        Label(L("复制自建模板"), systemImage: "doc.on.doc").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent).tint(Brand.pink)
+                }
+            }
         }
     }
 }

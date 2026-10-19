@@ -103,6 +103,7 @@ struct HomeView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 Text(L("预设会一次性改写下面的「生成选项」，建议先套预设，再按需微调。"))
                     .font(.caption2).foregroundStyle(Brand.pink.opacity(0.9))
+                DefaultTemplateCard()
                 PresetButtons()
             }
 
@@ -113,6 +114,7 @@ struct HomeView: View {
                     Text(L("开启后为每个地区生成「手动 / 自动 / 故转」：故转优先用手动，失败再落到自动测速。"))
                         .font(.caption2).foregroundStyle(.secondary)
                 }
+                PresetModeCard()
                 if store.supports("ads") {
                     Picker(L("广告拦截"), selection: Binding<String>(
                         get: { store.adsMode },
@@ -130,7 +132,7 @@ struct HomeView: View {
                 OptToggle(title: L("关闭 IPv6（防泄漏）"), key: "ipv6", feature: "ipv6", invert: true)
                 OptToggle(title: L("TUN 虚拟网卡"), key: "tun", feature: "tun")
                 OptToggle(title: "DNS fake-ip", key: "fakeIp", feature: "fakeIp")
-                if store.supports("quic") {
+                if store.supports("quic") && store.engine.tiers(client: store.client).quic != "not-generated" {
                     Toggle(L("拦截境外 QUIC"), isOn: Binding(
                         get: {
                             let v = store.opts["blockQuic"]
@@ -139,6 +141,11 @@ struct HomeView: View {
                         },
                         set: { store.setOpt("blockQuic", $0 ? "foreign" : "off") }
                     )).tint(Brand.pink)
+                    if !store.quicTierText.isEmpty {
+                        Text(L("QUIC：") + store.quicTierText).font(.caption2).foregroundStyle(.secondary)
+                    }
+                } else if store.engine.tiers(client: store.client).quic == "not-generated" {
+                    Text(L("QUIC：") + store.quicTierText).font(.caption2).foregroundStyle(.secondary)
                 }
                 if store.supports("stun") {
                     Toggle(L("STUN / WebRTC 防护"), isOn: Binding(
@@ -149,6 +156,9 @@ struct HomeView: View {
                         },
                         set: { store.setOpt("stun", $0 ? "proxy" : "off") }
                     )).tint(Brand.pink)
+                    if !store.stunTierText.isEmpty {
+                        Text(L("STUN：") + store.stunTierText).font(.caption2).foregroundStyle(.secondary)
+                    }
                 }
                 OptToggle(title: L("允许局域网连接"), key: "allowLan", feature: "allowLan")
                 OptToggle(title: L("Wi-Fi 通话规则"), key: "wifiCalling", feature: "wifi")
@@ -223,7 +233,7 @@ struct CapMatrixCard: View {
 
 struct PresetButtons: View {
     @EnvironmentObject var store: Store
-    private let order = ["nomad", "crypto-pack", "antileak", "safe", "min", "stream", "dev", "ai"]
+    private let order = ["balanced", "nomad", "crypto-pack", "antileak", "safe", "min", "stream", "dev", "ai", "cn", "all"]
     var body: some View {
         let all = store.engine.presets()
         let list = order.compactMap { id in all.first { ($0["id"] as? String) == id } }
@@ -248,6 +258,47 @@ struct PresetButtons: View {
             }
             .buttonStyle(.plain)
         }
+    }
+}
+
+/// 分层预设 A/B（9.8+）：由“故障转移”开关决定。A = 有故转，B = 无故转。
+struct PresetModeCard: View {
+    @EnvironmentObject var store: Store
+    var body: some View {
+        let mode = store.presetMode
+        VStack(alignment: .leading, spacing: 2) {
+            Text(mode == "A" ? L("分层预设 A · 有故障转移") : L("分层预设 B · 无故障转移"))
+                .font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink)
+            Text(mode == "A"
+                 ? L("服务组 → 地区-故转 → 自动 / 手动 → 节点。节点变红 / 超时自动跳转，保持持续连接。")
+                 : L("服务组 → 地区 → 直接手动 / 自动 → 节点，没有故转层。"))
+                .font(.caption2).foregroundStyle(.secondary)
+            if mode == "A" && store.family == "singbox" {
+                Text(L("sing-box 无原生 fallback：A 在此自动降级为地区-自动组（已标注，不是真故转）。"))
+                    .font(.caption2).foregroundStyle(.orange)
+            }
+            Text(L("切换：上面「故障转移」开关开 = A，关 = B。"))
+                .font(.caption2).foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// 默认模板（9.8+）最前最显眼：不套任何预设的基础配置。
+struct DefaultTemplateCard: View {
+    @EnvironmentObject var store: Store
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(L("默认模板（推荐 · 9.8+）")).font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink)
+            Text(L("不套预设的基础配置：DNS 双通道 + fallback 精确可靠 + TUN 一条链 + 规则 7 阶段。订阅处留空，生成时自动注入你自己填的订阅。"))
+                .font(.caption2).foregroundStyle(.secondary)
+            Button { store.restoreDefaults() } label: {
+                Label(L("恢复为默认模板"), systemImage: "arrow.counterclockwise")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered).tint(Brand.pink)
+        }
+        .padding(10)
+        .background(Brand.pink.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

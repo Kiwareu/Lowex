@@ -8,7 +8,7 @@ final class Store: ObservableObject {
     @Published var catalog: Catalog
     @Published var state: [String: Any] {
         didSet {
-            if !result.text.isEmpty || result.error != nil { result = GenResult(text: "", name: "", warnings: []) }
+            if !result.text.isEmpty || result.error != nil { result = GenResult(text: "", name: "", warnings: []); validationIssues = [] }
             scheduleSave()
         }
     }
@@ -24,6 +24,14 @@ final class Store: ObservableObject {
     @Published var celebrate = 0
     @Published var remoteURL = ""
     @Published var qrNote = ""
+    @Published var validationIssues: [Engine.ValidationIssue] = []
+    // 远程 JS（独立模块，与生成配置互斥；存在 UserDefaults，不进方案 state，避免污染生成）
+    @Published var remoteJsMode = false
+    @Published var remoteJsURL = ""
+    @Published var remoteJsSHA256 = ""
+    @Published var remoteJsName = ""
+    @Published var remoteJsMITM = ""
+    @Published var remoteJsConfirmSensitive = false
     private var needsDisclaimer = false
 
     private let key = "lowex.native.state.v3"
@@ -85,6 +93,7 @@ final class Store: ObservableObject {
                 ?? cat.clients.first?.id ?? "shadowrocket"
             state = Engine.shared.initialState(client: first, platform: "ios")
         }
+        loadRemoteJs()
     }
 
     static let iconsReadyKey = "lowex.icons.ready.v1"
@@ -405,6 +414,7 @@ final class Store: ObservableObject {
     /// 只清除已生成的结果（选项、节点、订阅都保留）
     func clearResult() {
         result = GenResult(text: "", name: "", warnings: [])
+        validationIssues = []
         remoteURL = ""
         qrNote = ""
     }
@@ -424,6 +434,7 @@ final class Store: ObservableObject {
         fresh["manualNodes"] = []
         state = fresh
         result = GenResult(text: "", name: "", warnings: [])
+        validationIssues = []
         pasteNote = ""; remoteURL = ""; qrNote = ""
         recommendNote = L("已恢复全部默认设置。")
         flushSave()
@@ -440,6 +451,7 @@ final class Store: ObservableObject {
         fresh["favoriteGroups"] = state["favoriteGroups"] ?? []
         state = fresh
         result = GenResult(text: "", name: "", warnings: [])
+        validationIssues = []
         pasteNote = ""
         recommendNote = L("已恢复默认选项（保留客户端与配置名）。")
         save()
@@ -487,12 +499,55 @@ final class Store: ObservableObject {
             _ = ext
         }
         result = engine.generate(state: state)
+        validationIssues = (result.error == nil && !result.text.isEmpty) ? engine.validateConfig(family: family, text: result.text) : []
         if result.error == nil, !result.text.isEmpty {
             let ext = (result.name as NSString).pathExtension
             let base = pn.isEmpty ? "lowex" : pn
             result.name = ext.isEmpty ? base : "\(base).\(ext)"
             celebrate += 1
             recordHistory()
+        }
+    }
+
+    // MARK: 远程 JS（独立模块，与生成配置互斥）
+    func saveRemoteJs() {
+        let d = UserDefaults.standard
+        d.set(remoteJsMode, forKey: "lowex.remoteJs.mode.v1")
+        d.set(remoteJsURL, forKey: "lowex.remoteJs.url.v1")
+        d.set(remoteJsSHA256, forKey: "lowex.remoteJs.sha256.v1")
+        d.set(remoteJsName, forKey: "lowex.remoteJs.name.v1")
+        d.set(remoteJsMITM, forKey: "lowex.remoteJs.mitm.v1")
+        d.set(remoteJsConfirmSensitive, forKey: "lowex.remoteJs.confirmSensitive.v1")
+    }
+    private func loadRemoteJs() {
+        let d = UserDefaults.standard
+        remoteJsMode = d.bool(forKey: "lowex.remoteJs.mode.v1")
+        remoteJsURL = d.string(forKey: "lowex.remoteJs.url.v1") ?? ""
+        remoteJsSHA256 = d.string(forKey: "lowex.remoteJs.sha256.v1") ?? ""
+        remoteJsName = d.string(forKey: "lowex.remoteJs.name.v1") ?? ""
+        remoteJsMITM = d.string(forKey: "lowex.remoteJs.mitm.v1") ?? ""
+        remoteJsConfirmSensitive = d.bool(forKey: "lowex.remoteJs.confirmSensitive.v1")
+    }
+    var presetMode: String { engine.presetMode(state: state) }
+    var remoteJsSupport: Engine.RemoteJsSupport { engine.remoteJsSupport(client: client) }
+    func remoteJsCheck() -> Engine.RemoteJsCheck {
+        let hosts = remoteJsMITM.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return engine.remoteJsValidate(url: remoteJsURL, sha256: remoteJsSHA256, name: remoteJsName, mitmHosts: hosts, confirmSensitive: remoteJsConfirmSensitive)
+    }
+    var quicTierText: String {
+        switch engine.tiers(client: client).quic {
+        case "precise": return L("精确拦境外：境内 QUIC 不受影响")
+        case "global-drop": return L("只能全局丢：国内 QUIC 也会一起丢，浏览器回落 TCP")
+        case "not-generated": return L("该客户端不生成 QUIC 规则")
+        default: return ""
+        }
+    }
+    var stunTierText: String {
+        switch engine.tiers(client: client).stun {
+        case "port": return L("按端口逐个拦（3478-3479 / 5349 / 19302-19309）")
+        case "protocol": return L("按 PROTOCOL,STUN（全端口）")
+        case "drop-only": return L("仅丢 UDP（QX udp_drop_list）")
+        default: return ""
         }
     }
 
