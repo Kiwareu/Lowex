@@ -131,7 +131,7 @@ function vQx(text:string):Issue[]{
 /* ---- Egern（YAML，键名取自官方示例） ---- */
 const EGERN_TOP=['ipv6','http_port','socks_port','allow_external_connections','block_quic','proxy_latency_test_url','dns','proxies','policy_groups','rules','auto_update','bypass_tunnel_proxy','real_ip_domains','hijack_dns'];
 const EGERN_RULES=['domain','domain_keyword','domain_suffix','domain_regex','domain_wildcard','geoip','ip_cidr','ip_cidr6','asn','url_regex','user_agent','dest_port','protocol','rule_set','ssid','bssid','cellular','and','or','not','default'];
-const EGERN_PROXY=['shadowsocks','trojan','vless','vmess','hysteria2','tuic','socks5','http','wireguard'];
+const EGERN_PROXY=['shadowsocks','trojan','vless','vmess','hysteria2','tuic','socks5','http','https','wireguard'];
 const EGERN_GROUP=['select','auto_test','fallback','load_balance','external','conditional'];
 function vEgern(text:string):Issue[]{
   const I:Issue[]=[];let y:any;try{y=yamlParse(text)}catch(e:any){return[{level:'error',msg:'YAML 解析失败：'+e.message}]}
