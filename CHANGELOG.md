@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased（feat/upgrade-98 分支，未合并，未发布）
+
+9.8+ 升级（分支 `feat/upgrade-98`，全部改动在该分支上，未动 main）：
+
+- 安全：`prelude.js` 的 `crypto.getRandomValues` 改用原生 `SecRandomCopyBytes` 注入的真随机，无可信随机源时直接抛错，绝不回退 `Math.random`（`Engine.swift` 新增 `installSecureRandom`）。
+- 校验器：`validate.ts` 首次被接入（之前是死代码），入口新增 `validateConfig`；同步 Surge / Loon / Shadowrocket `[General]` 白名单与 Egern `https` 节点类型；新增 fallback / 健康检查 / TUN / STUN 断言。
+- 地区正则：`regions.json` 为唯一源，OT 改为 `(?i)` + 全量关键词镜像（修小写 hk/us/eu 误入“其他”）；INI 各家族删第二套 `SIMPLE_RE`，改用 `toPortableFilter` 做方言适配（lookbehind 展开为可移植写法）；回国正则统一到 `HOME_REGEX`。
+- 分流：Mihomo 的 package 注释说明与 `PROCESS-NAME` 的关系（Android 默认进程名即包名；`plan.ts` 已按平台分流）；Surge / Loon / Shadowrocket 补 `PROCESS-NAME` 生成（之前静默丢弃），QX / Egern 丢弃时写明原因；Surge / Shadowrocket 的 macOS 开 `processRules`。
+- sing-box / Egern 的 HTTP 出站 TLS SNI 改为 `n.sni ?? n.server`。
+- 能力矩阵：QUIC / STUN 拆三档并经 `tiers()` 暴露；Egern 图标移除（未核实）；failover / tolerance / 节点过滤 / 本地端口 / 日志级别加边界注释；Shadowrocket STUN 补 Google 端口 19302–19309。
+- Fallback 精确可靠：订阅 `health-check` 默认开（间隔 600 秒）；fallback 组 `lazy: false` + 间隔 ≤600 秒；默认测速间隔 1800 → 600 秒；预设同步。
+- DNS：Mihomo 加 `fallback` + `fallback-filter`（只信任非 CN 答案，防投毒）。
+- 分层预设 A/B：显式定义（A 有故障转移 / B 无故障转移），入口新增 `presetMode()`；sing-box 的 A 自动降级为地区-自动。
+- 远程 JS 独立模块（`remoteJs.ts`，与生成配置互斥，不写进配置文件）：Mihomo 系配置级覆写（仅 Party / Verge Rev / FlClash）与 Surge 系 HTTP 重写（Surge / Loon / QX / Shadowrocket / Stash）分客户端 gating；仅 https + `.js` + SHA256 锁定 + 自建/受信源；MITM 最小范围，敏感域名需显式确认；付费绕过关键词拒绝；附自建模板。
+- 打包：重新构建并提交 `native/Resources/engine.js`（IPA 构建直接用仓库内的该文件，不重新构建引擎）。
+
 ## v1.5.2 — 2026-10-18
 
 - 修复：Mihomo 系 / Stash 配置里的「资源更新」组不再被隐藏，会正常显示在客户端面板主列表。
