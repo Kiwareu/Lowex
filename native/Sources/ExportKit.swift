@@ -177,6 +177,10 @@ struct GenerateView: View {
                         Text("• \(issue.msg)").font(.caption).foregroundStyle(issue.isError ? .red : .orange)
                     }
                 }
+                if store.hasValidationErrors {
+                    Text(L("校验发现错误，导出与导入已阻止：请先修正上面列出的错误，再导出。"))
+                        .font(.caption).foregroundStyle(.red)
+                }
             }
 
             if !store.result.text.isEmpty {
@@ -242,13 +246,16 @@ struct GenerateView: View {
         PlainCard {
             Text(L("导出")).font(.headline)
             Text(L("文件 {} · {} 字符", fileName, store.result.text.count)).font(.caption).foregroundStyle(.secondary)
+            if store.hasValidationErrors {
+                Text(L("校验有错误，导出已阻止（预览仍可看）。")).font(.caption).foregroundStyle(.red)
+            }
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                actionBtn(L("复制全部"), icon: "doc.on.doc") { UIPasteboard.general.string = store.result.text; toast = L("已复制到剪贴板") }
-                actionBtn(L("系统分享"), icon: "square.and.arrow.up") { prepareShare() }
-                actionBtn(L("保存到「文件」"), icon: "folder") { prepareSave() }
+                actionBtn(L("复制全部"), icon: "doc.on.doc", disabled: store.hasValidationErrors) { UIPasteboard.general.string = store.result.text; toast = L("已复制到剪贴板") }
+                actionBtn(L("系统分享"), icon: "square.and.arrow.up", disabled: store.hasValidationErrors) { prepareShare() }
+                actionBtn(L("保存到「文件」"), icon: "folder", disabled: store.hasValidationErrors) { prepareSave() }
                 actionBtn(showPreview ? L("收起预览") : L("完整预览"), icon: "eye") { withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showPreview.toggle() } }
-                actionBtn(L("配置二维码"), icon: "qrcode") { showConfigQR() }
-                actionBtn(L("复制文件名"), icon: "textformat") { UIPasteboard.general.string = store.result.name; toast = L("已复制文件名") }
+                actionBtn(L("配置二维码"), icon: "qrcode", disabled: store.hasValidationErrors) { showConfigQR() }
+                actionBtn(L("复制文件名"), icon: "textformat", disabled: store.hasValidationErrors) { UIPasteboard.general.string = store.result.name; toast = L("已复制文件名") }
             }
             Text(L("二维码仅在配置较小（约 2.4KB 内）时可用；大配置请用文件 / 分享，或填下方在线地址生成导入二维码。"))
                 .font(.caption2).foregroundStyle(.secondary)
@@ -273,6 +280,7 @@ struct GenerateView: View {
                         Button { openLink(link, sc) } label: {
                             Label(L("一键导入到 {}", sc.appName), systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity)
                         }.buttonStyle(.borderedProminent).tint(Brand.pink)
+                        .disabled(store.hasValidationErrors)
                     } else {
                         Text(L("还没有填配置直链：下面的「用 {} 打开文件」会把配置文件本身交给它，由它的导入页处理；只「唤起」App 不会进入导入页。", sc.appName))
                             .font(.caption2).foregroundStyle(.secondary)
@@ -282,14 +290,17 @@ struct GenerateView: View {
                             Button { openFile(sc) } label: {
                                 Label(L("用 {} 打开文件", sc.appName), systemImage: "square.and.arrow.down.on.square").frame(maxWidth: .infinity)
                             }.buttonStyle(.borderedProminent).tint(Brand.pink)
+                            .disabled(store.hasValidationErrors)
                         } else {
                             Button { openFile(sc) } label: {
                                 Label(L("用 {} 打开文件", sc.appName), systemImage: "square.and.arrow.down.on.square").frame(maxWidth: .infinity)
                             }.buttonStyle(.bordered).tint(Brand.pink)
+                            .disabled(store.hasValidationErrors)
                         }
                         Button { UIPasteboard.general.string = store.result.text; openRoot(sc, copied: true) } label: {
                             Label(L("复制并打开"), systemImage: "doc.on.clipboard").frame(maxWidth: .infinity)
                         }.buttonStyle(.bordered)
+                        .disabled(store.hasValidationErrors)
                     }
                 } else {
                     Text(L("当前为 {} 配置：请把文件传到目标设备；下面的链接可复制到目标设备上打开。", store.platform == "windows" ? "Windows" : "Android"))
@@ -297,8 +308,8 @@ struct GenerateView: View {
                 }
                 if let l = link {
                     HStack(spacing: 10) {
-                        actionBtn(L("复制导入链接"), icon: "link") { UIPasteboard.general.string = l; toast = L("已复制导入链接") }
-                        actionBtn(L("导入链接二维码"), icon: "qrcode") { qrImage = QR.image(l); qrCaption = L("用目标设备扫码 / 打开：\n{}", sc.appName); showQR = qrImage != nil }
+                        actionBtn(L("复制导入链接"), icon: "link", disabled: store.hasValidationErrors) { UIPasteboard.general.string = l; toast = L("已复制导入链接") }
+                        actionBtn(L("导入链接二维码"), icon: "qrcode", disabled: store.hasValidationErrors) { qrImage = QR.image(l); qrCaption = L("用目标设备扫码 / 打开：\n{}", sc.appName); showQR = qrImage != nil }
                     }
                 }
                 Text(sc.note).font(.caption2).foregroundStyle(.secondary)
@@ -364,11 +375,12 @@ struct GenerateView: View {
         .font(.caption).foregroundStyle(.secondary)
     }
 
-    private func actionBtn(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
+    private func actionBtn(_ title: String, icon: String, disabled: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: { Haptics.light(); action() }) {
             Label(title, systemImage: icon).font(.caption.weight(.semibold)).lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.center).frame(maxWidth: .infinity, minHeight: 36)
         }
         .buttonStyle(.bordered)
+        .disabled(disabled)
     }
 }
 
