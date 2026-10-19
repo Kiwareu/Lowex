@@ -22,6 +22,16 @@
    "regex": "(?i)^(?=.*(新加坡|(?<![a-zA-Z])(sg|sin|xsp)(?![a-zA-Z])|singapore|🇸🇬)).*$"
   },
   {
+   "id": "PH",
+   "name_zh": "菲律宾",
+   "regex": "(?i)^(?=.*(菲律宾|(?<![a-zA-Z])(ph|mnl|ceb)(?![a-zA-Z])|philippines|philippine|manila|cebu|🇵🇭)).*$"
+  },
+  {
+   "id": "SEA",
+   "name_zh": "东南亚",
+   "regex": "(?i)^(?=.*(东南亚|马来西亚|吉隆坡|泰国|曼谷|越南|胡志明|河内|印度尼西亚|印尼|雅加达|柬埔寨|金边|老挝|万象|缅甸|仰光|文莱|东帝汶|(?<![a-zA-Z])(kul|pen|th|bkk|vn|sgn|han|jkt|kh|mm|rgn|bn|tl)(?![a-zA-Z])|malaysia|kuala lumpur|thailand|bangkok|vietnam|ho chi minh|hanoi|indonesia|jakarta|cambodia|phnom penh|laos|vientiane|myanmar|yangon|brunei|timor|southeast asia|southeast|south east asia)).*$"
+  },
+  {
    "id": "KR",
    "name_zh": "韩国",
    "regex": "(?i)^(?=.*(韩国|(?<![a-zA-Z])(kr|icn|gmp|pus)(?![a-zA-Z])|korea|seoul|🇰🇷)).*$"
@@ -30,6 +40,16 @@
    "id": "US",
    "name_zh": "美国",
    "regex": "(?i)^(?=.*(美国|(?<![a-zA-Z])(us|usa|lax|sfo|jfk|sjc)(?![a-zA-Z])|america|united states|🇺🇸)).*$"
+  },
+  {
+   "id": "CA",
+   "name_zh": "加拿大",
+   "regex": "(?i)^(?=.*(加拿大|(?<![a-zA-Z])(ca|yyz|yvr|yul|yow|yyc)(?![a-zA-Z])|canada|toronto|vancouver|montreal|ottawa|calgary|🇨🇦)).*$"
+  },
+  {
+   "id": "AU",
+   "name_zh": "澳大利亚",
+   "regex": "(?i)^(?=.*(澳大利亚|澳洲|(?<![a-zA-Z])(au|syd|mel|bne|per)(?![a-zA-Z])|australia|sydney|melbourne|brisbane|perth|🇦🇺)).*$"
   },
   {
    "id": "EU",
@@ -54,7 +74,7 @@
   {
    "id": "OT",
    "name_zh": "其他",
-   "regex": "(?i)^(?!.*(DIRECT|香港|(?<![a-zA-Z])(hk|hkg)(?![a-zA-Z])|hongkong|hong kong|🇭🇰|台湾|(?<![a-zA-Z])(tw|tpe|khh|tsa)(?![a-zA-Z])|taiwan|taipei|🇹🇼|日本|(?<![a-zA-Z])(jp|nrt|hnd|kix|cts|fuk)(?![a-zA-Z])|japan|tokyo|🇯🇵|新加坡|(?<![a-zA-Z])(sg|sin|xsp)(?![a-zA-Z])|singapore|🇸🇬|韩国|(?<![a-zA-Z])(kr|icn|gmp|pus)(?![a-zA-Z])|korea|seoul|🇰🇷|美国|(?<![a-zA-Z])(us|usa|lax|sfo|jfk|sjc)(?![a-zA-Z])|america|united states|🇺🇸|欧洲|奥地利|比利时|保加利亚|克罗地亚|塞浦路斯|捷克|丹麦|爱沙尼亚|芬兰|希腊|匈牙利|爱尔兰|意大利|拉脱维亚|立陶宛|卢森堡|荷兰|波兰|葡萄牙|罗马尼亚|斯洛伐克|斯洛文尼亚|西班牙|瑞典|🇪🇺|🇦🇹|🇧🇪|🇨🇿|🇩🇰|🇫🇮|🇮🇪|🇮🇹|🇱🇺|🇳🇱|🇵🇱|🇵🇹|🇪🇸|🇸🇪|europe|netherlands|amsterdam|(?<![a-zA-Z])(eu|nl|ams|mad|bcn|fco|bru)(?![a-zA-Z])|英国|大不列颠|英格兰|united kingdom|britain|england|london|🇬🇧|(?<![a-zA-Z])(uk|gb|gbr|lhr|lgw|man)(?![a-zA-Z])|法国|法兰西|france|paris|🇫🇷|(?<![a-zA-Z])(fr|cdg|ory)(?![a-zA-Z])|德国|德意志|germany|deutschland|frankfurt|berlin|🇩🇪|(?<![a-zA-Z])(de|deu|ger|fra|muc)(?![a-zA-Z]))).*$"
+   "regex": "(?i)^(?!.*(DIRECT|香港|(?<![a-zA-Z])(hk|hkg)(?![a-zA-Z])|hongkong|hong kong|🇭🇰|台湾|(?<![a-zA-Z])(tw|tpe|khh|tsa)(?![a-zA-Z])|taiwan|taipei|🇹🇼|日本|(?<![a-zA-Z])(jp|nrt|hnd|kix|cts|fuk)(?![a-zA-Z])|japan|tokyo|🇯🇵|新加坡|(?<![a-zA-Z])(sg|sin|xsp)(?![a-zA-Z])|singapore|🇸🇬|韩国|(?<![a-zA-Z])(kr|icn|gmp|pus)(?![a-zA-Z])|korea|seoul|🇰🇷|美国|(?<![a-zA-Z])(us|usa|lax|sfo|jfk|sjc)(?![a-zA-Z])|america|united states|🇺🇸|欧洲|奥地利|比利时|保加利亚|克罗地亚|塞浦路斯|捷克|丹麦|爱沙尼亚|芬兰|希腊|匈牙利|爱尔兰|意大利|拉脱维亚|立陶宛|卢森堡|荷兰|波兰|葡萄牙|罗马尼亚|斯洛伐克|斯洛文尼亚|西班牙|瑞典|🇪🇺|🇦🇹|🇧🇪|🇨🇿|🇩🇰|🇫🇮|🇮🇪|🇮🇹|🇱🇺|🇳🇱|🇵🇱|🇵🇹|🇪🇸|🇸🇪|europe|netherlands|amsterdam|(?<![a-zA-Z])(eu|nl|ams|mad|bcn|fco|bru)(?![a-zA-Z])|英国|大不列颠|英格兰|united kingdom|britain|england|london|🇬🇧|(?<![a-zA-Z])(uk|gb|gbr|lhr|lgw|man)(?![a-zA-Z])|法国|法兰西|france|paris|🇫🇷|(?<![a-zA-Z])(fr|cdg|ory)(?![a-zA-Z])|德国|德意志|germany|deutschland|frankfurt|berlin|🇩🇪|(?<![a-zA-Z])(de|deu|ger|fra|muc)(?![a-zA-Z])|加拿大|(?<![a-zA-Z])(ca|yyz|yvr|yul|yow|yyc)(?![a-zA-Z])|canada|toronto|vancouver|montreal|ottawa|calgary|🇨🇦|菲律宾|(?<![a-zA-Z])(ph|mnl|ceb)(?![a-zA-Z])|philippines|philippine|manila|cebu|🇵🇭|东南亚|马来西亚|吉隆坡|泰国|曼谷|越南|胡志明|河内|印度尼西亚|印尼|雅加达|柬埔寨|金边|老挝|万象|缅甸|仰光|文莱|东帝汶|(?<![a-zA-Z])(kul|pen|th|bkk|vn|sgn|han|jkt|kh|mm|rgn|bn|tl)(?![a-zA-Z])|malaysia|kuala lumpur|thailand|bangkok|vietnam|ho chi minh|hanoi|indonesia|jakarta|cambodia|phnom penh|laos|vientiane|myanmar|yangon|brunei|timor|southeast asia|southeast|south east asia|澳大利亚|澳洲|(?<![a-zA-Z])(au|syd|mel|bne|per)(?![a-zA-Z])|australia|sydney|melbourne|brisbane|perth|🇦🇺)).*$"
   }
  ]
 }
