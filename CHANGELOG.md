@@ -1,5 +1,9 @@
 # Changelog
 
+## 未发布（Unreleased）
+
+- 统一 Bundle ID：`native/project.yml` 的 `PRODUCT_BUNDLE_IDENTIFIER` 由 `com.wenx.lowex.native` 改为用户确认的正式 ID `com.wenx.lowex`。注意：Bundle ID 变更后，旧 ID 安装的 App 与新 ID 视为不同应用，需重新安装，本机数据不会自动迁移。
+
 ## v1.5.2 — 2026-10-18
 
 - 修复：Mihomo 系 / Stash 配置里的「资源更新」组不再被隐藏，会正常显示在客户端面板主列表。
