@@ -14,6 +14,15 @@
 - DNS：Mihomo 加 `fallback` + `fallback-filter`（只信任非 CN 答案，防投毒）。
 - 分层预设 A/B：显式定义（A 有故障转移 / B 无故障转移），入口新增 `presetMode()`；sing-box 的 A 自动降级为地区-自动。
 - 远程 JS 独立模块（`remoteJs.ts`，与生成配置互斥，不写进配置文件）：Mihomo 系配置级覆写（仅 Party / Verge Rev / FlClash）与 Surge 系 HTTP 重写（Surge / Loon / QX / Shadowrocket / Stash）分客户端 gating；仅 https + `.js` + SHA256 锁定 + 自建/受信源；MITM 最小范围，敏感域名需显式确认；付费绕过关键词拒绝；附自建模板。
+- 各预设各自优化到最佳（`tools.ts` PRESETS，全在 `feat/upgrade-98` 上）：
+  - 统一安全基线：未知域名走代理、IPv6 关、fake-ip + TUN 开、境外 QUIC 拦、STUN 走代理、广告 Lite + 追踪/遥测拦截、故障转移开、测速 600 秒、负载均衡关、局域网关；差异只在定位。
+  - 修 `balanced` 之前是空操作（返回 `{groups:{}}`）：现在真正重置为全新方案默认开启的分组。
+  - 修多数预设悄悄关掉广告/遥测/追踪器拦截（`only()` 会把未列出的组关掉，而 `opts.ads='lite'` 成了死配置）：现在各预设统一开拦截（REJECT）。
+  - AI 预设：AI 组出口由 `R:US`（经故障转移，IP 会跳）改为 `R:US/m`（固定手动节点，防 AI 风控）。
+  - 流媒体预设：补 `media-more`（Hulu / Crunchyroll 等）；开发者预设：补 `cloud-dev`（AWS / Azure / GCP / Vercel 等）。
+  - 数字游民预设：删死条目 `line`（该分组已在 `groups.ts` 的 REMOVED 里，选了也不生效）；金融组出口固定 `R:DE/m`（之前按输入 state 的 regions 判断，输入通常没开 DE 会误取 SG，而预设本身会开启 DE）。
+  - `all` 预设：补开广告/遥测/追踪器拦截（之前因 `category==='reject'` 被过滤，沿用旧状态）。
+  - 分层预设 A：Surge / Loon / Shadowrocket / Egern 的故转组测速间隔钳到 ≤600 秒（之前直接用 `urlTestInterval`，设大了切换迟钝），与 Mihomo 一致。
 - 打包：重新构建并提交 `native/Resources/engine.js`（IPA 构建直接用仓库内的该文件，不重新构建引擎）。
 
 ## v1.5.2 — 2026-10-18
