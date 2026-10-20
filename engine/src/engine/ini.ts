@@ -130,7 +130,7 @@ export function genSurge(s:State,plan?:Plan):string{
   L.push(`${N.proxy} = select, ${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'].join(', ')}`);
   if(p.overseas)L.push(`${N.home} = select, ${['DIRECT',subs.length?incl:'',subs.length?`policy-regex-filter=(?i)${HOME_FILTER}`:''].filter(Boolean).join(', ')}`);
   L.push(...svcGroupLines(p,c,', '));
-  L.push(`${N.final} = select, ${o.unknown==='proxy'?N.proxy:'DIRECT'}, ${N.proxy}, DIRECT`,'');
+  {const ff=o.unknown==='proxy'?N.proxy:'DIRECT';L.push(`${N.final} = select, ${[ff,...[N.proxy,'DIRECT'].filter(x=>x!==ff)].join(', ')}`,'');}
   L.push('[Rule]');
   for(const it of c.items){
     if(it.k==='set'){L.push(`RULE-SET,${it.url},${it.policy}`);continue}
@@ -169,7 +169,7 @@ export function genLoon(s:State,plan?:Plan):string{
   L.push(`${N.proxy} = select,${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'].join(',')}`);
   if(p.overseas)L.push(`${N.home} = select,${subNames?'回国节点,':''}DIRECT`);
   L.push(...svcGroupLines(p,c,','));
-  L.push(`${N.final} = select,${o.unknown==='proxy'?N.proxy:'DIRECT'},${N.proxy},DIRECT`,'');
+  {const ff=o.unknown==='proxy'?N.proxy:'DIRECT';L.push(`${N.final} = select,${[ff,...[N.proxy,'DIRECT'].filter(x=>x!==ff)].join(',')}`,'');}
   const rule:string[]=[],remote:string[]=[];
   for(const it of c.items){
     if(it.k==='set'){remote.push(`${it.url}, policy=${it.policy}, tag=${it.name}, enabled=true`);continue}
@@ -238,7 +238,7 @@ export function genShadowrocket(s:State,plan?:Plan):string{
   L.push(`${N.proxy} = select,${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'].join(',')}`);
   if(p.overseas)L.push(`${N.home} = select,DIRECT,policy-regex-filter=${HOME_FILTER}`);
   L.push(...svcGroupLines(p,c,','));
-  L.push(`${N.final} = select,${o.unknown==='proxy'?N.proxy:'DIRECT'},${N.proxy},DIRECT`,'','[Rule]');
+  {const ff=o.unknown==='proxy'?N.proxy:'DIRECT';L.push(`${N.final} = select,${[ff,...[N.proxy,'DIRECT'].filter(x=>x!==ff)].join(',')}`,'','[Rule]');}
   for(const it of c.items){
     if(it.k==='set'){L.push(`RULE-SET,${it.url},${it.policy}`);continue}
     const r=it.t;
@@ -304,7 +304,7 @@ export function genEgern(s:State,plan?:Plan):string{
   const polName=(x:string)=>pol(c.tgt(x));
   const opts=(first:string)=>{const base=[N.proxy,...(useFo?foNames:[]),...autoNames,...manNames,'DIRECT',...(p.overseas?[N.home]:[])];return[first,...base.filter(v=>v!==first)]};
   for(const x of p.services){const f=polName(x.p);pg.push({select:{name:x.g.name,policies:opts(f==='REJECT'?N.proxy:f)}})}
-  pg.push({select:{name:N.final,policies:[o.unknown==='proxy'?N.proxy:'DIRECT',N.proxy,'DIRECT']}});
+  {const ff=o.unknown==='proxy'?N.proxy:'DIRECT';pg.push({select:{name:N.final,policies:[ff,...[N.proxy,'DIRECT'].filter(x=>x!==ff)]}});}
   // 规则
   const rules:string[]=[];
   const R=(k:string,m:Record<string,any>)=>rules.push(`  - ${k}: ${flow(m)}`);
