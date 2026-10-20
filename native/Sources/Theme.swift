@@ -218,13 +218,24 @@ struct PopupGlass: ViewModifier {
         fallback(content)
         #endif
     }
+    /// iOS 26 文件夹式水润玻璃：透一点的强模糊（背景色彩进来）+ 顶部高光 + 镜面亮边
     private func fallback(_ content: Content) -> some View {
         content.background {
             ZStack {
-                RoundedRectangle(cornerRadius: radius, style: .continuous).fill(.regularMaterial)
-                GlassFill(r: radius, boost: 1.0)
+                RoundedRectangle(cornerRadius: radius, style: .continuous).fill(.ultraThinMaterial)
+                // 顶部高光：水润感
+                RoundedRectangle(cornerRadius: radius, style: .continuous).fill(
+                    LinearGradient(colors: [.white.opacity(0.34), .white.opacity(0.07), .clear],
+                                   startPoint: .top, endPoint: .bottom)
+                )
+                // 镜面描边：上亮下暗，文件夹式亮边
+                RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(
+                    LinearGradient(colors: [.white.opacity(0.9), .white.opacity(0.28), .white.opacity(0.08), .white.opacity(0.38)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing),
+                    lineWidth: 1.2
+                )
             }
-            .shadow(color: .black.opacity(0.18), radius: 24, y: 8)
+            .shadow(color: .black.opacity(0.16), radius: 26, y: 10)
         }
     }
 }
