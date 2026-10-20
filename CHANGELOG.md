@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.7.12 — 2026-10-20
+
+- 修复：App 内置脚本运行时缺少 URL 等标准对象时，粘贴的节点链接（VLESS / Trojan / Hysteria2 / TUIC / AnyTLS、SIP002、带插件参数的 SS）会解析不出来，sing-box / karing 的 DNS 服务器会写成错误格式（过不了官方校验）。已在桥接层补齐这些对象：生成结果与浏览器环境逐字节一致，sing-box 配置已实测通过官方 1.12 / 1.14 两版校验。
+- 本版含 v1.7.11 的全部防泄漏加固（STUN 覆盖 TCP+UDP、WebRTC 策略组、Mihomo 去 fallback、fake-ip 排除补全），未装 1.7.11 的直接装本版。
+
 ## v1.7.11 — 2026-10-20
 
 - 防泄漏加固：STUN / WebRTC 端口规则覆盖 TCP + UDP（之前只拦 UDP，TCP 的 STUN 可能漏真实 IP）；Mihomo 系新增「WebRTC」策略组，默认拦截、组内不放直连，需要网页通话时在客户端面板切到「一键代理」。
