@@ -572,10 +572,14 @@ struct RemoteJsView: View {
             if store.remoteJsSupport.kind != "none" {
                 PlainCard {
                     Text(L("远程 JS 引用")).font(.headline)
+                    Text(L("在客户端里添加上方链接即可使用。SHA256 不必填；脚本库「填入引用」可一键填好。"))
+                        .font(.caption2).foregroundStyle(.secondary)
                     TextField(L("https://… .js 链接"), text: $store.remoteJsURL)
                         .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-                    TextField(L("SHA256 锁定（64 位 hex）"), text: $store.remoteJsSHA256)
+                    TextField(L("SHA256 锁定（可选，不填也能用）"), text: $store.remoteJsSHA256)
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Text(L("不填也能用，但作者更新脚本后 App 不会察觉——只用你信任的来源；脚本库里原创脚本的哈希可一键填入。"))
+                        .font(.caption2).foregroundStyle(.secondary)
                     TextField(L("名称（可选）"), text: $store.remoteJsName)
                     TextField(L("MITM hostname（逗号分隔，只写必需域名，绝不写 *）"), text: $store.remoteJsMITM)
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -622,7 +626,7 @@ struct RemoteJsView: View {
                 }
                 PlainCard {
                     Text(L("脚本库")).font(.headline)
-                    Text(L("原创脚本带 SHA256 锁定；分享的第三方脚本只给链接并标注来源，复制即用，不必在 App 里生成校验。绝不内置未核验的第三方脚本。"))
+                    Text(L("原创脚本带 SHA256 锁定，可一键填入引用；分享的第三方脚本只给链接并标注来源与审查备注，复制即用。"))
                         .font(.caption).foregroundStyle(.secondary)
                     ForEach(libraryRows) { row in
                         VStack(alignment: .leading, spacing: 6) {
@@ -670,16 +674,16 @@ struct RemoteJsView: View {
                                     Label(L("复制来源标注"), systemImage: "quote.bubble").font(.caption)
                                 }.buttonStyle(.bordered)
                                 // 覆写配置链接（.yaml）在代理软件里直接添加，不走 App 内校验，故不提供「填入引用」
-                                if row.kind != "config-override" && !row.sha256.isEmpty {
+                                if row.kind != "config-override" && !row.url.isEmpty {
                                     Button {
                                         store.remoteJsURL = row.url
                                         store.remoteJsSHA256 = row.sha256
                                         store.remoteJsName = row.name
                                         store.saveRemoteJs()
-                                        toast = L("已填入引用，可去校验")
+                                        toast = row.sha256.isEmpty ? L("已填入引用（未锁定：只用信任的来源）") : L("已填入引用，可去校验")
                                     } label: {
                                         Label(L("填入引用"), systemImage: "arrow.down.doc").font(.caption)
-                                    }.buttonStyle(.bordered)
+                                    }.buttonStyle(.bordered).disabled(row.pendingMerge)
                                 }
                             }
                         }
