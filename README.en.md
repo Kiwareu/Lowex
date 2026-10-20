@@ -40,11 +40,11 @@ Lowex runs on iPhone / iPad. Pick a target client and options, paste *your own* 
 
 ## Screenshots
 
-| Home | Rules |
-|---|---|
-| <img src="docs/screenshots/home.png" width="260"> | <img src="docs/screenshots/rules.png" width="260"> |
+| Home | Generate options | Rules |
+|---|---|---|
+| <img src="docs/screenshots/home.jpg" width="260"> | <img src="docs/screenshots/generate.jpg" width="260"> | <img src="docs/screenshots/rules.jpg" width="260"> |
 
-> Screenshots show v1.3; v1.4 adds list density on the Rules page, so details may differ.
+> Screenshots show the current version (v1.7.10).
 
 ## Supported clients
 
