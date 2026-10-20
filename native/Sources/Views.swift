@@ -374,6 +374,7 @@ struct NodesView: View {
     @State private var showClearSubsConfirm = false
     @State private var showClearHistoryConfirm = false
     @State private var editing: ManualNodeDraft?
+    @State private var renameCtx: SubRenameContext?
     @ObservedObject private var ap = LayoutPrefs.shared
 
     private var isSR: Bool { store.family == "shadowrocket" }
@@ -446,12 +447,18 @@ struct NodesView: View {
                 }
                 if !store.subs.isEmpty && !isSR {
                     ForEach(Array(store.subs.enumerated()), id: \.offset) { i, sub in
-                        HStack {
-                            Text(sub["url"] as? String ?? "").font(.caption2).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                        let nm = (sub["name"] as? String) ?? ""
+                        HStack(spacing: 8) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                if !nm.isEmpty { Text(nm).font(.caption.weight(.semibold)).lineLimit(1) }
+                                Text((sub["url"] as? String) ?? "").font(.caption2).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                            }
                             Spacer()
+                            Button { renameCtx = SubRenameContext(title: L("订阅名称"), initial: nm) { store.renameSub(i, $0) } } label: { Image(systemName: "pencil").font(.caption) }.buttonStyle(.plain).foregroundStyle(Brand.pink)
                             Button { store.removeSub(i) } label: { Image(systemName: "trash").font(.caption) }.buttonStyle(.plain).foregroundStyle(.red)
                         }
                     }
+                    Text(L("点铅笔给订阅起个名字，就不用再对着一串链接认了；名称只在 App 里显示，不影响生成的配置。")).font(.caption2).foregroundStyle(.tertiary)
                 }
                 // 订阅历史：防误删——清空订阅后可从这里逐条恢复
                 if !store.subHistory.isEmpty {
@@ -463,11 +470,15 @@ struct NodesView: View {
                     }
 
                     Text(L("点一条恢复导入到上方列表；垃圾桶只删这条历史，不影响已添加的订阅。")).font(.caption2).foregroundStyle(.secondary)
-                    ForEach(Array(store.subHistory.enumerated()), id: \.offset) { i, url in
-                        let added = store.subs.contains { ($0["url"] as? String) == url }
-                        HStack {
-                            Text(url).font(.caption2).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                    ForEach(Array(store.subHistory.enumerated()), id: \.offset) { i, entry in
+                        let added = store.subs.contains { ($0["url"] as? String) == entry.url }
+                        HStack(spacing: 8) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                if !entry.name.isEmpty { Text(entry.name).font(.caption.weight(.semibold)).lineLimit(1) }
+                                Text(entry.url).font(.caption2).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                            }
                             Spacer()
+                            Button { renameCtx = SubRenameContext(title: L("订阅名称"), initial: entry.name) { store.renameSubHistory(i, $0) } } label: { Image(systemName: "pencil").font(.caption) }.buttonStyle(.plain).foregroundStyle(Brand.pink)
                             if added {
                                 Text(L("已添加")).font(.caption2).foregroundStyle(.tertiary)
                             } else {
@@ -475,8 +486,7 @@ struct NodesView: View {
                             }
                         }
                         .contentShape(Rectangle())
-                        .onTapGesture { if !added { store.restoreSub(url) } }
-                        .disabled(added)
+                        .onTapGesture { if !added { store.restoreSub(entry) } }
                     }
                 }
             }
@@ -542,6 +552,9 @@ struct NodesView: View {
         .dismissKeyboardOnScroll()
         .sheet(item: $editing) { d in
             ManualNodeForm(draft: d).environmentObject(store)
+        }
+        .sheet(item: $renameCtx) { ctx in
+            SubRenameSheet(ctx: ctx)
         }
     }
 
@@ -1238,4 +1251,47 @@ struct ClientGrid: View {
         }
     }
     private var platformLabel: String { store.platform == "windows" ? "Windows" : (store.platform == "android" ? "Android" : "iOS") }
+}
+
+
+// MARK: - 订阅改名
+
+/// 改名编辑上下文（保存动作由调用处给定）
+struct SubRenameContext: Identifiable {
+    let id = UUID()
+    let title: String
+    let initial: String
+    let save: (String) -> Void
+}
+
+/// 订阅名称编辑器：一个输入框 + 保存 / 清除名称。
+struct SubRenameSheet: View {
+    let ctx: SubRenameContext
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    var body: some View {
+        NavStack {
+            ZStack {
+                PinkBackground()
+                VStack(spacing: 12) {
+                    PlainCard {
+                        Text(L("给这条订阅起个名字，列表和历史里都会显示它；留空保存 = 清除名称。")).font(.caption).foregroundStyle(.secondary)
+                        TextField(L("例如：主力机场"), text: $text)
+                            .textFieldStyle(.roundedBorder)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    }
+                    Spacer()
+                }
+                .padding(16)
+            }
+            .navigationTitle(ctx.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button(L("取消")) { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button(L("保存")) { ctx.save(text); dismiss() } }
+            }
+            .onAppear { text = ctx.initial }
+        }
+    }
 }

@@ -3,6 +3,12 @@ import Foundation
 import UIKit
 
 /// 方案以 [String: Any] 保存，字段与网页版 / 引擎一致，方案 JSON 可互通。
+/// 一条订阅引用：显示名称（可自定义，可空）+ URL
+struct SubRef: Codable, Equatable {
+    var name: String = ""
+    var url: String = ""
+}
+
 final class Store: ObservableObject {
     let engine = Engine.shared
     @Published var catalog: Catalog
@@ -344,7 +350,8 @@ final class Store: ObservableObject {
     // MARK: 节点 / 订阅
     /// 订阅历史（防误删：用户贴过的订阅 URL，持久化，可逐条恢复；最多 30 条）
     private let subHistoryKey = "lowex.subs.history.v1"
-    @Published var subHistory: [String] = []
+    private let subHistoryKeyV2 = "lowex.subs.history.v2"
+    @Published var subHistory: [SubRef] = []
     var nodesText: String {
         get { str("nodesText") }
         set { var s = state; s["nodesText"] = newValue; state = s }
@@ -408,7 +415,7 @@ final class Store: ObservableObject {
 
         if embedsSub && !urls.isEmpty {
             var cur = (s["subs"] as? [[String: Any]]) ?? []
-            for u in urls where !cur.contains(where: { ($0["url"] as? String) == u }) { cur.append(["name": "", "url": u]) }
+            for u in urls where !cur.contains(where: { ($0["url"] as? String) == u }) { cur.append(["name": knownSubName(for: u), "url": u]) }
             s["subs"] = cur
         }
         if !body.isEmpty {
@@ -543,7 +550,7 @@ final class Store: ObservableObject {
         d.set(remoteJsConfirmSensitive, forKey: "lowex.remoteJs.confirmSensitive.v1")
         d.set(remoteJsKind, forKey: "lowex.remoteJs.kind.v1")
     }
-    private func loadRemoteJs() {
+    func loadRemoteJs() {
         let d = UserDefaults.standard
         remoteJsMode = d.bool(forKey: "lowex.remoteJs.mode.v1")
         remoteJsURL = d.string(forKey: "lowex.remoteJs.url.v1") ?? ""
@@ -672,20 +679,36 @@ final class Store: ObservableObject {
         cur.remove(at: i); s["subs"] = cur; state = s
     }
     private func loadSubHistory() {
-        subHistory = UserDefaults.standard.stringArray(forKey: subHistoryKey) ?? []
+        let d = UserDefaults.standard
+        if let data = d.data(forKey: subHistoryKeyV2), let arr = try? JSONDecoder().decode([SubRef].self, from: data) {
+            subHistory = arr; return
+        }
+        // v1（纯 URL 数组）迁移到 v2
+        let old = d.stringArray(forKey: subHistoryKey) ?? []
+        subHistory = old.map { SubRef(name: "", url: $0) }
+        if !old.isEmpty { saveSubHistory(); d.removeObject(forKey: subHistoryKey) }
     }
     private func saveSubHistory() {
-        UserDefaults.standard.set(subHistory, forKey: subHistoryKey)
+        if let data = try? JSONEncoder().encode(subHistory) { UserDefaults.standard.set(data, forKey: subHistoryKeyV2) }
+    }
+    /// 某个 URL 已知的名称：先查当前订阅，再查历史
+    func knownSubName(for url: String) -> String {
+        if let n = subs.first(where: { ($0["url"] as? String) == url })?["name"] as? String, !n.isEmpty { return n }
+        return subHistory.first(where: { $0.url == url })?.name ?? ""
     }
     /// 记录用户贴过的订阅 URL：去重、最新在前、最多 30 条（无论客户端家族都记录）
     func recordSubHistory(_ urls: [String]) {
         var h = subHistory
-        for u in urls { h.removeAll { $0 == u }; h.insert(u, at: 0) }
+        for u in urls {
+            let nm = knownSubName(for: u)
+            h.removeAll { $0.url == u }; h.insert(SubRef(name: nm, url: u), at: 0)
+        }
         subHistory = Array(h.prefix(30))
         saveSubHistory()
     }
     /// 从历史恢复一条订阅到上方列表
-    func restoreSub(_ url: String) {
+    func restoreSub(_ e: SubRef) {
+        let url = e.url
         let urls = subs.compactMap { $0["url"] as? String }
         if urls.contains(url) { pasteNote = L("该订阅已在列表中"); return }
         if family == "shadowrocket" {
@@ -694,9 +717,38 @@ final class Store: ObservableObject {
             return
         }
         var s = state; var cur = (s["subs"] as? [[String: Any]]) ?? []
-        cur.append(["name": "", "url": url])
+        cur.append(["name": e.name, "url": url])
         s["subs"] = cur; state = s
         pasteNote = L("已恢复导入 1 条订阅")
+    }
+    /// 给订阅列表里的第 i 条改名（空字符串 = 清除名称）
+    func renameSub(_ i: Int, _ name: String) {
+        var s = state; var cur = (s["subs"] as? [[String: Any]]) ?? []
+        guard cur.indices.contains(i) else { return }
+        cur[i]["name"] = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        s["subs"] = cur; state = s
+    }
+    /// 给历史里的第 i 条改名
+    func renameSubHistory(_ i: Int, _ name: String) {
+        guard subHistory.indices.contains(i) else { return }
+        subHistory[i].name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        saveSubHistory()
+    }
+    /// 备份用：导出订阅历史
+    func exportSubHistory() -> [[String: String]] { subHistory.map { ["name": $0.name, "url": $0.url] } }
+    /// 备份用：应用订阅历史。replace 覆盖；合并按 URL 取并集，已有名称优先保留非空。
+    func applySubHistory(_ arr: [[String: String]], replace: Bool) {
+        let incoming = arr.compactMap { d -> SubRef? in guard let u = d["url"], !u.isEmpty else { return nil }; return SubRef(name: d["name"] ?? "", url: u) }
+        if replace { subHistory = Array(incoming.prefix(30)) } else {
+            var h = subHistory
+            for e in incoming {
+                if let ix = h.firstIndex(where: { $0.url == e.url }) {
+                    if h[ix].name.isEmpty { h[ix].name = e.name }
+                } else { h.append(e) }
+            }
+            subHistory = Array(h.prefix(30))
+        }
+        saveSubHistory()
     }
     func removeSubHistory(at i: Int) {
         guard subHistory.indices.contains(i) else { return }

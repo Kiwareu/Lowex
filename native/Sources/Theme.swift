@@ -32,12 +32,16 @@ struct PinkBackground: View {
         let still = reduce || Appearance.shared.performanceMode || !visible
         ZStack {
             // 不透明底色（与 LaunchBackground 同色）：网格渐变的色块带透明度，没有底色时会透出下层页面
-            (cs == .dark ? Color(red: 0.082, green: 0.051, blue: 0.129) : Color(red: 1, green: 0.949, blue: 0.969))
+            Appearance.shared.baseColor(dark: cs == .dark)
             if let img = Appearance.shared.wallpaper {
                 Color.clear.overlay { Image(uiImage: img).resizable().scaledToFill() }.clipped()
-                Color.black.opacity(cs == .dark ? 0.45 : 0.12)
+                Color.black.opacity(cs == .dark ? min(0.8, Appearance.shared.wallpaperDim * 3.75) : Appearance.shared.wallpaperDim)
             } else {
-                MeshBackdrop(dark: cs == .dark, speed: Appearance.shared.gradientSpeed, paused: still)
+                switch Appearance.shared.bgKind {
+                case .mesh: MeshBackdrop(dark: cs == .dark, speed: Appearance.shared.gradientSpeed, paused: still)
+                case .linear: LinearBackdrop(dark: cs == .dark, speed: Appearance.shared.gradientSpeed, paused: still)
+                case .solid: SolidBackdrop(dark: cs == .dark)
+                }
             }
         }
         .ignoresSafeArea()
@@ -91,6 +95,18 @@ struct MeshBackdrop: View {
     let dark: Bool; let speed: Double; let paused: Bool
     @ObservedObject private var scroll = ScrollActivity.shared
     private var colors: [Color] {
+        let ap = Appearance.shared
+        if ap.bgStyle != .sakura {
+            let (s1, s2, s3) = ap.seeds(dark: dark)
+            if dark {
+                return [Appearance.mix(s1, .black, 0.72), s2.opacity(0.35), Appearance.mix(s3, .black, 0.78),
+                        s1.opacity(0.38), Appearance.mix(s1, .black, 0.62), s2.opacity(0.30),
+                        Appearance.mix(s2, .black, 0.70), s3.opacity(0.22), s1.opacity(0.28)]
+            }
+            return [Appearance.mix(s1, .white, 0.90), s2.opacity(0.42), Appearance.mix(s2, .white, 0.86),
+                    s1.opacity(0.50), Appearance.mix(s1, .white, 0.78), s2.opacity(0.36),
+                    s3.opacity(0.40), Appearance.mix(s3, .white, 0.88), s1.opacity(0.38)]
+        }
         let a = Brand.pinkSoft, l = Brand.lilac, p = Brand.peach
         if dark {
             return [Color(red: 0.10, green: 0.05, blue: 0.15), l.opacity(0.35), Color(red: 0.08, green: 0.07, blue: 0.19),
@@ -102,14 +118,15 @@ struct MeshBackdrop: View {
                 p.opacity(0.40), Color(red: 1.0, green: 0.93, blue: 0.95), a.opacity(0.38)]
     }
     private func points(_ t: Float) -> [SIMD2<Float>] {
-        let k: Float = 0.11
+        let amp = Float(0.25 + 1.5 * Appearance.shared.bgDrift)
+        let k: Float = 0.11 * amp
         return [
             SIMD2<Float>(0, 0), SIMD2<Float>(0.5 + k * sin(t), 0), SIMD2<Float>(1, 0),
-            SIMD2<Float>(0, 0.5 + k * cos(t * 0.8)), SIMD2<Float>(0.5 + 0.2 * sin(t * 0.6 + 1), 0.5 + 0.2 * cos(t * 0.5)), SIMD2<Float>(1, 0.5 + k * sin(t * 0.7 + 2)),
+            SIMD2<Float>(0, 0.5 + k * cos(t * 0.8)), SIMD2<Float>(0.5 + 0.2 * amp * sin(t * 0.6 + 1), 0.5 + 0.2 * amp * cos(t * 0.5)), SIMD2<Float>(1, 0.5 + k * sin(t * 0.7 + 2)),
             SIMD2<Float>(0, 1), SIMD2<Float>(0.5 + k * cos(t * 0.9 + 0.5), 1), SIMD2<Float>(1, 1)]
     }
     var body: some View {
-        let base = dark ? Color(red: 0.08, green: 0.05, blue: 0.13) : Color(red: 1, green: 0.95, blue: 0.97)
+        let base = Appearance.shared.baseColor(dark: dark)
         // 空闲时 10fps 足够（原来 15fps）；滚动中本来就暂停；性能模式下背景直接静止
         TimelineView(.animation(minimumInterval: 1.0 / 10.0, paused: paused || scroll.active || speed <= 0.01 || Appearance.shared.performanceMode)) { ctx in
             let t = Float(ctx.date.timeIntervalSinceReferenceDate * speed * 0.22)
@@ -137,6 +154,37 @@ struct MeshBackdrop: View {
     private func blob(_ c: Color, r: CGFloat) -> some View {
         RadialGradient(colors: [c, c.opacity(0)], center: .center, startRadius: 0, endRadius: r / 2)
             .frame(width: r, height: r)
+    }
+}
+
+/// 线性渐变背景：角度可调；速度 > 0 时角度缓慢呼吸漂移。暂停逻辑与网格一致（滚动 / 性能模式 / 不可见页签）。
+struct LinearBackdrop: View {
+    let dark: Bool; let speed: Double; let paused: Bool
+    @ObservedObject private var scroll = ScrollActivity.shared
+    var body: some View {
+        let ap = Appearance.shared
+        let (s1, s2, s3) = ap.seeds(dark: dark)
+        let cols: [Color] = [Appearance.mix(s1, .white, dark ? 0.10 : 0.82), s1.opacity(dark ? 0.50 : 0.55),
+                             s2.opacity(dark ? 0.42 : 0.50), Appearance.mix(s3, .white, dark ? 0.05 : 0.85)]
+        TimelineView(.animation(minimumInterval: 1.0 / 10.0, paused: paused || scroll.active || speed <= 0.01 || Appearance.shared.performanceMode)) { ctx in
+            let t = ctx.date.timeIntervalSinceReferenceDate * speed * 0.05
+            let ang = (ap.bgAngle + (speed > 0.01 ? sin(t) * 14 : 0)) * Double.pi / 180
+            let sx = 0.5 - 0.5 * cos(ang), sy = 0.5 - 0.5 * sin(ang)
+            LinearGradient(colors: cols, startPoint: UnitPoint(x: sx, y: sy), endPoint: UnitPoint(x: 1 - sx, y: 1 - sy))
+        }
+    }
+}
+
+/// 柔光纯色背景：底色 + 一团静态柔光，最省电。
+struct SolidBackdrop: View {
+    let dark: Bool
+    var body: some View {
+        let ap = Appearance.shared
+        let s2 = ap.seeds(dark: dark).1
+        ZStack {
+            ap.baseColor(dark: dark)
+            RadialGradient(colors: [s2.opacity(dark ? 0.30 : 0.40), s2.opacity(0)], center: .topTrailing, startRadius: 0, endRadius: 420)
+        }
     }
 }
 
