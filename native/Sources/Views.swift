@@ -118,7 +118,7 @@ struct HomeView: View {
                     Toggle(L("故障转移（地区故转组）"), isOn: Binding(
                         get: { (store.opts["failover"] as? Bool) ?? true },
                         set: { store.setOpt("failover", $0) }
-                    )).tint(Brand.pink)
+                    ))
                     Text(L("sing-box 无原生 fallback：开 = 预设 A（降级为地区-自动组，不是真故转），关 = 预设 B（无故转层）。"))
                         .font(.caption2).foregroundStyle(.secondary)
                 }
@@ -148,7 +148,7 @@ struct HomeView: View {
                             return (v as? Bool) ?? true
                         },
                         set: { store.setOpt("blockQuic", $0 ? "foreign" : "off") }
-                    )).tint(Brand.pink)
+                    ))
                     if !store.quicTierText.isEmpty {
                         Text(L("QUIC：") + store.quicTierText).font(.caption2).foregroundStyle(.secondary)
                     }
@@ -163,7 +163,7 @@ struct HomeView: View {
                             return (v as? Bool) ?? true
                         },
                         set: { store.setOpt("stun", $0 ? "proxy" : "off") }
-                    )).tint(Brand.pink)
+                    ))
                     if !store.stunTierText.isEmpty {
                         Text(L("STUN：") + store.stunTierText).font(.caption2).foregroundStyle(.secondary)
                     }
@@ -347,7 +347,7 @@ struct OptToggle: View {
             Toggle(title, isOn: Binding(
                 get: { (store.opts[key] as? String) == "system" },
                 set: { store.setOpt(key, $0 ? "system" : "doh") }
-            )).tint(Brand.pink)
+            ))
         } else if store.supports(feature) {
             Toggle(title, isOn: Binding(
                 get: {
@@ -361,7 +361,7 @@ struct OptToggle: View {
                 },
                 set: { store.setOpt(key, invert ? !$0 : $0) }
             ))
-            .tint(Brand.pink)
+            
         }
     }
 }
@@ -576,7 +576,7 @@ struct NodesView: View {
                                 .font(.caption2).foregroundStyle(.secondary).lineLimit(2).truncationMode(.middle)
                         }
                         Spacer()
-                        Toggle("", isOn: Binding(get: { on }, set: { _ in store.toggleManual(id) })).labelsHidden().tint(Brand.pink)
+                        Toggle("", isOn: Binding(get: { on }, set: { _ in store.toggleManual(id) })).labelsHidden()
                     }
                     if let issue, on { Label(L("当前客户端不会写入：{}", issue), systemImage: "exclamationmark.triangle.fill").font(.caption2).foregroundStyle(.orange) }
                     HStack(spacing: 14) {
@@ -666,7 +666,7 @@ struct ManualNodeForm: View {
                 }
                 Section(L("类型")) {
                     Picker(L("类型"), selection: $type) { Text("SOCKS5").tag(0); Text("HTTP").tag(1); Text("HTTPS").tag(2) }.pickerStyle(.segmented)
-                    if type == 0 { Toggle("SOCKS5 over TLS", isOn: $draft.tls).tint(Brand.pink) }
+                    if type == 0 { Toggle("SOCKS5 over TLS", isOn: $draft.tls) }
                 }
                 Section(L("服务器")) {
                     TextField(L("主机（域名或 IP）"), text: $draft.host).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
@@ -881,7 +881,7 @@ struct RulesView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                     HStack {
-                        Toggle(L("只看收藏"), isOn: $onlyFav).tint(Brand.pink).font(.subheadline)
+                        Toggle(L("只看收藏"), isOn: $onlyFav).font(.subheadline)
                     }
                     DensityBar()
                 }
