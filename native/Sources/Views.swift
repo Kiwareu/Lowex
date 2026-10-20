@@ -889,7 +889,21 @@ struct RulesView: View {
                 // 每次渲染只取一次分组状态 / 收藏 / 分类（以前每行都各自从 [String: Any] 里重新转换一遍）
                 let gs = store.groupState, favs = Set(store.favoriteIds), cats = store.catalog.cats
                 let list = filteredGroups
-                if ap.density == .category {
+                if list.isEmpty {
+                    // 以前这里直接白屏：没收藏时开「只看收藏」、或搜索没结果，页面全空还零提示，看着像坏了
+                    PlainCard {
+                        Text(onlyFav && store.favoriteIds.isEmpty ? L("还没有收藏的分组") : L("没有找到匹配的分组"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(onlyFav && store.favoriteIds.isEmpty
+                             ? L("点任意分组行上的 ☆ 星星就能收藏它。收藏之后打开「只看收藏」，这里就只显示你收藏的分组。")
+                             : L("换个关键词试试，或者清空搜索。"))
+                            .font(.caption).foregroundStyle(.secondary)
+                        if onlyFav && store.favoriteIds.isEmpty {
+                            Button { onlyFav = false } label: { Text(L("先看全部分组")) }
+                                .buttonStyle(.bordered).tint(Brand.pink)
+                        }
+                    }
+                } else if ap.density == .category {
                     // 按分类：单列、行高一致，分类标题按常见程度排序；名称完整显示
                     ForEach(categorySections(list), id: \.0) { sec in
                         HStack(spacing: 6) {
