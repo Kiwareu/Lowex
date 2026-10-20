@@ -14,7 +14,7 @@ import {has,CAPS} from '../src/data/caps';
 import {QUIC_TIERS,STUN_TIERS} from '../src/data/caps';
 import {makePlan} from '../src/engine/plan';
 import {presetMode} from '../src/engine/plan';
-import {remoteJsSupport,validateRemoteJs,MIHOMO_SCRIPT_TEMPLATE,SURGE_SCRIPT_TEMPLATE} from '../src/engine/remoteJs';
+import {remoteJsSupport,validateRemoteJs,MIHOMO_SCRIPT_TEMPLATE,SURGE_SCRIPT_TEMPLATE,OVERRIDE_YAML_TEMPLATE} from '../src/engine/remoteJs';
 import {libraryList,libraryAttribution} from '../src/engine/remoteJsLibrary';
 import {leakChecklist,leakScore,STATUS_TEXT} from '../src/engine/leak';
 import {CARRIERS} from '../src/data/carriers';
@@ -51,7 +51,7 @@ const J=(x:unknown)=>JSON.stringify(x);
   /** 远程 JS 独立模块（与生成配置互斥，不写进配置文件） */
   remoteJsSupport:(client:string)=>J(remoteJsSupport(client)),
   remoteJsValidate:(json:string)=>{try{return J(validateRemoteJs(JSON.parse(json)))}catch(e:any){return J({blocked:[String(e&&e.message||e)],warns:[]})}},
-  remoteJsTemplate:(kind:string)=>J({text:kind==='config-overwrite'?MIHOMO_SCRIPT_TEMPLATE:SURGE_SCRIPT_TEMPLATE}),
+  remoteJsTemplate:(kind:string)=>J({text:kind==='config-override'?OVERRIDE_YAML_TEMPLATE:(kind==='config-overwrite'?MIHOMO_SCRIPT_TEMPLATE:SURGE_SCRIPT_TEMPLATE)}),
   /** 脚本库：分享区（原创脚本给链接+SHA256 锁定，分享的第三方只给链接+来源标注） */
   remoteJsLibrary:(client:string)=>J(libraryList(client||'')),
   remoteJsLibraryAttribution:(id:string)=>J(libraryAttribution(id)),
