@@ -17,7 +17,7 @@
  *    不适用于 Stash，暂不收录 Stash 条目，由用户自行添加。
  *    Surge / Loon / QX / Shadowrocket 的等价机制（托管配置/远程资源/模块订阅）
  *    未在时限内核实，留空由用户自行添加。
- *  - sing-box 不支持；egern 未核实。
+ *  - sing-box 不支持；egern 的 HTTP 重写已按官方文档核实（URL 重写 + JavaScript + MITM），但脚本 API 与 Surge 系不同，种子里的 Surge 写法脚本不对 egern 提供。
  *
  *  安全红线（硬编码种子只放两类）：
  *  - 自建脚本：本仓库 remote-scripts/ 下的文件，走
