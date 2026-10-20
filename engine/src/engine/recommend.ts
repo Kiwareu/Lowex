@@ -20,7 +20,7 @@ export function defaultOpts():Opts{
   const a=new Uint8Array(12);crypto.getRandomValues(a);
   return{ipv6:false,tun:true,mtu:1420,mixedPort:7890,apiPort:9090,secret:Array.from(a,x=>x.toString(16).padStart(2,'0')).join(''),logLevel:'warning',allowLan:false,
   dnsCn:[ALI,TX],dnsPreset:'ali-dnspod',dnsBootstrap:BOOTSTRAP_DEFAULT,cnDnsMode:'doh',dnsRemote:['https://1.1.1.1/dns-query','https://8.8.8.8/dns-query'],fakeIp:true,
-  blockQuic:'foreign',stun:'proxy',unknown:'proxy',ads:'lite',telemetry:true,trackers:true,icons:true,lowMemory:false,keepAlive:false,
+  blockQuic:'foreign',stun:'reject',unknown:'proxy',ads:'lite',telemetry:true,trackers:true,icons:true,lowMemory:false,keepAlive:false,
   testUrl:'https://www.gstatic.com/generate_204',urlTestInterval:600,
   campusDomain:'',campusCidr:'',homeDomain:'',lanGateway:'',lanDns:'',wifiCalling:false,mcc:'',mnc:'',wifiRegion:'',tunStack:'mixed',
   panelOrigins:['https://metacubexd.pages.dev','https://board.zash.run.place'],nodeInclude:'',nodeExclude:'剩余流量|套餐到期|距离下次重置|官网|过期时间',lbGroup:false,tolerance:50,failover:true};
@@ -56,7 +56,7 @@ export function recommend(net:Network,loc:Location,platform:string):{patch:Parti
   const quic=loc==='overseas'||net==='overseas'?'off':'foreign';
   add({key:'blockQuic',label:'QUIC',value:quic==='off'?'放行':'拦截境外 QUIC（回落 TCP）',why:quic==='off'?'人在海外直连境外服务，不必拦 QUIC。':'境外 UDP/QUIC 在本地线路上常被限速或丢包，拦掉让浏览器回落 TCP 更稳；直连 QUIC 不受影响。联通 / 电信 UDP 质量参差，这项更建议开。',basis:'经验值',patch:{blockQuic:quic}});
   // STUN
-  add({key:'stun',label:'STUN / WebRTC',value:'走代理',why:'防止 WebRTC 暴露真实 IP；要求节点支持 UDP。节点不支持 UDP 时音视频会断，请改为「拦截」。',basis:'经验值',patch:{stun:'proxy'}});
+  add({key:'stun',label:'STUN / WebRTC',value:'拦截',why:'最干净：WebRTC 拿不到公网地址，无泄漏面，也不占代理带宽。需要网页视频通话时再改「走代理」（要求节点支持 UDP）。',basis:'经验值',patch:{stun:'reject'}});
   // keepalive
   const ka=net==='cellular'||mobileOS;
   add({key:'keepAlive',label:'TCP 保活（keep-alive 600/30）',value:ka?'开':'关',why:ka?'蜂窝 / 移动设备 NAT 老化短，保活更稳也更省电。':'桌面有线 / 宽带可不设。',basis:'经验值',patch:{keepAlive:ka}});
