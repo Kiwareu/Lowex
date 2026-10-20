@@ -110,7 +110,8 @@ struct MeshBackdrop: View {
     }
     var body: some View {
         let base = dark ? Color(red: 0.08, green: 0.05, blue: 0.13) : Color(red: 1, green: 0.95, blue: 0.97)
-        TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: paused || scroll.active || speed <= 0.01)) { ctx in
+        // 空闲时 10fps 足够（原来 15fps）；滚动中本来就暂停；性能模式下背景直接静止
+        TimelineView(.animation(minimumInterval: 1.0 / 10.0, paused: paused || scroll.active || speed <= 0.01 || Appearance.shared.performanceMode)) { ctx in
             let t = Float(ctx.date.timeIntervalSinceReferenceDate * speed * 0.22)
             if #available(iOS 18.0, *) {
                 MeshGradient(width: 3, height: 3, points: points(t), colors: colors, background: base, smoothsColors: true)
