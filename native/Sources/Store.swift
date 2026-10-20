@@ -163,9 +163,14 @@ final class Store: ObservableObject {
         saveWork = w
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: w)
     }
-    func flushSave() { saveWork?.cancel(); save(); LocalFile.flush() }
+    /// 状态落盘：主线程只做快照，JSON 序列化 + 写盘全在后台串行队列（原来每次点开关都在主线程把整包状态转成 JSON，点了会顿一下）
+    private static let saveQueue = DispatchQueue(label: "lowex.store.save", qos: .utility)
     func save() {
-        var s = state
+        let snapshot = state, k = key
+        Self.saveQueue.async { Self.persistState(snapshot, key: k) }
+    }
+    private static func persistState(_ s0: [String: Any], key: String) {
+        var s = s0
         let secret: [String: Any] = ["subs": (s["subs"] as? [[String: Any]]) ?? [], "nodesText": (s["nodesText"] as? String) ?? ""]
         if JSONSerialization.isValidJSONObject(secret), let d = try? JSONSerialization.data(withJSONObject: secret) { LocalFile.write(d, Store.secretFile) }
         s["subs"] = []
@@ -177,6 +182,13 @@ final class Store: ObservableObject {
         if let d = try? JSONSerialization.data(withJSONObject: s) {
             UserDefaults.standard.set(d, forKey: key)
         }
+    }
+    /// 备份 / 切后台前调用：把队列里排队的写盘全部落完，保证拿到的是最新状态（顺序不变，不丢数据）
+    func flushSave() {
+        saveWork?.cancel()
+        let snapshot = state, k = key
+        Self.saveQueue.sync { Self.persistState(snapshot, key: k) }
+        LocalFile.flush()
     }
 
     var client: String { str("client") }
