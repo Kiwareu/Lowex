@@ -40,7 +40,7 @@ export const CAPS:Record<Feature,{keys:(keyof Opts)[];fam:Family[];label:string}
  homeDns:{keys:['lanDns'],fam:MS,label:'内网 DNS'},
  wifi:{keys:['wifiCalling','mcc','mnc'],fam:ALL,label:'Wi-Fi 通话'},
  modules:{keys:[],fam:['surge','qx','shadowrocket','loon','stash','egern'],label:'模块与脚本'},
- mitm:{keys:[],fam:['surge','qx','shadowrocket','loon','stash'],label:'MITM 与自定义重写'},
+ mitm:{keys:[],fam:['surge','qx','shadowrocket','loon','stash','egern'],label:'MITM 与自定义重写'}, // Egern 官方文档确认支持 MITM（URL 重写 + JavaScript + MITM），2026-10-20 补上
 };
 /** QUIC 三档（9.8+，不把三档混为一个“支持”）：
  *  precise = 精确拦境外（AND + NOT CN，境内 QUIC 不受影响）；
