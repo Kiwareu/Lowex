@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.7.1 — 2026-10-20
+
+- 包名修正：`native/project.yml` 的 `PRODUCT_BUNDLE_IDENTIFIER` 由 `com.wenx.lowex.native` 改为之前确认的正式包名 `com.wenx.lowex`。注意：iOS 把不同包名视为不同应用，需重新安装；旧包名 App 的数据不会自动迁移——请先在旧 App「更多 → 备份」导出完整备份，再在新 App 里导入恢复。
+
+
 ## v1.7.0 — 2026-10-20
 
 - 地区分组新增加拿大、菲律宾、东南亚、澳大利亚（节点页地区分组；含各自图标 region-CA/PH/SEA/AU，已上传 Lowex-Icons 仓库；OT「其他」排除列表同步更新；东南亚不含已独立成组的新加坡/菲律宾，避免重复）。
