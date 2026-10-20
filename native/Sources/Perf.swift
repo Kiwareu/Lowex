@@ -30,13 +30,19 @@ struct MiniSwitch: View {
     let on: Bool
     var action: (Bool) -> Void
     var body: some View {
-        Button { action(!on) } label: {
+        Button {
+            Haptics.light()
+            withAnimation(.spring(response: 0.30, dampingFraction: 0.80)) { action(!on) }
+        } label: {
             ZStack(alignment: on ? .trailing : .leading) {
-                Capsule().fill(on ? Brand.pink : Color.secondary.opacity(0.32))
-                Circle().fill(Color.white).padding(2)
+                // 系统开关绿（与原生开关同色），扁、绿+白
+                Capsule().fill(on ? Color(red: 0.204, green: 0.780, blue: 0.349) : Color.secondary.opacity(0.30))
+                Circle().fill(Color.white)
+                    .shadow(color: .black.opacity(0.18), radius: 2, x: 0, y: 1)
+                    .padding(2.5)
             }
-            .frame(width: 42, height: 25)
-            .frame(width: 46, height: 36)
+            .frame(width: 44, height: 26)
+            .frame(width: 48, height: 36)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
