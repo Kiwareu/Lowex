@@ -42,11 +42,11 @@ Lowex 是一款執行在 iPhone / iPad 上的配置生成器：選好目標客�
 
 ## 截圖
 
-| 首頁 | 規則 |
-|---|---|
-| <img src="docs/screenshots/home.png" width="260"> | <img src="docs/screenshots/rules.png" width="260"> |
+| 首頁 | 生成選項 | 規則 |
+|---|---|---|
+| <img src="docs/screenshots/home.jpg" width="260"> | <img src="docs/screenshots/generate.jpg" width="260"> | <img src="docs/screenshots/rules.jpg" width="260"> |
 
-> 截圖為 v1.3 介面，v1.4 起規則頁新增列表密度，細節以實際版本為準。
+> 截圖為目前版本（v1.7.10）介面。
 
 ## 支援的客戶端
 
