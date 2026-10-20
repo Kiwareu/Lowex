@@ -8,7 +8,10 @@
  *    YAML 覆写（prepend-/append- merge 键）不通用，故 Stash 不在此列。
  *  - config-overwrite（配置级 JS 覆写 .js）：脚本收到完整 config 对象，返回修改后的 config。
  *    Mihomo Party / Clash Verge Rev 的 script.js（V8），FlClash 的脚本覆写（scriptId，
- *    chen08209/FlClash DeepWiki Profile Management）。
+ *    chen08209/FlClash DeepWiki Profile Management）；ClashMi：覆写支持 JS 类型
+ *    （核心设置 → 覆写 → ＋ → 添加配置链接 → 选 JS 类型；加完后把该覆写的「覆写方式」
+ *    改为「内置-覆写」才会生效——来源：Perfect-Rules 第三方教程 README + 视频
+ *    https://youtu.be/jmJiyDSmZE0，2026-10-20 核实；非官方文档，步骤与用户截图的覆写 UI 一致）。
  *  - http-rewrite（HTTP 重写 .js + MITM）：http-request / http-response 脚本 + MITM。
  *    Surge / Loon / Quantumult X / Shadowrocket / Stash 为 Surge 系脚本写法；
  *    Egern 官方文档确认支持 URL 重写 + JavaScript + MITM（egernapp.com/docs），
@@ -28,7 +31,7 @@ export const REMOTE_JS_KINDS: RemoteJsKind[] = ['config-override', 'config-overw
 /** 每种类型支持的客户端 id（见文件头核实来源注释） */
 export const REMOTE_JS_KIND_CLIENTS: Record<RemoteJsKind, string[]> = {
   'config-override': ['clashmi', 'verge', 'clashparty', 'flclash'],
-  'config-overwrite': ['clashparty', 'verge', 'flclash'],
+  'config-overwrite': ['clashmi', 'clashparty', 'verge', 'flclash'],
   'http-rewrite': ['surge', 'loon', 'qx', 'shadowrocket', 'stash', 'egern'],
 };
 /** 客户端中文显示名（用于「支持的客户端」提示） */
@@ -55,7 +58,9 @@ function kindNote(kind: RemoteJsKind, clientId: string, ok: boolean): string {
   const names = REMOTE_JS_KIND_CLIENTS[kind].map(id => REMOTE_JS_CLIENT_NAMES[id] || id);
   if (ok) {
     if (kind === 'config-override') return '在该客户端的「覆写 / Override」里添加 .yaml 链接即可（以客户端内实际入口为准）';
-    if (kind === 'config-overwrite') return '脚本收到完整 config 对象，返回修改后的 config（.js，以客户端文档为准）';
+    if (kind === 'config-overwrite') return clientId === 'clashmi'
+      ? '在「核心设置 → 覆写」里添加配置链接并选 JS 类型；加完后把该覆写的「覆写方式」改为「内置-覆写」，否则可能不生效'
+      : '脚本收到完整 config 对象，返回修改后的 config（.js，以客户端文档为准）';
     return clientId === 'egern'
       ? '支持 URL 重写 + JavaScript + MITM（官方文档确认），但脚本 API 与 Surge 系不同，按 Egern 自家语法写'
       : '支持 http-request / http-response 脚本 + MITM（.js，以客户端文档为准）';
