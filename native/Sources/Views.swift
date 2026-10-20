@@ -729,7 +729,7 @@ struct ExitPicker: View {
         onClose()
     }
 
-    private var selectedFill: some ShapeStyle {
+    private var selectedFill: AnyShapeStyle {
         AnyShapeStyle(LinearGradient(colors: [Brand.pink, Brand.lilac], startPoint: .leading, endPoint: .trailing))
     }
 
