@@ -1104,7 +1104,9 @@ struct GroupRow: View, Equatable {
         }.buttonStyle(.plain)
     }
     private var toggle: some View {
-        MiniSwitch(on: on, action: onOn)
+        // 系统原生开关：iOS 26 上自动是液态玻璃（和「只看收藏」同款），旧系统是经典扁开关，全 App 统一
+        Toggle("", isOn: Binding(get: { on }, set: { Haptics.light(); onOn($0) }))
+            .labelsHidden()
     }
     private var policyChip: some View {
         Button(action: onPolicy) {
