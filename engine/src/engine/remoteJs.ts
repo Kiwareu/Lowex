@@ -9,8 +9,9 @@
  *    仅 Surge / Loon / QX / Shadowrocket / Stash 支持；sing-box 不支持 JS 重写；
  *    Egern 未核实，仅提供注释说明。
  *
- *  安全红线（校验器强制执行）：仅 https + 仅 .js 结尾 + SHA256 锁定（64 位 hex）+
- *  仅自建/受信源；默认不内置任何第三方脚本；MITM hostname 绝不写 *；
+ *  安全红线（校验器强制执行）：仅 https + 仅 .js 结尾；SHA256 锁定可选——
+ *  填了就强制校验（作者更新即提示），不填则放行但常显「未锁定」警告，只用信任的来源；
+ *  第三方分享脚本由用户自行核验来源（脚本库标注出处）；MITM hostname 绝不写 *；
  *  含付费绕过关键词的脚本直接拒绝；敏感域名（银行/支付/社交账号）需用户显式确认。
  */
 import {CLIENTS} from '../data/clients';
@@ -34,13 +35,15 @@ export interface RemoteJsInput { url: string; sha256: string; name?: string; mit
 export interface RemoteJsCheck { blocked: string[]; warns: string[] }
 const PAID_BYPASS = ['破解', '绕过付费', '解锁会员', '解锁付费', '去付费', '激活码', '授权破解', 'crack', 'bypass paywall', '付费解锁'];
 const SENSITIVE = ['alipay', 'wechat', 'weixin', 'tenpay', 'unionpay', 'paypal', 'icloud', 'bank', 'wallet'];
-/** 校验远程 JS 引用。blocked 非空 = 拒绝使用；warns = 需用户确认后才可继续。 */
+/** 校验远程 JS 引用。blocked 非空 = 拒绝使用；warns = 提醒（不拦截），用户确认来源可信后可继续。 */
 export function validateRemoteJs(input: RemoteJsInput): RemoteJsCheck {
   const blocked: string[] = []; const warns: string[] = [];
   const url = (input.url || '').trim();
   if (!/^https:\/\//i.test(url)) blocked.push('远程 JS 只允许 https 链接');
   if (!/\.js(\?.*)?$/i.test(url)) blocked.push('远程 JS 链接必须以 .js 结尾');
-  if (!/^[0-9a-f]{64}$/i.test((input.sha256 || '').trim())) blocked.push('必须提供 SHA256 锁定（64 位 hex）：作者更新脚本后哈希变化即拒绝加载，防供应链劫持');
+  const sha = (input.sha256 || '').trim();
+  if (!sha) warns.push('未填写 SHA256 锁定：作者更新脚本后 App 不会察觉。只用你信任的来源；要锁定就去脚本库复制带哈希的版本');
+  else if (!/^[0-9a-f]{64}$/i.test(sha)) blocked.push('SHA256 格式错误：应为 64 位 hex；不填则留空');
   const hay = `${input.name || ''} ${url} ${input.content || ''}`.toLowerCase();
   for (const k of PAID_BYPASS) if (hay.includes(k.toLowerCase())) blocked.push(`含付费绕过关键词「${k}」，拒绝使用`);
   for (const h of input.mitmHosts || []) {
