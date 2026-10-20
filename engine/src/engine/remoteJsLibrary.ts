@@ -53,7 +53,8 @@ export interface LibraryEntry {
 /** 种子数据。注意：原创条目的 url 指向 main 分支的 raw 链接——在分支合并到 main
  *  之前会 404（pendingMerge），SHA256 已按文件内容填好，合并后哈希不变。
  *  第三方分享条目（shared）由用户指定收录：仅标注来源与出处，不做哈希锁定，
- *  由用户自行核验来源可信度。 */
+ *  由用户自行核验来源可信度。
+ *  （2026-10-20：分支已合并到 main，原创条目的 raw 链接生效，pendingMerge 标记已移除。） */
 const SEED: LibraryEntry[] = [
   {
     id: 'lowex-mihomo-dns-fix',
@@ -65,7 +66,6 @@ const SEED: LibraryEntry[] = [
     source: { kind: 'original', author: 'Lowex', note: '仓库自建：remote-scripts/mihomo-dns-leak-fix.js' },
     desc: '配置级 JS 覆写：只补缺不覆盖，补齐 DNS 开关/监听/国内外分流与防投毒过滤，绝不碰 IPv6 与已有规则。',
     updated: '2026-10-20',
-    pendingMerge: true,
   },
   {
     id: 'lowex-surge-noop',
@@ -77,7 +77,6 @@ const SEED: LibraryEntry[] = [
     source: { kind: 'original', author: 'Lowex', note: '仓库自建：remote-scripts/surge-noop.js' },
     desc: '空实现重写脚本（$done({})），先验证引用链路跑通，再按注释示例改自己的逻辑。',
     updated: '2026-10-20',
-    pendingMerge: true,
   },
   {
     id: 'lowex-mihomo-override-yaml',
@@ -89,7 +88,6 @@ const SEED: LibraryEntry[] = [
     source: { kind: 'original', author: 'Lowex', note: '仓库自建：remote-scripts/mihomo-override-dns-rules.yaml，基于 Lowex 9.8+ 分析优化' },
     desc: '覆写配置链接：DNS 防泄漏整段 + fallback 精确化注释 + 分流规则骨架。在代理软件的「覆写 / Override」里添加配置链接即可。',
     updated: '2026-10-20',
-    pendingMerge: true,
   },
   {
     id: 'chunlion-dns-leak-full',
