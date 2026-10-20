@@ -137,11 +137,11 @@ struct AppearanceView: View {
                             }
                         }
                         PlainCard {
-                            Toggle(L("触感反馈"), isOn: Binding(get: { ap.haptics }, set: { ap.haptics = $0; if $0 { Haptics.light() } })).tint(Brand.pink)
+                            Toggle(L("触感反馈"), isOn: Binding(get: { ap.haptics }, set: { ap.haptics = $0; if $0 { Haptics.light() } }))
                             Text(L("按钮、开关、选择与生成成功时的轻微震动。")).font(.caption2).foregroundStyle(.secondary)
                         }
                         PlainCard {
-                            Toggle(L("性能模式"), isOn: Binding(get: { ap.performanceMode }, set: { ap.performanceMode = $0 })).tint(Brand.pink)
+                            Toggle(L("性能模式"), isOn: Binding(get: { ap.performanceMode }, set: { ap.performanceMode = $0 }))
                             Text(L("关闭背景动画，并用更轻量的玻璃质感卡片，滚动更流畅，外观几乎不变。iPhone XS 等较旧机型默认开启。")).font(.caption2).foregroundStyle(.secondary)
                         }
                         PlainCard {
