@@ -114,6 +114,17 @@ const SEED: LibraryEntry[] = [
     updated: '2026-10-20',
   },
   {
+    id: 'perfect-rules-clashmi',
+    name: '分享 · Perfect Rules ClashMi 一键覆写（完美分流 + DNS 防泄漏）',
+    kind: 'config-overwrite',
+    clients: ['clashmi'],
+    url: 'https://raw.githubusercontent.com/n0de-sudo/Perfect-Rules/refs/heads/main/Clash/Clash_mi.js',
+    sha256: '',
+    source: { kind: 'shared', author: 'n0de-sudo（阿尔忒弥斯实验室）', authorUrl: 'https://github.com/n0de-sudo/Perfect-Rules', note: '2026-10-20 全文审查（1957 行）：无网络外发、无窃密、无付费绕过、无硬编码订阅；URL 仅公共 DoH、generate_204 与作者自有规则仓库；DNS 国内外分流 + fallback-filter 规范。注意：会接管基础配置（mixed-port 固定 7890 等），保留机场原有分组并动态生成地区组；作者更新不受哈希锁定；README 含机场推广，脚本本身无推广代码。ClashMi 用法：覆写选 JS 类型，覆写方式改「内置-覆写」' },
+    desc: '配置级 JS 覆写：给机场订阅一键注入完美分流（国内直连/海外代理/AI/YouTube/广告拦截）+ DNS 防泄漏 + 动态地区分组。在 ClashMi「核心设置 → 覆写」里添加配置链接并选 JS 类型。',
+    updated: '2026-10-20',
+  },
+  {
     id: 'example-shared',
     name: '示例：收藏的第三方覆写配置（请替换）',
     kind: 'config-override',
