@@ -323,7 +323,7 @@ struct WifiInline: View {
                 get: { (store.opts["wifiCalling"] as? Bool) ?? false },
                 set: { store.setOpt("wifiCalling", $0) }
             ))
-            .tint(Brand.pink)
+            
             Text(L("运营商 ePDG / IMS 域名直连，避免通话被代理。选择会写入生成配置。"))
                 .font(.caption).foregroundStyle(.secondary)
             WifiCallNote()
@@ -470,7 +470,7 @@ struct ModulesView: View {
                         Toggle("", isOn: Binding(
                             get: { (m["on"] as? Bool) ?? true },
                             set: { v in var l = mods; l[i]["on"] = v; store.set("modules", l) }
-                        )).labelsHidden().tint(Brand.pink)
+                        )).labelsHidden()
                         Button(role: .destructive) {
                             var l = mods; l.remove(at: i); store.set("modules", l)
                         } label: { Image(systemName: "trash") }
@@ -616,7 +616,7 @@ struct RemoteJsView: View {
                 Toggle(L("启用远程覆写"), isOn: Binding(
                     get: { store.remoteJsMode },
                     set: { store.remoteJsMode = $0; store.saveRemoteJs() }
-                )).tint(Brand.pink).disabled(!sup.anySupported)
+                )).disabled(!sup.anySupported)
                 if !sup.anySupported {
                     Text(L("当前客户端三种类型都不支持，已禁用。")).font(.caption2).foregroundStyle(.secondary)
                 }
@@ -641,7 +641,7 @@ struct RemoteJsView: View {
                     if activeKind == "http-rewrite" {
                         TextField(L("MITM hostname（逗号分隔，只写必需域名，绝不写 *）"), text: $store.remoteJsMITM)
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
-                        Toggle(L("MITM 含敏感域名（支付 / 账号类），我已显式确认"), isOn: $store.remoteJsConfirmSensitive).tint(Brand.pink)
+                        Toggle(L("MITM 含敏感域名（支付 / 账号类），我已显式确认"), isOn: $store.remoteJsConfirmSensitive)
                     }
                     if !toast.isEmpty { Text(toast).font(.footnote).foregroundStyle(Brand.pink) }
                 }
