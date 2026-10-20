@@ -513,39 +513,6 @@ struct BottomFade: View {
     }
 }
 
-/// 专用开关：仿 iOS 26 系统液态玻璃开关（扁、绿+白、带震动反馈）。
-/// 在 App 根视图统一 .toggleStyle(LiquidToggleStyle())，所有开关都走它，.tint 对它无效，颜色全局统一。
-struct LiquidToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack {
-            configuration.label
-            Spacer()
-            Button {
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { configuration.isOn.toggle() }
-                Haptics.light()
-            } label: {
-                ZStack(alignment: .leading) {
-                    // 轨道：开=系统绿，关=灰
-                    Capsule().fill(configuration.isOn ? Color(red: 0.204, green: 0.780, blue: 0.349) : Color.secondary.opacity(0.30))
-                    // 轨道高光（玻璃感）
-                    Capsule().fill(LinearGradient(colors: [.white.opacity(configuration.isOn ? 0.22 : 0.10), .clear], startPoint: .top, endPoint: .bottom))
-                    // 白钮：液态玻璃质感（高光 + 亮边 + 软阴影）
-                    Capsule().fill(Color.white)
-                        .frame(width: 27, height: 27)
-                        .overlay(Capsule().fill(LinearGradient(colors: [.white.opacity(0.9), .clear], startPoint: .top, endPoint: .center)))
-                        .overlay(Capsule().strokeBorder(Color.black.opacity(0.05), lineWidth: 0.5))
-                        .shadow(color: .black.opacity(0.22), radius: 3, x: 0, y: 1.5)
-                        .padding(.leading, 2)
-                        .offset(x: configuration.isOn ? 20 : 0)
-                }
-                .frame(width: 51, height: 31)
-            }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(configuration.isOn ? .isSelected : [])
-        }
-    }
-}
-
 /// 多行自适应的单选按钮组：代替 segmented Picker，标签再长也会换行显示完整，大字号 / 小屏不会出现省略号。
 struct ChoiceTabs<T: Hashable>: View {
     let options: [(T, String)]
