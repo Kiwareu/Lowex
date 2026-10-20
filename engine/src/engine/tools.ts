@@ -58,7 +58,7 @@ const only=(on:string[],pol:Record<string,string>={})=>{const g:State['groups']=
  *  未知域名走代理、IPv6 关、fake-ip + TUN 开、境外 QUIC 拦、STUN 走代理、
  *  广告 Lite + 追踪/遥测拦截、故障转移开、测速间隔 600 秒、容差 50、
  *  负载均衡关（防流量分散到多节点）、局域网关。 */
-const hardOpts=(s:State,extra:Partial<Opts>={}):Opts=>({...s.opts,unknown:'proxy',ipv6:false,fakeIp:true,tun:true,blockQuic:'foreign',stun:'reject',ads:'lite',telemetry:true,trackers:true,failover:true,urlTestInterval:600,tolerance:50,lbGroup:false,allowLan:false,...extra});
+const hardOpts=(s:State,extra:Partial<Opts>={}):Opts=>({...s.opts,unknown:'proxy',ipv6:false,fakeIp:true,tun:true,blockQuic:'foreign',stun:'proxy',ads:'lite',telemetry:true,trackers:true,failover:true,urlTestInterval:600,tolerance:50,lbGroup:false,allowLan:false,...extra});
 /** 预设分组：除定位组外，广告 / 遥测 / 追踪器拦截默认开（REJECT）。
  *  注意：only() 会枚举全部 GROUPS 把未列出的组关掉；之前多数预设没列这三组，
  *  等于悄悄关了拦截，而 opts.ads='lite' 成了死配置。onlyB 保证两者一致。 */
