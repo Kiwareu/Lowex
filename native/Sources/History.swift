@@ -184,10 +184,13 @@ struct HistoryView: View {
                 }.buttonStyle(.bordered)
             }
         }
-        .confirmationDialog(L("清空全部历史"), isPresented: $confirmClear, titleVisibility: .visible) {
-            Button(L("清空"), role: .destructive) { hs.clear() }
-            Button(L("取消"), role: .cancel) {}
-        } message: { Text(L("历史记录删除后无法恢复。")) }
+        .overlay {
+            if confirmClear {
+                GlassConfirm(title: L("清空全部历史"), message: L("历史记录删除后无法恢复。"),
+                    actions: [.init(title: L("清空"), destructive: true) { hs.clear() }],
+                    dismiss: { confirmClear = false })
+            }
+        }
     }
 
     private func row(_ e: HistoryEntry) -> some View {
@@ -293,16 +296,23 @@ struct HistoryDetailView: View {
                 .hideNavBar()
             }
         }
-        .confirmationDialog(L("恢复此版本的设置"), isPresented: $confirmRestore, titleVisibility: .visible) {
-            Button(L("恢复")) {
-                if let v = version, store.restoreSettings(json: v.settings) { toast = L("已恢复设置，订阅与节点保持不变；到「生成」页重新生成即可"); store.tab = .generate }
-                else { toast = L("这个版本没有可恢复的设置") }
+        .overlay {
+            if confirmRestore {
+                GlassConfirm(title: L("恢复此版本的设置"),
+                    message: L("会用这个版本生成时的选项覆盖当前选项（客户端、分组、地区、功能开关等）；订阅、节点和手动节点不变。"),
+                    actions: [.init(title: L("恢复"), destructive: false) {
+                        if let v = version, store.restoreSettings(json: v.settings) { toast = L("已恢复设置，订阅与节点保持不变；到「生成」页重新生成即可"); store.tab = .generate }
+                        else { toast = L("这个版本没有可恢复的设置") }
+                    }],
+                    dismiss: { confirmRestore = false })
             }
-            Button(L("取消"), role: .cancel) {}
-        } message: { Text(L("会用这个版本生成时的选项覆盖当前选项（客户端、分组、地区、功能开关等）；订阅、节点和手动节点不变。")) }
-        .confirmationDialog(L("删除整条记录"), isPresented: $confirmDeleteEntry, titleVisibility: .visible) {
-            Button(L("删除"), role: .destructive) { hs.delete(entryID); presentation.wrappedValue.dismiss() }
-            Button(L("取消"), role: .cancel) {}
+        }
+        .overlay {
+            if confirmDeleteEntry {
+                GlassConfirm(title: L("删除整条记录"), message: "",
+                    actions: [.init(title: L("删除"), destructive: true) { hs.delete(entryID); presentation.wrappedValue.dismiss() }],
+                    dismiss: { confirmDeleteEntry = false })
+            }
         }
     }
 
