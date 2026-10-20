@@ -776,30 +776,28 @@ struct ExitPicker: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.30).ignoresSafeArea()
+            Color.black.opacity(0.35).ignoresSafeArea()
                 .onTapGesture { onClose() }
             VStack(spacing: 0) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(L("出口")).font(.headline).foregroundStyle(Brand.ink)
-                        Text(group.name).font(.caption).foregroundStyle(.secondary)
-                    }
+                HStack {
+                    Text(L("出口")).font(.headline).foregroundStyle(Brand.ink)
+                    Text(group.name).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     Spacer()
                     Button { onClose() } label: {
-                        Image(systemName: "xmark.circle.fill").font(.title3).foregroundStyle(.secondary)
+                        Image(systemName: "xmark.circle.fill").font(.body).foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 10)
-                HStack(spacing: 8) {
+                .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 8)
+                HStack(spacing: 6) {
                     baseButton(L("代理"), "PROXY")
                     baseButton(L("直连"), "DIRECT")
                     baseButton(L("拦截"), "REJECT")
                 }
-                .padding(.horizontal, 16).padding(.bottom, 10)
-                Divider().padding(.horizontal, 16)
+                .padding(.horizontal, 14).padding(.bottom, 8)
+                Divider().padding(.horizontal, 14)
                 ScrollView {
-                    VStack(spacing: 4) {
+                    VStack(spacing: 2) {
                         HStack(spacing: 6) {
                             Text(L("全部节点")).font(.subheadline).foregroundStyle(Brand.ink)
                             Spacer()
@@ -808,19 +806,14 @@ struct ExitPicker: View {
                         }
                         .padding(.vertical, 4)
                         ForEach(store.catalog.regions) { r in regionRow(r) }
-                        Text(L("选中未启用的地区会自动启用；故转 = 故障转移（节点挂了自动切换）。"))
-                            .font(.caption2).foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, 6)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    .padding(.horizontal, 14).padding(.vertical, 6)
                 }
-                .frame(maxHeight: 320)
+                .frame(maxHeight: 340)
             }
-            .frame(maxWidth: 370)
-            .glassCard(heavy: true)
-            .clipShape(RoundedRectangle(cornerRadius: Brand.radius + 4, style: .continuous))
-            .padding(.horizontal, 18)
+            .frame(maxWidth: 300)
+            .popupGlass()
+            .padding(.horizontal, 24)
         }
     }
 }
