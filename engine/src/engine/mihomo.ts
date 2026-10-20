@@ -1,5 +1,5 @@
 import {block,flow} from './yaml';
-import {setFmt,makePlan,N,MC,BM7,regionGroup,HOME_REGEX,type Plan} from './plan';
+import {setFmt,makePlan,subNames,N,MC,BM7,regionGroup,HOME_REGEX,type Plan} from './plan';
 import type {State} from './types';
 import type {Node} from './nodes';
 import {iconMap,iconsOn} from './icons';
@@ -77,7 +77,8 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   const proxies=p.nodes.map(mihomoProxy);
   const providers:Record<string,any>={};
   const subs=p.appMode?[]:(p.subs.length?p.subs:(p.nodes.length?[]:[{name:'',url:'{{SUB_URL_1}}'}]));
-  subs.forEach((x,i)=>{providers['sub'+(i+1)]={type:'http',url:x.url,interval:86400,...(o.nodeInclude?.trim()?{filter:o.nodeInclude.trim()}:{}),...(o.nodeExclude?.trim()?{'exclude-filter':o.nodeExclude.trim()}:{}),...(stash?{}:{proxy:N.update,'health-check':{enable:true,interval:600,url:o.testUrl},
+  const subKeys=subNames(subs,i=>'sub'+(i+1));
+  subs.forEach((x,i)=>{providers[subKeys[i]]={type:'http',url:x.url,interval:86400,...(o.nodeInclude?.trim()?{filter:o.nodeInclude.trim()}:{}),...(o.nodeExclude?.trim()?{'exclude-filter':o.nodeExclude.trim()}:{}),...(stash?{}:{proxy:N.update,'health-check':{enable:true,interval:600,url:o.testUrl},
     override:{...(x.name?{'additional-prefix':`[${x.name}] `}:{}),'override-expr':['(select(.type == "vless" or .type == "vmess" or .type == "trojan" or .type == "anytls" or .tls == true) | ."client-fingerprint") |= (. // "chrome")']}})}});
   // groups
   const pg:any[]=[];

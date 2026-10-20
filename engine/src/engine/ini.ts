@@ -1,4 +1,4 @@
-import {makePlan,N,BM7,regionGroup,HOME_REGEX,type Plan,type Rule} from './plan';
+import {makePlan,N,BM7,regionGroup,HOME_REGEX,subNames,type Plan,type Rule} from './plan';
 import {safeRe} from './mihomo';
 import type {State} from './types';
 import type {Node} from './nodes';
@@ -113,7 +113,7 @@ export function genSurge(s:State,plan?:Plan):string{
   // 官方手册（policy-groups/policy-including）：policy-path 是外部节点列表；policy-regex-filter 只作用于外部来源；
   // 多个订阅 → 每个订阅一个隐藏 select 组（policy-path），再用 include-other-group 汇总（iOS 4.12+/Mac 4.5+）。
   // 组行上的 url= 在当前版本无效，测速地址用 [General] 的 proxy-test-url。
-  const subs=p.subs;const subG=subs.map((_,i)=>`订阅${i+1}`);
+  const subs=p.subs;const subG=subNames(subs,i=>'订阅'+(i+1));
   subs.forEach((x,i)=>L.push(`${subG[i]} = select, policy-path=${x.url}, update-interval=86400, hidden=true`));
   const incl=`include-other-group="${subG.join(',')}"`;
   const allNodes=p.nodes.map(n=>nm(n.name));
@@ -155,19 +155,20 @@ export function genLoon(s:State,plan?:Plan):string{
   const L:string[]=[`# Lowex 生成 · Loon（已对照官方文档 nsloon.app 与 LoonExampleConfig 核对，未用真机导入）· ${new Date().toISOString().slice(0,10)}`,'# 全部在浏览器本地生成，未上传任何内容。',''];
   L.push('[General]',`ip-mode = ${o.ipv6?'dual':'ipv4-only'}`,`skip-proxy = ${COMMON_SKIP}`,'bypass-tun = 10.0.0.0/8,100.64.0.0/10,127.0.0.0/8,169.254.0.0/16,172.16.0.0/12,192.168.0.0/16,224.0.0.0/4,255.255.255.255/32',`doh-server = ${o.dnsCn.join(',')}`,'dns-server = system','sni-sniffing = true',...(o.stun==='reject'?['disable-stun = true']:[]),`allow-wifi-access = ${o.allowLan}`,`proxy-test-url = ${o.testUrl}`,'test-timeout = 5','');
   L.push('[Proxy]');let sk=0;for(const n of P.nodes){const l=nodeLine(n,'loon');if(l)L.push(l);else sk++}if(sk)L.push(`# 已跳过 ${sk} 个 Loon 不支持的节点`);
+  const loonSubNames=subNames(p.subs,i=>'订阅'+(i+1));
   L.push('','[Remote Proxy]');
-  if(p.subs.length)p.subs.forEach((x,i)=>L.push(`${nm(x.name)||'订阅'+(i+1)} = ${x.url}`));else if(!p.nodes.length)L.push('订阅1 = {{SUB_URL_1}}');
+  if(p.subs.length)p.subs.forEach((x,i)=>L.push(`${loonSubNames[i]} = ${x.url}`));else if(!p.nodes.length)L.push('订阅1 = {{SUB_URL_1}}');
   L.push('','[Remote Filter]');
-  const subList=p.subs.length?p.subs.map((x,i)=>nm(x.name)||'订阅'+(i+1)):(p.nodes.length?[]:['订阅1']);const subNames=subList.join(',');
+  const subList=p.subs.length?loonSubNames:(p.nodes.length?[]:['订阅1']);const subNamesJoined=subList.join(',');
   // 官方示例：名称 = NameRegex,订阅别名...,FilterKey = 正则（必须列出订阅别名）
-  if(subNames){for(const r of c.regionsUsed)L.push(`${r.id}节点 = NameRegex,${subNames},FilterKey = "(?i)${regionFilter(p,r)}"`);
-    if(p.overseas)L.push(`回国节点 = NameRegex,${subNames},FilterKey = "(?i)${HOME_FILTER}"`)}
+  if(subNamesJoined){for(const r of c.regionsUsed)L.push(`${r.id}节点 = NameRegex,${subNamesJoined},FilterKey = "(?i)${regionFilter(p,r)}"`);
+    if(p.overseas)L.push(`回国节点 = NameRegex,${subNamesJoined},FilterKey = "(?i)${HOME_FILTER}"`)}
   L.push('','[Proxy Group]');
-  const rmem=(r:{id:string;regex:string})=>{const a=[...matches(p,r)];if(subNames)a.push(`${r.id}节点`);return a.length?a.join(','):'DIRECT'};
+  const rmem=(r:{id:string;regex:string})=>{const a=[...matches(p,r)];if(subNamesJoined)a.push(`${r.id}节点`);return a.length?a.join(','):'DIRECT'};
   for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,${rmem(r)},url=${o.testUrl},interval=${o.urlTestInterval},tolerance=${o.tolerance}`);L.push(`${regionGroup(r,'手动')} = select,${rmem(r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,${rmem(r)},url=${o.testUrl},interval=${Math.min(o.urlTestInterval,600)},max-timeout=3000`)}
   L.push(`全部-自动 = url-test,${[...p.nodes.map(n=>nm(n.name)),...subList].join(',')||'DIRECT'},url=${o.testUrl},interval=${o.urlTestInterval},tolerance=${o.tolerance}`);
   L.push(`${N.proxy} = select,${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'].join(',')}`);
-  if(p.overseas)L.push(`${N.home} = select,${subNames?'回国节点,':''}DIRECT`);
+  if(p.overseas)L.push(`${N.home} = select,${subNamesJoined?'回国节点,':''}DIRECT`);
   L.push(...svcGroupLines(p,c,','));
   {const ff=o.unknown==='proxy'?N.proxy:'DIRECT';const all=[N.proxy,...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'];L.push(`${N.final} = select,${[ff,...all.filter(x=>x!==ff)].join(',')}`,'');}
   const rule:string[]=[],remote:string[]=[];
@@ -204,7 +205,8 @@ export function genQX(s:State,plan?:Plan):string{
   for(const x of p.services){const f=c.tgt(x.p);L.push(`static=${x.g.name}, ${c.svcOrder(f).map(lc).join(', ')}`)}
   L.push(`static=${N.final}, ${lc(o.unknown==='proxy'?N.proxy:'DIRECT')}, ${N.proxy}, direct`,'');
   L.push('[server_remote]');
-  if(p.subs.length)p.subs.forEach((x,i)=>L.push(`${x.url}, tag=${nm(x.name)||'订阅'+(i+1)}, update-interval=86400, opt-parser=false, enabled=true`));else if(!p.nodes.length&&!p.appMode)L.push('{{SUB_URL_1}}, tag=订阅1, update-interval=86400, opt-parser=false, enabled=true');
+  const qxSubNames=subNames(p.subs,i=>'订阅'+(i+1));
+  if(p.subs.length)p.subs.forEach((x,i)=>L.push(`${x.url}, tag=${qxSubNames[i]}, update-interval=86400, opt-parser=false, enabled=true`));else if(!p.nodes.length&&!p.appMode)L.push('{{SUB_URL_1}}, tag=订阅1, update-interval=86400, opt-parser=false, enabled=true');
   L.push('','[filter_remote]');
   const fl:string[]=[];
   for(const it of c.items){

@@ -370,6 +370,7 @@ struct OptToggle: View {
 struct NodesView: View {
     @EnvironmentObject var store: Store
     @State private var subDraft = ""
+    @State private var subNameDraft = ""
     @State private var linkDraft = ""
     @State private var showClearSubsConfirm = false
     @State private var showClearHistoryConfirm = false
@@ -430,11 +431,17 @@ struct NodesView: View {
             if showSubs { PlainCard {
                 Label(L("① 订阅链接 URL"), systemImage: "link").font(.headline)
                 Text(subHelper).font(.caption).foregroundStyle(.secondary)
+                if !isSR {
+                    TextField(L("订阅名称（可空）"), text: $subNameDraft)
+                        .textFieldStyle(.roundedBorder)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                }
                 inputBox($subDraft, placeholder: L("https://example.com/sub?token=…\n可一行一个，多个订阅"))
                 HStack {
                     Button {
-                        store.addSubscriptions(subDraft)
-                        if !isSR { subDraft = "" }
+                        store.addSubscriptions(subDraft, name: subNameDraft)
+                        if !isSR { subDraft = ""; subNameDraft = "" }
                     } label: {
                         Label(isSR ? L("复制到剪贴板") : L("添加订阅"), systemImage: isSR ? "doc.on.clipboard" : "plus.circle.fill")
                     }
@@ -458,7 +465,7 @@ struct NodesView: View {
                             Button { store.removeSub(i) } label: { Image(systemName: "trash").font(.caption) }.buttonStyle(.plain).foregroundStyle(.red)
                         }
                     }
-                    Text(L("点铅笔给订阅起个名字，就不用再对着一串链接认了；名称只在 App 里显示，不影响生成的配置。")).font(.caption2).foregroundStyle(.tertiary)
+                    Text(L("点铅笔可随时改名；名称会写进生成的配置，替换原来的 sub1、sub2…。")).font(.caption2).foregroundStyle(.tertiary)
                 }
                 // 订阅历史：防误删——清空订阅后可从这里逐条恢复
                 if !store.subHistory.isEmpty {
@@ -559,7 +566,7 @@ struct NodesView: View {
     }
 
     private var subHelper: String {
-        L("一行一个 URL，点「添加订阅」→ 下方列表可逐条删除。生成时写入 {}，由客户端自行更新节点。", target("sub"))
+        L("名称在前、链接在后：一行一个 URL，点「添加订阅」→ 下方列表可逐条改名 / 删除。一次只贴一条时，上面的名称会给到这条订阅；名称生成时写入 {} 替换 sub1、sub2…，客户端面板里显示的也是它。一次贴多条时名称不生效，添加后点铅笔逐条起。", target("sub"))
     }
     private var linkHelper: String {
         L("支持 ss / vmess / vless / trojan / hysteria2 / tuic / anytls 链接（每行一条）或整段 Base64 订阅正文。点「写入方案」→ 生成时写入 {}；客户端不支持的协议会跳过并提示。", target("link"))
@@ -1275,7 +1282,7 @@ struct SubRenameSheet: View {
                 PinkBackground()
                 VStack(spacing: 12) {
                     PlainCard {
-                        Text(L("给这条订阅起个名字，列表和历史里都会显示它；留空保存 = 清除名称。")).font(.caption).foregroundStyle(.secondary)
+                        Text(L("给这条订阅起个名字：App 列表、历史里都会显示；生成配置时订阅来源也用这个名称（订阅不写进配置的客户端只在 App 里显示）。留空保存 = 清除名称。")).font(.caption).foregroundStyle(.secondary)
                         TextField(L("例如：主力机场"), text: $text)
                             .textFieldStyle(.roundedBorder)
                             .autocorrectionDisabled()

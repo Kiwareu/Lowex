@@ -664,13 +664,19 @@ final class Store: ObservableObject {
     var manualCaps: Engine.ManualCap? { engine.manualMatrix().first { $0.id == client } }
 
     /// 只收订阅 URL（A 区）
-    func addSubscriptions(_ raw: String) {
+    func addSubscriptions(_ raw: String, name: String = "") {
         let lines = raw.split(whereSeparator: \.isNewline).map { String($0).trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         let urls = lines.filter { $0.lowercased().hasPrefix("http://") || $0.lowercased().hasPrefix("https://") }
         let other = lines.count - urls.count
         if urls.isEmpty { pasteNote = L("没有识别到 http(s):// 订阅 URL") + (other > 0 ? L("；节点链接请粘贴到下面的「节点链接」区。") : "。"); return }
         recordSubHistory(urls)
         applyPaste(urls.joined(separator: "\n"))
+        // 名称输入框：一次只贴一条链接时把名称给这条订阅（已在列表里则顺带改名），历史同步
+        let nm = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if urls.count == 1 && !nm.isEmpty {
+            if let ix = subs.firstIndex(where: { ($0["url"] as? String) == urls[0] }) { renameSub(ix, nm) }
+            if let hx = subHistory.firstIndex(where: { $0.url == urls[0] }) { renameSubHistory(hx, nm) }
+        }
         if other > 0 { pasteNote += L("（另有 {} 行不是订阅 URL，已忽略，节点链接请放到「节点链接」区。）", other) }
     }
     func removeSub(_ i: Int) {

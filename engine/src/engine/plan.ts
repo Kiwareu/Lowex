@@ -6,6 +6,19 @@ import type {State,Policy} from './types';
 import {parseNodes,type Node} from './nodes';
 import {manualToNode,manualIssue} from './manual';
 
+/** 订阅在配置里的显示名清洗：去掉会破坏 YAML / INI 语法的字符（逗号、等号、冒号、引号、括号、# 等），
+ *  折叠空白，限长 40；清洗后为空 → 用 fallback（如 sub1 / 订阅1）。 */
+export function subDisplayName(raw:string,fallback:string):string{
+  const c=(raw||'').replace(/[,=:"#\[\]{}!&*|>'"%@`]/g,' ').replace(/\s+/g,' ').trim().slice(0,40).replace(/[\uD800-\uDBFF]$/,'').trim();
+  return c||fallback;
+}
+/** 一组订阅的配置内名称：逐条清洗 + 同名去重（追加 -2、-3…）。fallback 按下标生成默认名。 */
+export function subNames(subs:{name:string}[],fallback:(i:number)=>string):string[]{
+  const used=new Set<string>();const out:string[]=[];
+  subs.forEach((x,i)=>{let n=subDisplayName(x.name,fallback(i));const base=n;let k=2;while(used.has(n))n=base+'-'+(k++);used.add(n);out.push(n)});
+  return out;
+}
+
 export type Rule=
  |{st?:string}&(
  |{t:'suffix';v:string;p:Policy;via?:string}|{t:'ipcidr';v:string;p:Policy}|{t:'process';v:string;p:Policy}|{t:'package';v:string;p:Policy}
