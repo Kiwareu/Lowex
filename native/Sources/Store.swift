@@ -32,6 +32,7 @@ final class Store: ObservableObject {
     @Published var remoteJsName = ""
     @Published var remoteJsMITM = ""
     @Published var remoteJsConfirmSensitive = false
+    @Published var remoteJsKind = "" // config-override / config-overwrite / http-rewrite（空=自动取当前客户端第一个支持的）
     // 脚本库：用户自己收藏的脚本（UserDefaults 持久化，字段 id/name/url/author/sourceKind/desc/kind）
     @Published var libraryCustom: [[String: String]] = []
     private var needsDisclaimer = false
@@ -528,6 +529,7 @@ final class Store: ObservableObject {
         d.set(remoteJsName, forKey: "lowex.remoteJs.name.v1")
         d.set(remoteJsMITM, forKey: "lowex.remoteJs.mitm.v1")
         d.set(remoteJsConfirmSensitive, forKey: "lowex.remoteJs.confirmSensitive.v1")
+        d.set(remoteJsKind, forKey: "lowex.remoteJs.kind.v1")
     }
     private func loadRemoteJs() {
         let d = UserDefaults.standard
@@ -537,6 +539,7 @@ final class Store: ObservableObject {
         remoteJsName = d.string(forKey: "lowex.remoteJs.name.v1") ?? ""
         remoteJsMITM = d.string(forKey: "lowex.remoteJs.mitm.v1") ?? ""
         remoteJsConfirmSensitive = d.bool(forKey: "lowex.remoteJs.confirmSensitive.v1")
+        remoteJsKind = d.string(forKey: "lowex.remoteJs.kind.v1") ?? ""
         libraryCustom = UserDefaults.standard.array(forKey: "lowex.library.custom.v1") as? [[String: String]] ?? []
     }
     /// 脚本库：添加用户收藏（id 用 UUID）
@@ -558,9 +561,15 @@ final class Store: ObservableObject {
     }
     var presetMode: String { engine.presetMode(state: state) }
     var remoteJsSupport: Engine.RemoteJsSupport { engine.remoteJsSupport(client: client) }
+    /// 当前选中的覆写类型：用户显式选的优先，否则取当前客户端第一个支持的
+    var remoteJsActiveKind: String {
+        let sup = remoteJsSupport
+        if !remoteJsKind.isEmpty, sup.kinds.contains(where: { $0.kind == remoteJsKind && $0.supported }) { return remoteJsKind }
+        return sup.kinds.first(where: { $0.supported })?.kind ?? ""
+    }
     func remoteJsCheck() -> Engine.RemoteJsCheck {
         let hosts = remoteJsMITM.components(separatedBy: CharacterSet(charactersIn: ",，")).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        return engine.remoteJsValidate(url: remoteJsURL, sha256: remoteJsSHA256, name: remoteJsName, mitmHosts: hosts, confirmSensitive: remoteJsConfirmSensitive)
+        return engine.remoteJsValidate(kind: remoteJsActiveKind, url: remoteJsURL, sha256: remoteJsSHA256, name: remoteJsName, mitmHosts: hosts, confirmSensitive: remoteJsConfirmSensitive)
     }
     var quicTierText: String {
         switch engine.tiers(client: client).quic {
