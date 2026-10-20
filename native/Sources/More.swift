@@ -504,6 +504,14 @@ struct RemoteJsView: View {
     @State private var addDesc = ""
     @State private var addKind = 0 // 0 config-override / 1 config-overwrite / 2 http-rewrite
     /// kind 的中文显示名
+    func remoteJsKindName(_ kind: String) -> String {
+        switch kind {
+        case "config-override": return L("覆写配置链接")
+        case "config-overwrite": return L("配置级 JS 覆写")
+        case "http-rewrite": return L("HTTP 重写")
+        default: return kind
+        }
+    }
     func libraryKindName(_ kind: String) -> String {
         switch kind {
         case "config-override": return L("覆写配置")
@@ -553,37 +561,61 @@ struct RemoteJsView: View {
         return store.engine.remoteJsLibraryAttribution(id: row.id)["text"] ?? ""
     }
     var body: some View {
-        PageChrome(title: L("远程 JS 覆写 / 重写")) {
+        PageChrome(title: L("远程覆写 / 脚本重写")) {
             PlainCard {
-                Text(L("与「生成配置」互斥独立：只想要 JS 远程文件时用这里，不要同时生成配置。"))
+                Text(L("与「生成配置」互斥独立：只想要远程覆写 / 脚本时用这里，不要同时生成配置。"))
                     .font(.footnote).foregroundStyle(.secondary)
                 let sup = store.remoteJsSupport
-                Text(L("当前客户端：") + (sup.kind == "config-overwrite" ? L("配置级 JS 覆写（Mihomo 系）") : (sup.kind == "http-rewrite" ? L("HTTP 重写（Surge 系）") : L("不支持"))))
-                    .font(.subheadline.weight(.semibold))
-                Text(sup.reason).font(.caption).foregroundStyle(.secondary)
-                Toggle(L("启用远程 JS 模式（与生成配置互斥）"), isOn: Binding(
+                Text(L("当前客户端支持情况")).font(.subheadline.weight(.semibold))
+                ForEach(sup.kinds, id: \.kind) { k in
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Image(systemName: k.supported ? "checkmark.circle.fill" : "xmark.circle")
+                                .foregroundStyle(k.supported ? Brand.pink : .secondary)
+                            Text(remoteJsKindName(k.kind)).font(.caption.weight(.semibold))
+                            Text(k.supported ? L("支持") : L("不支持")).font(.caption2)
+                                .foregroundStyle(k.supported ? Brand.pink : .secondary)
+                        }
+                        Text(k.note).font(.caption2).foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
+                }
+                Toggle(L("启用远程覆写模式（与生成配置互斥）"), isOn: Binding(
                     get: { store.remoteJsMode },
                     set: { store.remoteJsMode = $0; if $0 { store.clearResult() }; store.saveRemoteJs() }
-                )).tint(Brand.pink).disabled(sup.kind == "none")
-                if sup.kind == "none" {
-                    Text(L("该客户端不支持远程 JS，已禁用。")).font(.caption2).foregroundStyle(.secondary)
+                )).tint(Brand.pink).disabled(!sup.anySupported)
+                if !sup.anySupported {
+                    Text(L("当前客户端三种类型都不支持，已禁用。")).font(.caption2).foregroundStyle(.secondary)
                 }
             }
-            if store.remoteJsSupport.kind != "none" {
+            if store.remoteJsSupport.anySupported {
+                let activeKind = store.remoteJsActiveKind
                 PlainCard {
-                    Text(L("远程 JS 引用")).font(.headline)
-                    Text(L("在客户端里添加上方链接即可使用。SHA256 不必填；脚本库「填入引用」可一键填好。"))
+                    Text(L("远程覆写引用")).font(.headline)
+                    Text(L("在客户端里添加链接即可使用（以所选类型的客户端入口为准）。脚本库「填入引用」可一键填好。"))
                         .font(.caption2).foregroundStyle(.secondary)
-                    TextField(L("https://… .js 链接"), text: $store.remoteJsURL)
+                    Picker(L("类型"), selection: Binding(
+                        get: { store.remoteJsActiveKind },
+                        set: { store.remoteJsKind = $0; store.saveRemoteJs() }
+                    )) {
+                        ForEach(store.remoteJsSupport.kinds.filter { $0.supported }, id: \.kind) { k in
+                            Text(remoteJsKindName(k.kind)).tag(k.kind)
+                        }
+                    }.pickerStyle(.segmented)
+                    TextField(activeKind == "config-override" ? L("https://… .yaml 覆写链接") : L("https://… .js 链接"), text: $store.remoteJsURL)
                         .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-                    TextField(L("SHA256 锁定（可选，不填也能用）"), text: $store.remoteJsSHA256)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
-                    Text(L("不填也能用，但作者更新脚本后 App 不会察觉——只用你信任的来源；脚本库里原创脚本的哈希可一键填入。"))
-                        .font(.caption2).foregroundStyle(.secondary)
+                    if activeKind != "config-override" {
+                        TextField(L("SHA256 锁定（可选，不填也能用）"), text: $store.remoteJsSHA256)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        Text(L("不填也能用，但作者更新脚本后 App 不会察觉——只用你信任的来源；脚本库里原创脚本的哈希可一键填入。"))
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
                     TextField(L("名称（可选）"), text: $store.remoteJsName)
-                    TextField(L("MITM hostname（逗号分隔，只写必需域名，绝不写 *）"), text: $store.remoteJsMITM)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
-                    Toggle(L("MITM 含敏感域名（支付 / 账号类），我已显式确认"), isOn: $store.remoteJsConfirmSensitive).tint(Brand.pink)
+                    if activeKind == "http-rewrite" {
+                        TextField(L("MITM hostname（逗号分隔，只写必需域名，绝不写 *）"), text: $store.remoteJsMITM)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        Toggle(L("MITM 含敏感域名（支付 / 账号类），我已显式确认"), isOn: $store.remoteJsConfirmSensitive).tint(Brand.pink)
+                    }
                     Button { check = store.remoteJsCheck(); store.saveRemoteJs() } label: {
                         Label(L("校验引用"), systemImage: "checkmark.shield").frame(maxWidth: .infinity)
                     }
@@ -611,13 +643,13 @@ struct RemoteJsView: View {
                     .buttonStyle(.bordered)
                     if showTemplate {
                         ScrollView {
-                            Text(store.engine.remoteJsTemplate(kind: store.remoteJsSupport.kind))
+                            Text(store.engine.remoteJsTemplate(kind: store.remoteJsActiveKind))
                                 .font(.caption2.monospaced()).frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .frame(height: 220)
                     }
                     Button {
-                        UIPasteboard.general.string = store.engine.remoteJsTemplate(kind: store.remoteJsSupport.kind)
+                        UIPasteboard.general.string = store.engine.remoteJsTemplate(kind: store.remoteJsActiveKind)
                         toast = L("模板已复制")
                     } label: {
                         Label(L("复制自建模板"), systemImage: "doc.on.doc").frame(maxWidth: .infinity)
@@ -676,6 +708,7 @@ struct RemoteJsView: View {
                                 // 覆写配置链接（.yaml）在代理软件里直接添加，不走 App 内校验，故不提供「填入引用」
                                 if row.kind != "config-override" && !row.url.isEmpty {
                                     Button {
+                                        store.remoteJsKind = row.kind
                                         store.remoteJsURL = row.url
                                         store.remoteJsSHA256 = row.sha256
                                         store.remoteJsName = row.name
