@@ -35,22 +35,22 @@ export function genSingbox(s:State,plan?:Plan):string{
   if(placeholder)outs.push({type:'direct',tag:'NODE-PLACEHOLDER'});else for(const n of nodes)outs.push(singboxOut(n));
   const urltest=(t:string,list:string[])=>({type:'urltest',tag:t,outbounds:list,url:o.testUrl,interval:Math.round(o.urlTestInterval/60)+'m',tolerance:o.tolerance});
   const have=new Set<string>(['direct']);
-  const regionTags:string[]=[];
+  const regionTags:string[]=[];const manTags:string[]=[];
   for(const r of p.regions){
     const re=safeRe(r.regex);const list=nodeTags.filter(t=>re.test(t));if(!list.length||placeholder)continue;
     const man=regionGroup(r,'手动'),au=regionGroup(r,'自动'),fo=regionGroup(r,'故转');
     // sing-box 没有 fallback / 故障转移组（官方只有 selector 与 urltest；urltest 是「选延迟最低的健康节点」，节点挂了会自动换）。不再伪造「故转」组。
     void fo;outs.push({type:'selector',tag:man,outbounds:list},urltest(au,list));
-    regionTags.push(au);have.add(au);have.add(man);
+    regionTags.push(au);manTags.push(man);have.add(au);have.add(man);
   }
   outs.push(urltest('全部-自动',nodeTags),{type:'selector',tag:'全部-手动',outbounds:nodeTags});
   outs.push({type:'selector',tag:N.proxy,outbounds:[...regionTags,'全部-自动','全部-手动','direct'],default:regionTags[0]||'全部-自动'});
   have.add(N.proxy);
   if(p.overseas){const re=safeRe(HOME_REGEX);const l=nodeTags.filter(t=>re.test(t)&&!placeholder);outs.push({type:'selector',tag:N.home,outbounds:[...l,'direct'],default:l[0]||'direct'});have.add(N.home)}
   const tg=(pol:string)=>{if(pol==='DIRECT')return'direct';if(pol==='REJECT')return'REJECT';let n=p.pname(pol);if(n.endsWith('-故转'))n=n.replace(/-故转$/,'-自动');return have.has(n)?n:N.proxy};
-  const opts=[N.proxy,...regionTags,'direct'];
+  const opts=[N.proxy,...regionTags,...manTags,'direct']; // 服务组含 自动/手动（sing-box 无原生故障转移）
   for(const x of p.services){const f=tg(x.p);outs.push({type:'selector',tag:x.g.name,outbounds:[f,...opts.filter(y=>y!==f),...(p.overseas&&f!==N.home?[N.home]:[])],default:f});have.add(x.g.name)}
-  outs.push({type:'selector',tag:N.final,outbounds:[o.unknown==='proxy'?N.proxy:'direct',N.proxy,'direct'],default:o.unknown==='proxy'?N.proxy:'direct'});
+  {const ff=o.unknown==='proxy'?N.proxy:'direct';const all=[N.proxy,...regionTags,...manTags,'全部-自动','全部-手动','direct'];outs.push({type:'selector',tag:N.final,outbounds:[ff,...all.filter(x=>x!==ff)],default:ff});}
   // rules
   const rs:Record<string,any>={};const rules:any[]=[{action:'sniff'},{protocol:'dns',action:'hijack-dns'}];
   const rsAdd=(kind:'site'|'ip',name:string)=>{const t=(kind==='site'?'gs-':'gi-')+tag(name);if(!rs[t])rs[t]={type:'remote',tag:t,format:'binary',url:kind==='site'?MC.ssite(name):MC.sip(name),update_interval:o.lowMemory?'3d':'1d',download_detour:'direct'};return t};
