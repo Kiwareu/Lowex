@@ -59,7 +59,7 @@ const SEED: LibraryEntry[] = [
     id: 'lowex-mihomo-dns-fix',
     name: 'Lowex 原创 · Mihomo DNS 防泄漏加固覆写',
     kind: 'config-overwrite',
-    clients: ['clashparty', 'verge', 'flclash'],
+    clients: ['clashmi', 'clashparty', 'verge', 'flclash'],
     url: 'https://raw.githubusercontent.com/Kiwareu/Lowex/main/remote-scripts/mihomo-dns-leak-fix.js',
     sha256: '96841d9b0705d667a83f800b2f8785677e53b65d63af6c4d2ed4075a2992b90f', // remote-scripts/mihomo-dns-leak-fix.js
     source: { kind: 'original', author: 'Lowex', note: '仓库自建：remote-scripts/mihomo-dns-leak-fix.js' },
