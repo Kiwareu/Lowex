@@ -98,12 +98,16 @@ struct BackupView: View {
                 }
             }
         }
-        .confirmationDialog(L("导入备份"), isPresented: $confirmRestore, titleVisibility: .visible) {
-            Button(L("覆盖当前数据"), role: .destructive) { if let p = pending { note = store.applyBackup(p, replace: true) }; pending = nil }
-            Button(L("合并到当前数据")) { if let p = pending { note = store.applyBackup(p, replace: false) }; pending = nil }
-            Button(L("取消"), role: .cancel) { pending = nil }
-        } message: {
-            Text(pendingInfo + "\n" + L("覆盖：用备份替换当前设置、订阅、节点和历史。合并：设置以备份为准，订阅 / 节点 / 历史取并集。"))
+        .overlay {
+            if confirmRestore {
+                GlassConfirm(title: L("导入备份"),
+                    message: pendingInfo + "\n" + L("覆盖：用备份替换当前设置、订阅、节点和历史。合并：设置以备份为准，订阅 / 节点 / 历史取并集。"),
+                    actions: [
+                        .init(title: L("覆盖当前数据"), destructive: true) { if let p = pending { note = store.applyBackup(p, replace: true) } },
+                        .init(title: L("合并到当前数据"), destructive: false) { if let p = pending { note = store.applyBackup(p, replace: false) } },
+                    ],
+                    dismiss: { confirmRestore = false; pending = nil })
+            }
         }
     }
 }
