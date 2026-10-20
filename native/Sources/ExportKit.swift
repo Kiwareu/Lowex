@@ -156,7 +156,7 @@ struct GenerateView: View {
                     Label(store.generating ? L("生成中…") : L("生成配置"), systemImage: "sparkles").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent).tint(Brand.pink)
-                .disabled(store.generating || store.remoteJsMode)
+                .disabled(store.generating)
                 Button(role: .destructive) { confirmClear = true } label: {
                     Label(L("清除配置"), systemImage: "trash").frame(maxWidth: .infinity)
                 }
@@ -166,10 +166,6 @@ struct GenerateView: View {
                 if let e = store.result.error { Text(e).foregroundStyle(.red).font(.footnote) }
                 ForEach(store.result.warnings, id: \.self) { w in
                     Text("• \(w)").font(.caption).foregroundStyle(.orange)
-                }
-                if store.remoteJsMode {
-                    Text(L("远程 JS 模式已开：只输出远程 JS 文件，不生成配置文件。关闭后可恢复生成。"))
-                        .font(.caption).foregroundStyle(.orange)
                 }
                 if !store.validationIssues.isEmpty {
                     Text(L("校验结果")).font(.subheadline.weight(.semibold))
@@ -206,12 +202,16 @@ struct GenerateView: View {
             if !toast.isEmpty { Text(toast).font(.footnote).foregroundStyle(Brand.pink) }
         }
         .onChangeValue(of: store.result.text) { n in if n.isEmpty { toast = ""; showPreview = false } }
-        .confirmationDialog(L("清除配置"), isPresented: $confirmClear, titleVisibility: .visible) {
-            Button(L("只清除生成结果")) { withAnimation { store.clearResult(); toast = L("已清除生成结果") } }
-            Button(L("清除并重置规则 / 分组选项（保留节点与订阅）"), role: .destructive) { withAnimation { store.resetSelections(); toast = L("已重置选项，节点与订阅保留") } }
-            Button(L("取消"), role: .cancel) {}
-        } message: {
-            Text(L("「只清除生成结果」不改你的选择；「重置」会把规则、分组、功能开关恢复默认，节点、订阅、手动节点和配置名不动。"))
+        .overlay {
+            if confirmClear {
+                GlassConfirm(title: L("清除配置"),
+                    message: L("「只清除生成结果」不改你的选择；「重置」会把规则、分组、功能开关恢复默认，节点、订阅、手动节点和配置名不动。"),
+                    actions: [
+                        .init(title: L("只清除生成结果"), destructive: false) { withAnimation { store.clearResult(); toast = L("已清除生成结果") } },
+                        .init(title: L("清除并重置规则 / 分组选项（保留节点与订阅）"), destructive: true) { withAnimation { store.resetSelections(); toast = L("已重置选项，节点与订阅保留") } },
+                    ],
+                    dismiss: { confirmClear = false })
+            }
         }
         .sheet(item: $shareFile) { ActivityView(items: [$0.url]) }
         .sheet(isPresented: $showQR) {
