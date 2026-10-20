@@ -26,6 +26,8 @@
 
 Lowex 是一款執行在 iPhone / iPad 上的配置生成器：選好目標客戶端和選項，貼上你自己的節點或訂閱，一鍵匯出適合該客戶端的配置檔案（規則、策略組、DNS、防洩漏等）。所有生成都在本機完成，沒有伺服器，不上傳節點或訂閱。
 
+> **裝不了 IPA？用網站版（免安裝）**：瀏覽器開啟 **[262819.xyz](https://262819.xyz)** 即用，與 App 版同一套生成標準，全部在瀏覽器本地生成、不上傳任何內容。適合系統版本用不了 TrollStore、或不想折騰簽名的朋友。
+
 ## 功能
 
 - **14 個客戶端**：Clash Verge Rev、FlClash、Clash Mi、Clash Meta for Android、Mihomo Party、Mihomo 核心、sing-box、Karing、Surge、Quantumult X、Shadowrocket、Loon、Stash、Egern。
@@ -83,6 +85,10 @@ Lowex 是一款執行在 iPhone / iPad 上的配置生成器：選好目標客�
 ## 安裝
 
 > Lowex 不在 App Store 上架，提供**未簽名 IPA**。
+
+**裝不了 IPA 的朋友直接用網站版**：開啟 [262819.xyz](https://262819.xyz)，不用安裝、不用簽名，瀏覽器裡就能生成與 App 版同一標準的配置檔案。
+
+IPA 安裝步驟如下：
 
 1. 到 [Releases](https://github.com/Kiwareu/Lowex/releases) 下載最新的 `Lowex-vX.Y.Z.ipa`（旁邊的 `.sha256` 檔案可校驗完整性）。
 2. 安裝方式任選：
