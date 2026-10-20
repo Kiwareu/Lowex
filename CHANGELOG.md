@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.7.3 — 2026-10-20
+
+- 远程覆写页面重做：按「覆写配置链接 / 配置级 JS 覆写 / HTTP 重写」三种类型分别显示支持情况，不支持的类型列出支持的客户端名单；修正 ClashMi 覆写配置链接被误判为「不支持」；Egern 的 HTTP 重写按官方文档确认为支持；MITM 能力补上 Egern。
+- 引用表单按类型自适应：覆写配置链接只填 .yaml 链接；JS 类型 SHA256 可选锁定；MITM 字段只在 HTTP 重写下出现。
+- ClashMi 的覆写支持 JS 类型（核心设置 → 覆写 → 添加配置链接 → 选 JS，覆写方式改为「内置-覆写」）。
+- 脚本库新增分享：Perfect Rules ClashMi 一键覆写（n0de-sudo，全文已审查）；原创 DNS 修复脚本对 ClashMi 开放。
+
+
 ## v1.7.2 — 2026-10-20
 
 - 修复：安装包的版本号之前在 `project.yml` 里是写死的 `1.6.0`/`47`（v1.6.0/v1.7.0/v1.7.1 的包在 TrollStore 里都显示 1.6.0），现改为引用构建设置 `$(MARKETING_VERSION)`/`$(CURRENT_PROJECT_VERSION)`，以后只改一处版本号即可。
