@@ -50,8 +50,10 @@ export interface LibraryEntry {
   pendingMerge?: boolean;
 }
 
-/** 种子数据。注意：原创条目是“自建但尚未合并到 main”的状态——url 指向 main 分支的
- *  raw 链接现在 404，sha256 留空；合并到 main 后由维护者计算文件 SHA256 并填入。 */
+/** 种子数据。注意：原创条目的 url 指向 main 分支的 raw 链接——在分支合并到 main
+ *  之前会 404（pendingMerge），SHA256 已按文件内容填好，合并后哈希不变。
+ *  第三方分享条目（shared）由用户指定收录：仅标注来源与出处，不做哈希锁定，
+ *  由用户自行核验来源可信度。 */
 const SEED: LibraryEntry[] = [
   {
     id: 'lowex-mihomo-dns-fix',
@@ -59,7 +61,7 @@ const SEED: LibraryEntry[] = [
     kind: 'config-overwrite',
     clients: ['clashparty', 'verge', 'flclash'],
     url: 'https://raw.githubusercontent.com/Kiwareu/Lowex/main/remote-scripts/mihomo-dns-leak-fix.js',
-    sha256: '', // TODO(合并到 main 后)：计算 remote-scripts/mihomo-dns-leak-fix.js 的 SHA256 后填入
+    sha256: '96841d9b0705d667a83f800b2f8785677e53b65d63af6c4d2ed4075a2992b90f', // remote-scripts/mihomo-dns-leak-fix.js
     source: { kind: 'original', author: 'Lowex', note: '仓库自建：remote-scripts/mihomo-dns-leak-fix.js' },
     desc: '配置级 JS 覆写：只补缺不覆盖，补齐 DNS 开关/监听/国内外分流与防投毒过滤，绝不碰 IPv6 与已有规则。',
     updated: '2026-10-20',
@@ -71,7 +73,7 @@ const SEED: LibraryEntry[] = [
     kind: 'http-rewrite',
     clients: ['surge', 'loon', 'qx', 'shadowrocket', 'stash'],
     url: 'https://raw.githubusercontent.com/Kiwareu/Lowex/main/remote-scripts/surge-noop.js',
-    sha256: '', // TODO(合并到 main 后)：计算 remote-scripts/surge-noop.js 的 SHA256 后填入
+    sha256: 'acc5c0f497591cf56012a5e577ee7b4eecab91f55ab67ef423739b29455db141', // remote-scripts/surge-noop.js
     source: { kind: 'original', author: 'Lowex', note: '仓库自建：remote-scripts/surge-noop.js' },
     desc: '空实现重写脚本（$done({})），先验证引用链路跑通，再按注释示例改自己的逻辑。',
     updated: '2026-10-20',
@@ -88,6 +90,28 @@ const SEED: LibraryEntry[] = [
     desc: '覆写配置链接：DNS 防泄漏整段 + fallback 精确化注释 + 分流规则骨架。在代理软件的「覆写 / Override」里添加配置链接即可。',
     updated: '2026-10-20',
     pendingMerge: true,
+  },
+  {
+    id: 'chunlion-dns-leak-full',
+    name: '分享 · Chunlion DNS 防泄漏 + 完整分流（43 策略组）',
+    kind: 'config-overwrite',
+    clients: ['clashparty', 'verge', 'flclash'],
+    url: 'https://raw.githubusercontent.com/Chunlion/Clash_Rule-Set/main/Chunlion_Rule-Set_DNS-Leak.js',
+    sha256: '',
+    source: { kind: 'shared', author: 'Chunlion', authorUrl: 'https://github.com/Chunlion/Clash_Rule-Set', note: '2026-10-20 已审查：无网络外发、无窃密；规则源为 MetaCubeX 官方 meta-rules-dat、anti-ad、666OS 等可信源；会覆写端口为 7893、开启 TUN、面板 secret 默认为 123456（仅本机）；作者更新后行为可能变化，未做哈希锁定' },
+    desc: '配置级 JS 覆写：给已有订阅一键注入 DNS 防泄漏（Fake-IP + 分流）与 43 个策略组（流媒体/AI/金融/游戏等）。在客户端的覆写/脚本里添加此链接。',
+    updated: '2026-10-20',
+  },
+  {
+    id: 'chunlion-dns-leak-lite',
+    name: '分享 · Chunlion DNS 防泄漏 + 轻量分流（24 策略组）',
+    kind: 'config-overwrite',
+    clients: ['clashparty', 'verge', 'flclash'],
+    url: 'https://raw.githubusercontent.com/Chunlion/Clash_Rule-Set/main/Chunlion_Rule-Set_DNS-Leak_Lite.js',
+    sha256: '',
+    source: { kind: 'shared', author: 'Chunlion', authorUrl: 'https://github.com/Chunlion/Clash_Rule-Set', note: '2026-10-20 已审查：同完整版，策略组精简到 24 个，适合节点多或低资源设备；未做哈希锁定' },
+    desc: '轻量版覆写：保留核心 DNS 防泄漏与常用服务分流，规则源更少、后台更轻。',
+    updated: '2026-10-20',
   },
   {
     id: 'example-shared',
