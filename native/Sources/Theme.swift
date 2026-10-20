@@ -203,6 +203,35 @@ extension View {
     }
 }
 
+/// 弹窗专用玻璃：比卡片更奶白、更不透，接近系统菜单（图一）的质感。
+/// iOS 26 用真实 liquid glass；低版本用 regularMaterial 强模糊 + 高光叠层，保证背景不穿帮。
+struct PopupGlass: ViewModifier {
+    var radius: CGFloat = 20
+    func body(content: Content) -> some View {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *), !Appearance.shared.performanceMode {
+            content.glassEffect(.regular, in: .rect(cornerRadius: radius))
+        } else {
+            fallback(content)
+        }
+        #else
+        fallback(content)
+        #endif
+    }
+    private func fallback(_ content: Content) -> some View {
+        content.background {
+            ZStack {
+                RoundedRectangle(cornerRadius: radius, style: .continuous).fill(.regularMaterial)
+                GlassFill(r: radius, boost: 1.0)
+            }
+            .shadow(color: .black.opacity(0.18), radius: 24, y: 8)
+        }
+    }
+}
+extension View {
+    func popupGlass(radius: CGFloat = 20) -> some View { modifier(PopupGlass(radius: radius)) }
+}
+
 /// 普通卡片 / 行：纯叠层玻璃（GlassFill），没有实时模糊。
 struct SoftCard: ViewModifier {
     var radius: CGFloat? = nil
@@ -230,7 +259,7 @@ struct GlassConfirm: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.30).ignoresSafeArea()
+            Color.black.opacity(0.35).ignoresSafeArea()
                 .onTapGesture { dismiss() }
             VStack(spacing: 0) {
                 Text(title).font(.headline).foregroundStyle(Brand.ink)
@@ -265,9 +294,8 @@ struct GlassConfirm: View {
                 }
                 .padding(16)
             }
-            .frame(maxWidth: 340)
-            .glassCard(heavy: true)
-            .clipShape(RoundedRectangle(cornerRadius: Brand.radius + 4, style: .continuous))
+            .frame(maxWidth: 300)
+            .popupGlass()
             .padding(.horizontal, 24)
         }
     }
