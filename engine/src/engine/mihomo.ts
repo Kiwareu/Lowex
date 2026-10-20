@@ -26,7 +26,7 @@ export function mihomoProxy(n:Node):Record<string,any>{
   }
   return o;
 }
-const key=(s:string)=>s.replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
+const key=(s:string)=>s.replace(/!/g,'_not_').replace(/[^A-Za-z0-9]+/g,'_').replace(/__+/g,'_').replace(/^_|_$/g,''); // !cn（非中国）保留为 _not_，避免 gs_category_ai_cn 这类误导名
 export function genMihomo(s:State,plan?:Plan,stash=false):string{
   const p=plan||makePlan(s);const o=s.opts;
   const mobile=s.platform==='ios'||s.platform==='android';
@@ -80,7 +80,7 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   const inc:any=stash?{use:Object.keys(providers)}:{'include-all':true};
   const stashProxies=stash&&p.nodes.length?{proxies:p.nodes.map(n=>n.name)}:{};
   void stashProxies;
-  pg.push({name:N.update,type:'select',proxies:['DIRECT',N.proxy]});
+  pg.push({name:N.update,type:'select',proxies:[N.proxy,'DIRECT']}); // 默认走代理：国内订阅与规则集直连多半刷不出，走代理还隐藏 SNI
   const reg=p.regions;
   const allNodes=()=>p.nodes.map(n=>n.name);
   const regionHas=(r:{regex:string})=>{if(!p.nodes.length||p.subs.length)return true;const re=safeRe(r.regex);return p.nodes.some(n=>re.test(n.name))};
