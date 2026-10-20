@@ -30,9 +30,12 @@ Lowex 是一款运行在 iPhone / iPad 上的配置生成器：选好目标客�
 
 - **14 个客户端**：Clash Verge Rev、FlClash、Clash Mi、Clash Meta for Android、Mihomo Party、Mihomo 内核、sing-box、Karing、Surge、Quantumult X、Shadowrocket、Loon、Stash、Egern。
 - **按平台输出**：先选 Windows / iOS / Android，再选客户端；输出只含该平台有效的规则（Windows 仅 `.exe` 进程名，Android 仅包名，iOS 无进程 / 包名规则）。
-- **75 个服务分组**：AI、流媒体、社交、开发、银行与券商、跨境账户、远程工作、数字游民工具、加密货币等，可逐组开关与指定出口。
-- **故障转移**：每个地区可选「手动 / 自动测速 / 故障转移」，并按各客户端文档只生成它真正支持的策略组类型。
-- **防泄漏**：fake-ip DNS、嗅探、QUIC / STUN 拦截，可选的广告 / 追踪 / 遥测拦截。
+- **77 个服务分组**：AI、流媒体、社交、开发、银行与券商、跨境账户、远程工作、数字游民工具、加密货币等，可逐组开关与指定出口。
+- **15 个地区分组**：香港、台湾、日本、新加坡、菲律宾、东南亚、韩国、美国、加拿大、澳洲、欧洲、英国、法国、德国与其他，逐个可选手动 / 自动测速 / 故障转移。
+- **分层预设 A / B**：A（有故障转移）服务组 → 地区-故转 → 自动 / 手动 → 节点，节点变红 / 超时自动跳转，保持持续连接；B（无故障转移）服务组 → 所选地区 → 直接手动 / 自动 → 节点。客户端不支持原生故障转移时（如 sing-box）自动降级并明确标注，绝不越界生成。
+- **防泄漏**：fake-ip DNS、嗅探、QUIC / STUN 拦截（STUN 按端口逐个拦截），可选的广告 / 追踪 / 遥测拦截。
+- **远程覆写与脚本库**（独立模块，与生成配置互不锁定）：三类覆写分开处理、按客户端能力开放——覆写配置链接（.yaml）、配置级 JS 覆写（Mihomo / Clash 系）、HTTP 重写（Surge 系，含 MITM 校验）；内置脚本库收录自研与社区分享的脚本 / 覆写，每条标注作者与来源仓库链接，审查后才收录，不硬塞未验证的第三方地址。
+- **控制面板对接**：Mihomo 系配置自带 external-controller（127.0.0.1:9090，每次生成随机密钥），可直接对接客户端面板 / Web 面板查看连接与切换节点。
 - **网络环境**：按运营商、网络类型、所在地给出带依据的 DNS / DoH、Bootstrap DNS、IPv6、MTU、QUIC 推荐（依据见 [docs/NETWORK-ENV.md](docs/NETWORK-ENV.md)）。
 - **手动节点**：SOCKS5 / HTTP / HTTPS（住宅 / 家宽代理），密码存系统钥匙串，按客户端语法输出（见 [docs/MANUAL-NODES.md](docs/MANUAL-NODES.md)）。
 - **一键预设、完整备份与恢复**：数字游民、加密货币、通用防泄漏等预设；设置、订阅、节点、外观与历史记录可整体导出为 JSON，导入前确认「覆盖 / 合并」（备份含订阅与密码，请妥善保管）。
@@ -43,11 +46,11 @@ Lowex 是一款运行在 iPhone / iPad 上的配置生成器：选好目标客�
 
 ## 截图
 
-| 首页 | 规则 |
-|---|---|
-| <img src="docs/screenshots/home.png" width="260"> | <img src="docs/screenshots/rules.png" width="260"> |
+| 首页 | 生成选项 | 规则 |
+|---|---|---|
+| <img src="docs/screenshots/home.jpg" width="260"> | <img src="docs/screenshots/generate.jpg" width="260"> | <img src="docs/screenshots/rules.jpg" width="260"> |
 
-> 截图为 v1.3 界面，v1.4 起规则页新增列表密度，细节以实际版本为准。
+> 截图为当前版本（v1.7.10）界面。
 
 ## 支持的客户端
 
