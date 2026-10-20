@@ -20,6 +20,7 @@ struct LowexApp: App {
     var body: some Scene {
         WindowGroup {
             RootGate(boot: boot)
+                .toggleStyle(LiquidToggleStyle())
                 .environmentObject(appearance)
                 .environmentObject(lang)
                 .environment(\.locale, lang.resolved.locale)
