@@ -94,7 +94,7 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
     pg.push(stash?{name:man,type:'select',...(Object.keys(providers).length?{use:Object.keys(providers)}:{}),filter:stripFlags(f)}:{name:man,type:'select','include-all':true,filter:f,'empty-fallback':'REJECT'});
     pg.push(stash?{name:au,type:'url-test',...(Object.keys(providers).length?{use:Object.keys(providers)}:{}),filter:stripFlags(f),url:o.testUrl,interval:o.urlTestInterval,tolerance:o.tolerance}:{name:au,type:'url-test','include-all':true,filter:f,...lazy,'empty-fallback':'REJECT'});
     // 精确 fallback：lazy:false 才能后台持续探测，节点变红/超时才自动跳转；间隔钳到 ≤600 秒
-    if(useFo){pg.push({name:fo,type:'fallback',proxies:[man,au],url:o.testUrl,interval:Math.min(o.urlTestInterval,600),lazy:false,timeout:3000,'max-failed-times':2,hidden:true,'empty-fallback':'REJECT'});regionNames.push(fo)}
+    if(useFo){pg.push({name:fo,type:'fallback',proxies:[man,au],url:o.testUrl,interval:Math.min(o.urlTestInterval,600),lazy:false,timeout:3000,'max-failed-times':2,'empty-fallback':'REJECT'});regionNames.push(fo)} // 不 hidden：用户要在客户端点进故障转移组
     else regionNames.push(au);
   }
   const autoAll={name:'全部-自动',type:'url-test',...(stash?(Object.keys(providers).length?{use:Object.keys(providers)}:{}):{'include-all':true}),url:o.testUrl,interval:Math.min(o.urlTestInterval,600),tolerance:o.tolerance,...(stash?{}:{lazy:true,timeout:3000,'max-failed-times':2})};
@@ -113,8 +113,9 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   pg.push(autoAll,manAll);if(o.lbGroup)pg.push(lb);
   if(p.overseas)pg.push(stash?{name:N.home,type:'select',...(Object.keys(providers).length?{use:Object.keys(providers)}:{}),filter:stripFlags(HOME_REGEX),proxies:['DIRECT']}:{name:N.home,type:'select','include-all':true,filter:HOME_REGEX,proxies:['DIRECT']});
   const pn=(pol:string)=>{const n=p.pname(pol);return n.endsWith('-故转')&&!regionNames.includes(n)?N.proxy:n};
-  // 服务组
-  const opts=[N.proxy,...regionNames,'DIRECT'];
+  // 服务组：含每地区的 故障转移/自动/手动 三种模式，点进服务组可直接切换（与一键代理对齐）
+  const svcModes=useFo?[...regionNames,...autoNames,...manNames]:[...regionNames,...manNames];
+  const opts=[N.proxy,...svcModes,'DIRECT'];
   const polAll=(first:string)=>{const f=first;return [f,...opts.filter(x=>x!==f),...(p.overseas&&f!==N.home?[N.home]:[])]};
   for(const x of p.services){pg.push({name:x.g.name,type:'select',proxies:polAll(pn(x.p))})}
   {const base=useFo?[...regionNames,...autoNames,...manNames]:[...regionNames,...manNames];
