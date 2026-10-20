@@ -214,6 +214,65 @@ extension View {
     func softCard(radius: CGFloat? = nil) -> some View { modifier(SoftCard(radius: radius)) }
 }
 
+/// 全局液态玻璃确认弹窗：替代 confirmationDialog。每个 action 一行大按钮；destructive 显示红色。
+struct GlassConfirmAction: Identifiable {
+    let id = UUID()
+    let title: String
+    let destructive: Bool
+    let action: () -> Void
+}
+
+struct GlassConfirm: View {
+    let title: String
+    let message: String
+    let actions: [GlassConfirmAction]
+    var dismiss: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.30).ignoresSafeArea()
+                .onTapGesture { dismiss() }
+            VStack(spacing: 0) {
+                Text(title).font(.headline).foregroundStyle(Brand.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 18).padding(.top, 16)
+                if !message.isEmpty {
+                    Text(message).font(.footnote).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 18).padding(.top, 6)
+                }
+                VStack(spacing: 6) {
+                    ForEach(actions) { a in
+                        Button { Haptics.light(); a.action(); dismiss() } label: {
+                            Text(a.title)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(a.destructive ? Color.red : Brand.pink)
+                                .frame(maxWidth: .infinity).padding(.vertical, 10)
+                                .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(a.destructive ? Color.red.opacity(0.10) : Color.secondary.opacity(0.10)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Button { dismiss() } label: {
+                        Text(L("取消"))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Brand.ink)
+                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.secondary.opacity(0.14)))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(16)
+            }
+            .frame(maxWidth: 340)
+            .glassCard(heavy: true)
+            .clipShape(RoundedRectangle(cornerRadius: Brand.radius + 4, style: .continuous))
+            .padding(.horizontal, 24)
+        }
+    }
+}
+
 /// 按下回弹（spring）
 struct PressableStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
