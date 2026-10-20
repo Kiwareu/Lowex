@@ -25,7 +25,7 @@ function common(p:Plan,fmt:Fmt){
   const fo=o.failover!==false; // 默认开故障转移（故转）
   const regionsUsed=p.regions.filter(r=>!p.nodes.length||p.subs.length||matches(p,r).length);
   const regionNames=regionsUsed.map(r=>regionGroup(r,fo?'故转':'自动'));
-  const svcOrder=(first:string)=>{const base=[N.proxy,...regionsUsed.map(r=>regionGroup(r,fo?'故转':'自动')),'DIRECT'];return[first,...base.filter(x=>x!==first)]};
+  const svcOrder=(first:string)=>{const base=[N.proxy,...(fo?regionsUsed.map(r=>regionGroup(r,'故转')):[]),...regionsUsed.map(r=>regionGroup(r,'自动')),...regionsUsed.map(r=>regionGroup(r,'手动')),'DIRECT'];return[first,...base.filter(x=>x!==first)]}; // 服务组含三模式
   const polName=(pol:string)=>{const n=p.pname(pol);const m=n.match(/^(.*)-故转$/);if(m){const r=regionsUsed.find(x=>x.name===m[1]);if(!r)return N.proxy;return fo?regionGroup(r,'故转'):regionGroup(r,'自动')}return n};
   const lists:{key:string;url:string;policy:string;comment?:string}[]=[];
   const skipped:string[]=[];
