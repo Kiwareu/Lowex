@@ -153,7 +153,7 @@ struct GenerateView: View {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { store.generate() }
                     if store.result.error == nil && !store.result.text.isEmpty { toast = L("已生成 {}", store.result.name) }
                 } label: {
-                    Label(store.generating ? L("生成中…") : L("生成配置"), systemImage: "sparkles").frame(maxWidth: .infinity)
+                    Label(store.generating ? (store.fetchingSubs ? L("正在拉取订阅…") : L("生成中…")) : L("生成配置"), systemImage: "sparkles").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent).tint(Brand.pink)
                 .disabled(store.generating)
