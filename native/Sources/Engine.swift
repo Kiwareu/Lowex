@@ -131,14 +131,19 @@ final class Engine {
         let r = json(api.objectForKeyedSubscript("presetMode")?.call(withArguments: [s])?.toString() ?? "{}")
         return r["mode"] as? String ?? "A"
     }
-    struct RemoteJsSupport { let kind: String; let reason: String }
+    struct RemoteJsKindInfo { let kind: String; let supported: Bool; let note: String; let supporters: [String] }
+    struct RemoteJsSupport { let kinds: [RemoteJsKindInfo]; let anySupported: Bool }
     func remoteJsSupport(client: String) -> RemoteJsSupport {
         let r = json(api.objectForKeyedSubscript("remoteJsSupport")?.call(withArguments: [client])?.toString() ?? "{}")
-        return RemoteJsSupport(kind: r["kind"] as? String ?? "none", reason: r["reason"] as? String ?? "")
+        let kinds = (r["kinds"] as? [[String: Any]] ?? []).map { d in
+            RemoteJsKindInfo(kind: d["kind"] as? String ?? "", supported: d["supported"] as? Bool ?? false,
+                             note: d["note"] as? String ?? "", supporters: d["supporters"] as? [String] ?? [])
+        }
+        return RemoteJsSupport(kinds: kinds, anySupported: r["anySupported"] as? Bool ?? false)
     }
     struct RemoteJsCheck { let blocked: [String]; let warns: [String] }
-    func remoteJsValidate(url: String, sha256: String, name: String, mitmHosts: [String], confirmSensitive: Bool) -> RemoteJsCheck {
-        let input: [String: Any] = ["url": url, "sha256": sha256, "name": name, "mitmHosts": mitmHosts, "confirmSensitive": confirmSensitive]
+    func remoteJsValidate(kind: String, url: String, sha256: String, name: String, mitmHosts: [String], confirmSensitive: Bool) -> RemoteJsCheck {
+        let input: [String: Any] = ["kind": kind, "url": url, "sha256": sha256, "name": name, "mitmHosts": mitmHosts, "confirmSensitive": confirmSensitive]
         guard let d = try? JSONSerialization.data(withJSONObject: input), let s = String(data: d, encoding: .utf8) else {
             return RemoteJsCheck(blocked: ["无法序列化"], warns: [])
         }
