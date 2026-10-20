@@ -508,7 +508,6 @@ struct ModulesView: View {
 // MARK: 远程 JS（独立模块，不写进配置文件，与生成配置互不影响）
 struct RemoteJsView: View {
     @EnvironmentObject var store: Store
-    @State private var check: Engine.RemoteJsCheck?
     @State private var showTemplate = false
     @State private var toast = ""
     @State private var showAddForm = false
@@ -545,6 +544,7 @@ struct RemoteJsView: View {
         let desc: String
         let sourceKind: String // "original" 原创 / "shared" 分享
         let author: String
+        let authorUrl: String // 作者 GitHub 仓库链接（查看/更新用）
         let pendingMerge: Bool
         let custom: Bool // 用户自己收藏的
     }
@@ -557,15 +557,33 @@ struct RemoteJsView: View {
                               desc: d["desc"] as? String ?? "",
                               sourceKind: src?["kind"] as? String ?? "shared",
                               author: src?["author"] as? String ?? "",
+                              authorUrl: src?["authorUrl"] as? String ?? "",
                               pendingMerge: d["pendingMerge"] as? Bool ?? false, custom: false)
         }
         let mine = store.libraryCustom.map { d in
             LibraryRow(id: d["id"] ?? UUID().uuidString, name: d["name"] ?? "", url: d["url"] ?? "",
                        sha256: "", kind: d["kind"] ?? "", desc: d["desc"] ?? "",
-                       sourceKind: d["sourceKind"] ?? "shared", author: d["author"] ?? "",
+                       sourceKind: d["sourceKind"] ?? "shared", author: d["author"] ?? "", authorUrl: "",
                        pendingMerge: false, custom: true)
         }
         return seed + mine
+    }
+    /// 来源仓库链接：优先条目自带的 authorUrl；原创走 Lowex 仓库 remote-scripts；否则从 raw 链接推导
+    func repoLink(for row: LibraryRow) -> String {
+        if !row.authorUrl.isEmpty { return row.authorUrl }
+        if row.sourceKind == "original" && !row.custom { return "https://github.com/Kiwareu/Lowex/tree/main/remote-scripts" }
+        let prefix = "https://raw.githubusercontent.com/"
+        if row.url.hasPrefix(prefix) {
+            let parts = row.url.dropFirst(prefix.count).split(separator: "/")
+            if parts.count >= 2 { return "https://github.com/\(parts[0])/\(parts[1])" }
+        }
+        return ""
+    }
+    func repoShort(_ url: String) -> String {
+        var t = url
+        if t.hasPrefix("https://") { t = String(t.dropFirst(8)) }
+        if t.hasPrefix("github.com/") { t = String(t.dropFirst(11)) }
+        return t
     }
     func attributionText(for row: LibraryRow) -> String {
         if row.custom {
@@ -609,14 +627,8 @@ struct RemoteJsView: View {
                     Text(L("远程覆写引用")).font(.headline)
                     Text(L("在客户端里添加链接即可使用（以所选类型的客户端入口为准）。脚本库「填入引用」可一键填好。"))
                         .font(.caption2).foregroundStyle(.secondary)
-                    Picker(L("类型"), selection: Binding(
-                        get: { store.remoteJsActiveKind },
-                        set: { store.remoteJsKind = $0; store.saveRemoteJs() }
-                    )) {
-                        ForEach(store.remoteJsSupport.kinds.filter { $0.supported }, id: \.kind) { k in
-                            Text(remoteJsKindName(k.kind)).tag(k.kind)
-                        }
-                    }.pickerStyle(.segmented)
+                    ChoiceTabs(options: store.remoteJsSupport.kinds.filter { $0.supported }.map { ($0.kind, remoteJsKindName($0.kind)) },
+                               selection: Binding(get: { store.remoteJsActiveKind }, set: { store.remoteJsKind = $0; store.saveRemoteJs() }))
                     TextField(activeKind == "config-override" ? L("https://… .yaml 覆写链接") : L("https://… .js 链接"), text: $store.remoteJsURL)
                         .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                     if activeKind != "config-override" {
@@ -630,21 +642,6 @@ struct RemoteJsView: View {
                         TextField(L("MITM hostname（逗号分隔，只写必需域名，绝不写 *）"), text: $store.remoteJsMITM)
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
                         Toggle(L("MITM 含敏感域名（支付 / 账号类），我已显式确认"), isOn: $store.remoteJsConfirmSensitive).tint(Brand.pink)
-                    }
-                    Button { check = store.remoteJsCheck(); store.saveRemoteJs() } label: {
-                        Label(L("校验引用"), systemImage: "checkmark.shield").frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent).tint(Brand.pink)
-                    if let c = check {
-                        if !c.blocked.isEmpty {
-                            ForEach(c.blocked, id: \.self) { Text(L("已拦截：{}", $0)).font(.caption).foregroundStyle(.red) }
-                        }
-                        if !c.warns.isEmpty {
-                            ForEach(c.warns, id: \.self) { Text(L("需确认：{}", $0)).font(.caption).foregroundStyle(.orange) }
-                        }
-                        if c.blocked.isEmpty && c.warns.isEmpty {
-                            Text(L("校验通过：可使用（仍需你确认来源可信）。")).font(.caption).foregroundStyle(Brand.pink)
-                        }
                     }
                     if !toast.isEmpty { Text(toast).font(.footnote).foregroundStyle(Brand.pink) }
                 }
@@ -673,7 +670,7 @@ struct RemoteJsView: View {
                 }
                 PlainCard {
                     Text(L("脚本库")).font(.headline)
-                    Text(L("原创脚本带 SHA256 锁定，可一键填入引用；分享的第三方脚本只给链接并标注来源与审查备注，复制即用。"))
+                    Text(L("点「复制链接」即用；每条都标了作者和来源仓库链接，想看更新去作者仓库。"))
                         .font(.caption).foregroundStyle(.secondary)
                     ForEach(libraryRows) { row in
                         VStack(alignment: .leading, spacing: 6) {
@@ -697,6 +694,14 @@ struct RemoteJsView: View {
                             if !row.url.isEmpty {
                                 Text(row.url).font(.caption2.monospaced())
                                     .lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                            }
+                            if !repoLink(for: row).isEmpty {
+                                HStack(spacing: 2) {
+                                    Text(L("来源仓库：")).font(.caption2).foregroundStyle(.secondary)
+                                    if let u = URL(string: repoLink(for: row)) {
+                                        Link(repoShort(repoLink(for: row)), destination: u).font(.caption2)
+                                    }
+                                }
                             }
                             if row.pendingMerge {
                                 Text(L("待分支合并到 main 后链接生效")).font(.caption2).foregroundStyle(.orange)
@@ -745,18 +750,11 @@ struct RemoteJsView: View {
                     if showAddForm {
                         VStack(spacing: 8) {
                             TextField(L("名称"), text: $addName)
-                            Picker(L("类型"), selection: $addKind) {
-                                Text(L("覆写配置链接")).tag(0)
-                                Text(L("JS 配置覆写")).tag(1)
-                                Text(L("HTTP 重写")).tag(2)
-                            }.pickerStyle(.segmented)
+                            ChoiceTabs(options: [(0, L("覆写配置链接")), (1, L("JS 配置覆写")), (2, L("HTTP 重写"))], selection: $addKind)
                             TextField(addKind == 0 ? L("https://… .yaml 链接") : L("https://… .js 链接"), text: $addUrl)
                                 .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                             TextField(L("作者"), text: $addAuthor).textInputAutocapitalization(.never).autocorrectionDisabled()
-                            Picker(L("来源"), selection: $addSourceKind) {
-                                Text(L("原创")).tag(0)
-                                Text(L("分享")).tag(1)
-                            }.pickerStyle(.segmented)
+                            ChoiceTabs(options: [(0, L("原创")), (1, L("分享"))], selection: $addSourceKind)
                             TextField(L("说明（可选）"), text: $addDesc)
                             Button {
                                 let u = addUrl.trimmingCharacters(in: .whitespacesAndNewlines)
