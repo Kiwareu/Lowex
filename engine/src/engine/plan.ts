@@ -169,7 +169,7 @@ export function makePlan(s:State):Plan{
   push({t:'site',name:'cn',g:CORE.cn,p:cnT},{t:'ip',name:'cn',g:CORE.cn,p:cnT});
   push({t:'final',p:o.unknown==='proxy'?'PROXY':'DIRECT'});
   if(overseas&&!subs.length&&!nodes.length)warnings.push('海外模式需要订阅里有「回国」线路节点；没有的话「回国」组只会指向直连。');
-  if(client.family==='mihomo'||client.family==='stash')warnings.push('「资源更新」组需要先在客户端的控制面板里手动选中一个具体节点（或「一键代理」），选好之后才会生效；没选之前它默认直连。');
+  if(client.family==='mihomo'||client.family==='stash')warnings.push('「资源更新」组默认走「一键代理」更新订阅与规则集；如代理不可用，在客户端控制面板里手动切到 DIRECT。');
   if(appMode)warnings.push('已选「在客户端 App 内自己添加」：配置不含订阅和节点，请在 '+client.name+' 里自行添加；策略组按节点名称里的地区关键词自动收纳。'+(client.family==='mihomo'?'这份 YAML 是覆写内容：请导入为 '+client.name+' 的覆写/扩展配置，不要当作完整订阅替换。':''));
   if(!appMode&&!subs.length&&!nodes.length&&client.subInConfig)warnings.push('还没有填订阅或节点：配置里使用了占位符 {{SUB_URL_1}}，导入前请替换。');
   warnings.push(...manualWarn);
