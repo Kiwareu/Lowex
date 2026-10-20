@@ -567,10 +567,6 @@ final class Store: ObservableObject {
         if !remoteJsKind.isEmpty, sup.kinds.contains(where: { $0.kind == remoteJsKind && $0.supported }) { return remoteJsKind }
         return sup.kinds.first(where: { $0.supported })?.kind ?? ""
     }
-    func remoteJsCheck() -> Engine.RemoteJsCheck {
-        let hosts = remoteJsMITM.components(separatedBy: CharacterSet(charactersIn: ",，")).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        return engine.remoteJsValidate(kind: remoteJsActiveKind, url: remoteJsURL, sha256: remoteJsSHA256, name: remoteJsName, mitmHosts: hosts, confirmSensitive: remoteJsConfirmSensitive)
-    }
     var quicTierText: String {
         switch engine.tiers(client: client).quic {
         case "precise": return L("精确拦境外：境内 QUIC 不受影响")
