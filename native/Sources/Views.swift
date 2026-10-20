@@ -378,15 +378,14 @@ struct NodesView: View {
 
     private var isSR: Bool { store.family == "shadowrocket" }
     private var isSB: Bool { store.family == "singbox" }
-    /// 订阅区：只有能把订阅 URL 写进配置的客户端才显示
-    private var showSubs: Bool { !store.appMode && store.embedsSub }
+    /// 订阅区：配置模式下所有客户端都显示。写不进配置的客户端（如 sing-box），生成时联网拉取订阅展开成节点
+    private var showSubs: Bool { !store.appMode }
     /// 节点链接区：Shadowrocket 的配置文件带不了节点链接
     private var showLinks: Bool { !store.appMode && !isSR }
     private var showManual: Bool { !store.appMode }
     private var hiddenNote: String? {
         if store.appMode { return nil }
         if isSR { return L("Shadowrocket 的 conf 只能携带手动节点（[Proxy]）；订阅与节点链接请在 App 内添加，已隐藏这两块。") }
-        if !store.embedsSub { return L("{} 没有订阅字段，已隐藏订阅 URL 区；节点链接 / Base64 生成时展开写入。", store.clientInfo?.name ?? L("该客户端")) }
         return nil
     }
     private var singleModeNote: String? {
@@ -546,7 +545,10 @@ struct NodesView: View {
     }
 
     private var subHelper: String {
-        L("一行一个 URL，点「添加订阅」→ 下方列表可逐条删除。生成时写入 {}，由客户端自行更新节点。", target("sub"))
+        if store.embedsSub {
+            return L("一行一个 URL，点「添加订阅」→ 下方列表可逐条删除。生成时写入 {}，由客户端自行更新节点。", target("sub"))
+        }
+        return L("一行一个 URL，点「添加订阅」→ 下方列表可逐条删除。{} 的配置文件没有订阅字段：生成时 Lowex 会联网拉取订阅正文，展开成节点后写入配置，导入即用。", store.clientInfo?.name ?? "")
     }
     private var linkHelper: String {
         L("支持 ss / vmess / vless / trojan / hysteria2 / tuic / anytls 链接（每行一条）或整段 Base64 订阅正文。点「写入方案」→ 生成时写入 {}；客户端不支持的协议会跳过并提示。", target("link"))
