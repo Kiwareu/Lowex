@@ -25,7 +25,7 @@ final class Store: ObservableObject {
     @Published var remoteURL = ""
     @Published var qrNote = ""
     @Published var validationIssues: [Engine.ValidationIssue] = []
-    // 远程 JS（独立模块，与生成配置互斥；存在 UserDefaults，不进方案 state，避免污染生成）
+    // 远程 JS（独立模块，与生成配置互不影响；存在 UserDefaults，不进方案 state，避免污染生成）
     @Published var remoteJsMode = false
     @Published var remoteJsURL = ""
     @Published var remoteJsSHA256 = ""
@@ -520,7 +520,7 @@ final class Store: ObservableObject {
         }
     }
 
-    // MARK: 远程 JS（独立模块，与生成配置互斥）
+    // MARK: 远程 JS（独立模块，与生成配置互不影响）
     func saveRemoteJs() {
         let d = UserDefaults.standard
         d.set(remoteJsMode, forKey: "lowex.remoteJs.mode.v1")
