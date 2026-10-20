@@ -2,9 +2,12 @@
 // 名称：Lowex 原创 · Mihomo DNS 防泄漏加固覆写
 // 用途：Mihomo Party / Clash Verge Rev / FlClash 的配置级覆写脚本。
 //       保守加固 DNS：只补缺、不覆盖——用户已有的值一律不动。
-// 用法：把本文件放到你自己的 GitHub 仓库（或等本仓库合并到 main 后直接用
-//       App「脚本库」里的链接），在客户端的「覆写 / 扩展脚本」里引用 URL，
-//       并在引用处锁定本文件的 SHA256（作者更新后哈希变化即拒绝加载）。
+// 逻辑：现代分流路径（nameserver-policy + respect-rules + proxy-server-
+//       nameserver）齐全时，不再补 fallback；路径不全的老配置才补
+//       fallback + fallback-filter 做防投毒兜底。
+// 用法：把本文件放到你自己的 GitHub 仓库（或直接用 App「脚本库」里的
+//       链接），在客户端的「覆写 / 扩展脚本」里引用 URL，并在引用处
+//       锁定本文件的 SHA256（作者更新后哈希变化即拒绝加载）。
 // 安全提示：不要从网上复制不明作者的覆写脚本；任何改动都要重新计算 SHA256。
 // ============================================================================
 
@@ -21,26 +24,25 @@ function main(config) {
   if (dns['default-nameserver'] == null) dns['default-nameserver'] = ['223.5.5.5', '119.29.29.29'];
   if (dns.nameserver == null)
     dns.nameserver = ['https://dns.alidns.com/dns-query', 'https://doh.pub/dns-query'];
-  if (dns.fallback == null) dns.fallback = ['tls://1.0.0.1', 'tls://8.8.8.8'];
+  if (dns['proxy-server-nameserver'] == null)
+    dns['proxy-server-nameserver'] = ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'];
+  if (dns['respect-rules'] == null) dns['respect-rules'] = true;
 
-  // 防投毒过滤：只信任非 CN 答案。整段缺失才补，不合并进用户已有的 fallback-filter。
-  if (dns['fallback-filter'] == null) {
-    dns['fallback-filter'] = {
-      geoip: true,
-      'geoip-code': 'CN',
-      ipcidr: [
-        '240.0.0.0/4',
-        '0.0.0.0/32',
-        '10.0.0.0/8',
-        '127.0.0.0/8',
-        '172.16.0.0/12',
-        '192.168.0.0/16',
-        '100.64.0.0/10'
-      ],
-      domain: ['+.cn']
-    };
+  // 现代路径齐全（policy + respect-rules + 节点域名解析）→ 不补 fallback：
+  // policy 优先于 nameserver/fallback，境外 DoH 经规则走代理加密，够了。
+  var modern = dns['nameserver-policy'] != null && dns['respect-rules'] === true && dns['proxy-server-nameserver'] != null;
+  if (!modern) {
+    if (dns.fallback == null) dns.fallback = ['tls://1.0.0.1', 'tls://8.8.8.8'];
+    if (dns['fallback-filter'] == null) {
+      dns['fallback-filter'] = {
+        geoip: true,
+        'geoip-code': 'CN',
+        ipcidr: ['240.0.0.0/4', '0.0.0.0/32', '10.0.0.0/8', '127.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '100.64.0.0/10'],
+        domain: ['+.cn']
+      };
+    }
   }
 
-  // 绝不碰：ipv6 开关（dns.ipv6 / config.ipv6）与用户已有规则（config.rules）。
+  // 绝不碰：ipv6 开关与用户已有规则（config.rules）。
   return config;
 }

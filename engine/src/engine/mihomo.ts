@@ -26,6 +26,11 @@ export function mihomoProxy(n:Node):Record<string,any>{
   }
   return o;
 }
+/** fake-ip-filter 追加项：系统联网检测 / 校时域名。拿到假 IP 会导致「无网络」误判或校时失败。
+ *  解析仍走 nameserver-policy / nameserver（respect-rules），不新增泄漏面。
+ *  不收 stun/turn 通配、远控/游戏/厂商域名（属偏好，非联网检测）。
+ *  依据：https://wiki.metacubex.one/en/config/dns/#fake-ip-filter */
+export const FAKEIP_EXTRA=['+.localdomain','+.msftconnecttest.com','+.msftncsi.com','captive.apple.com','connectivitycheck.android.com','detectportal.firefox.com','nmcheck.gnome.org','time.*.gov','time.*.apple.com','+.ntp.org'];
 const key=(s:string)=>s.replace(/!/g,'_not_').replace(/[^A-Za-z0-9]+/g,'_').replace(/__+/g,'_').replace(/^_|_$/g,''); // !cn（非中国）保留为 _not_，避免 gs_category_ai_cn 这类误导名
 export function genMihomo(s:State,plan?:Plan,stash=false):string{
   const p=plan||makePlan(s);const o=s.opts;
@@ -49,19 +54,19 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   if(!stash){dnsPolicy['rule-set:private_domain']='system';dnsPolicy['rule-set:cn_domain']=cnNs}
   if(o.homeDomain&&o.lanDns)dnsPolicy[`+.${o.homeDomain}`]=o.lanDns;
   if(o.campusDomain&&o.lanDns)for(const d of o.campusDomain.split(/[\s,]+/).filter(Boolean))dnsPolicy[`+.${d}`]=o.lanDns;
-  const dns:Record<string,any>=stash?{enable:true,ipv6:o.ipv6,'enhanced-mode':'fake-ip','fake-ip-range':'198.18.0.1/16','default-nameserver':boot,nameserver:dnsCnDoh,fallback:o.dnsRemote,'fake-ip-filter':['+.lan','+.local','time.*.com','ntp.*.com','+.pool.ntp.org','+.connectivitycheck.gstatic.com',...homeDom.map(d=>'+.'+d)]}:{
+  const dns:Record<string,any>=stash?{enable:true,ipv6:o.ipv6,'enhanced-mode':'fake-ip','fake-ip-range':'198.18.0.1/16','default-nameserver':boot,nameserver:dnsCnDoh,fallback:o.dnsRemote,'fake-ip-filter':['+.lan','+.local','time.*.com','ntp.*.com','+.pool.ntp.org','+.connectivitycheck.gstatic.com',...FAKEIP_EXTRA,...homeDom.map(d=>'+.'+d)]}:{
     enable:true,ipv6:o.ipv6,'prefer-h3':false,'enhanced-mode':o.fakeIp?'fake-ip':'redir-host','cache-algorithm':low||mobile?'lru':'arc',
-    ...(o.fakeIp?{'fake-ip-range':'198.18.0.1/16','fake-ip-filter-mode':'blacklist','fake-ip-filter':['+.lan','+.local','+.arpa','time.*.com','ntp.*.com','+.pool.ntp.org','+.connectivitycheck.gstatic.com','rule-set:cn_domain','rule-set:private_domain',...homeDom.map(d=>'+.'+d),...(o.campusDomain?o.campusDomain.split(/[\s,]+/).filter(Boolean).map(d=>'+.'+d):[])]}:{}),
+    ...(o.fakeIp?{'fake-ip-range':'198.18.0.1/16','fake-ip-filter-mode':'blacklist','fake-ip-filter':['+.lan','+.local','+.arpa','time.*.com','ntp.*.com','+.pool.ntp.org','+.connectivitycheck.gstatic.com',...FAKEIP_EXTRA,'rule-set:cn_domain','rule-set:private_domain',...homeDom.map(d=>'+.'+d),...(o.campusDomain?o.campusDomain.split(/[\s,]+/).filter(Boolean).map(d=>'+.'+d):[])]}:{}),
     'respect-rules':true,'use-hosts':true,'use-system-hosts':false,
     'default-nameserver':boot,
     'proxy-server-nameserver':dnsCnDoh,'direct-nameserver':cnNs,'direct-nameserver-follow-policy':false,
     'nameserver-policy':dnsPolicy,
     nameserver:[...o.dnsRemote,...(stash?[]:['tls://8.8.4.4'])],
-    // 境外回退防投毒（Mihomo 官方 pattern）：nameserver 返回 CN 结果时走
-    // fallback 重查；fallback 只信任非 CN 答案（geoip-code CN 丢弃）+ 丢弃
-    // fake-ip 段（240.0.0.0/4），防 DNS 投毒。geoip 用 Mihomo 内置默认 GeoIP 库。
-    fallback:o.dnsRemote,
-    'fallback-filter':{geoip:true,'geoip-code':'CN',ipcidr:['240.0.0.0/4']},
+    // 不再输出 fallback / fallback-filter：nameserver（境外加密 DNS + respect-rules）与
+    // nameserver-policy / proxy-server-nameserver / direct-nameserver 已覆盖国内外分流。
+    // wiki：nameserver-policy 优先于 nameserver/fallback 查询；境外 DoH 经
+    // respect-rules 走代理加密，fallback 的并发重查不再必要（官方 DNS 文档）。
+    // Stash 分支保留 fallback：无 nameserver-policy，仍依赖 fallback。
   };
   if(p.overseas&&!stash){dns['nameserver-policy']={...dnsPolicy,'rule-set:cn_domain':cnNs}}
   const tun:Record<string,any>={enable:o.tun,stack:o.tunStack,'dns-hijack':['any:53','tcp://any:53'],'auto-route':true,'auto-detect-interface':true,'strict-route':true,mtu:o.mtu,'udp-timeout':300};
@@ -121,6 +126,9 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   {const base=useFo?[...regionNames,...autoNames,...manNames]:[...regionNames,...manNames];
 const all=[N.proxy,...base,'全部-自动','全部-手动',...(o.lbGroup?['全部-负载均衡']:[]),'DIRECT',...(p.overseas?[N.home]:[])];
 const ff=o.unknown==='proxy'?N.proxy:'DIRECT';pg.push({name:N.final,type:'select',proxies:[ff,...all.filter(x=>x!==ff)]});}
+  // WebRTC 组（仅 Mihomo；Stash 用 PROTOCOL,STUN 固定出口）：默认跟 opts.stun；不放 DIRECT（直连=把真实 IP 交给 STUN）。
+  // 规则依据：https://wiki.metacubex.one/en/config/rules/ DST-PORT 不限 NETWORK → TCP+UDP；OR 组合端口。
+  if(!stash&&p.rules.some(r=>r.t==='stun')){const st=p.rules.find(r=>r.t==='stun') as any;pg.push({name:N.webrtc,type:'select',proxies:st.p==='REJECT'?['REJECT',N.proxy]:[N.proxy,'REJECT']})}
   // rule providers
   const rp:Record<string,any>={};const rules:string[]=[];
   const rpush=(kind:'site'|'ip',name:string,aliasHint?:string)=>{
@@ -151,7 +159,7 @@ const ff=o.unknown==='proxy'?N.proxy:'DIRECT';pg.push({name:N.final,type:'select
       case'rset':{const f=setFmt(r.url);const k='cs_'+r.id.replace(/[^A-Za-z0-9]/g,'');rp[k]={type:'http',behavior:r.kind==='ip'?'ipcidr':r.kind,format:f==='mrs'?'mrs':f==='yaml'?'yaml':'text',interval:86400,...(stash?{}:{proxy:N.update}),url:r.url};
         rules.push(`RULE-SET,${k},${targetName(r.p)}${r.kind==='domain'?'':',no-resolve'}`);break}
       case'quic':if(stash){rules.push('AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((GEOIP,CN)))),REJECT');break}rules.push(`AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,gs_cn),(RULE-SET,gi_cn,no-resolve)))))),REJECT`);rpush('site','cn');rpush('ip','cn');break;
-      case'stun':if(stash){rules.push(`PROTOCOL,STUN,${targetName(r.p)}`);break}rules.push(`AND,((NETWORK,UDP),(OR,((DST-PORT,3478-3479),(DST-PORT,5349),(DST-PORT,19302-19309)))),${targetName(r.p)}`);break;
+      case'stun':if(stash){rules.push(`PROTOCOL,STUN,${targetName(r.p)}`);break}rules.push(`OR,((DST-PORT,3478-3479),(DST-PORT,5349),(DST-PORT,19302-19309)),${N.webrtc}`);break;
       case'wifi':if(stash){for(const d of r.domains)rules.push(`DOMAIN-SUFFIX,${d},${targetName(r.p)}`);break}rules.push(`AND,((NETWORK,UDP),(OR,((DST-PORT,500),(DST-PORT,4500))),(OR,(${r.domains.map(d=>`(DOMAIN-SUFFIX,${d})`).join(',')}))),${targetName(r.p)}`);for(const d of r.domains)rules.push(`DOMAIN-SUFFIX,${d},${targetName(r.p)}`);break;
       case'final':rules.push(`MATCH,${r.p==='PROXY'?N.final:'DIRECT'}`);break;
       case'site':{

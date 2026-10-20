@@ -62,9 +62,9 @@ const SEED: LibraryEntry[] = [
     kind: 'config-overwrite',
     clients: ['clashmi', 'clashparty', 'verge', 'flclash'],
     url: 'https://raw.githubusercontent.com/Kiwareu/Lowex/main/remote-scripts/mihomo-dns-leak-fix.js',
-    sha256: '96841d9b0705d667a83f800b2f8785677e53b65d63af6c4d2ed4075a2992b90f', // remote-scripts/mihomo-dns-leak-fix.js
+    sha256: '5003b22e6976722959f1842f5df1daf70718b803b33adb367eb293c4d8c5eaaf', // remote-scripts/mihomo-dns-leak-fix.js
     source: { kind: 'original', author: 'Lowex', note: '仓库自建：remote-scripts/mihomo-dns-leak-fix.js' },
-    desc: '配置级 JS 覆写：只补缺不覆盖，补齐 DNS 开关/监听/国内外分流与防投毒过滤，绝不碰 IPv6 与已有规则。',
+    desc: '配置级 JS 覆写：只补缺不覆盖，补齐 DNS 开关/监听、节点域名解析与 respect-rules；现代分流齐全时不补 fallback。绝不碰 IPv6 与已有规则。',
     updated: '2026-10-20',
   },
   {
@@ -86,7 +86,7 @@ const SEED: LibraryEntry[] = [
     url: 'https://raw.githubusercontent.com/Kiwareu/Lowex/main/remote-scripts/mihomo-override-dns-rules.yaml',
     sha256: '', // yaml 覆写链接在代理软件的「覆写 / Override」里直接添加，不走 App 内校验
     source: { kind: 'original', author: 'Lowex', note: '仓库自建：remote-scripts/mihomo-override-dns-rules.yaml，基于 Lowex 9.8+ 分析优化' },
-    desc: '覆写配置链接：DNS 防泄漏整段 + fallback 精确化注释 + 分流规则骨架。在代理软件的「覆写 / Override」里添加配置链接即可。',
+    desc: '覆写配置链接：DNS 防泄漏整段（nameserver-policy + respect-rules，无 fallback；与 App / 网站生成标准一致）。在代理软件的「覆写 / Override」里添加配置链接即可。',
     updated: '2026-10-20',
   },
   {

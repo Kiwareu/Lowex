@@ -1,5 +1,6 @@
-export const VERSION='1.7.10';
+export const VERSION='1.7.11';
 export const CHANGELOG:{v:string;date:string;items:string[]}[]=[
+  {v:'1.7.11',date:'2026-10-20',items:['防泄漏加固：STUN / WebRTC 端口规则覆盖 TCP + UDP（之前只拦 UDP，TCP 的 STUN 可能漏真实 IP）；Mihomo 系新增「WebRTC」策略组，默认拦截、组内不放直连，需要网页通话时在客户端面板切到「一键代理」。','DNS 精简：Mihomo 系去掉 fallback / fallback-filter——nameserver-policy 优先分流 + 境外加密 DoH 经代理已覆盖防投毒，少一轮并发查询；Stash 保持不变。','fake-ip 排除补全：微软 / 苹果 / 安卓 / Firefox 联网检测与校时域名不再返回假 IP，避免 Wi-Fi「无网络」误判与校时失败。','sing-box / Shadowrocket 的 STUN 拦截同步覆盖 TCP + UDP；脚本库两个原创覆写同步新标准（JS 覆写现代分流齐全时不补 fallback，YAML 模板去掉 fallback）。']},
  {v:'1.7.10',date:'2026-10-20',items:['分组行开关换成系统原生：iOS 26 上是液态玻璃（和「只看收藏」同款），全 App 开关彻底统一。','规则页列表为空时显示说明卡：无收藏/搜索无结果不再白屏。']},
  {v:'1.7.9',date:'2026-10-20',items:['所有开关恢复系统原生扁开关（绿+白）：规则页自绘开关改绿，全 App 粉色开关全部去粉。','全局流畅度优化：状态保存移到后台线程，点开关不再卡；背景漂移动画降帧、性能模式静止。','分段选择器滑动白条、删校验引用、脚本库来源仓库链接（上轮已上线）。']},
  {v:'1.7.8',date:'2026-10-20',items:['全 App 换上仿 iOS 26 液态玻璃专用开关：扁、绿+白，带震动反馈。','分段选择器改为滑动白条：液态玻璃质感 + 弹簧滑动动画。','远程覆写引用去掉「校验引用」按钮，粘贴链接直接用。','脚本库每条加上可点的来源仓库链接，想看更新去作者仓库。']},

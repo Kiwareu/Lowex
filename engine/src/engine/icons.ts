@@ -9,7 +9,7 @@ import {has} from '../data/caps';
 export function iconMap(p:Plan):Record<string,string>{
   const m:Record<string,string>={};
   const put=(name:string,key:string)=>{const u=resolveIcon(key,ICONS[key]);if(u)m[name]=u};
-  put(N.proxy,'s:proxy');put(N.final,'s:final');put(N.update,'s:update');put(N.home,'s:home');put('国内直连','s:direct');
+  put(N.proxy,'s:proxy');put(N.final,'s:final');put(N.update,'s:update');put(N.home,'s:home');put(N.webrtc,'s:final');put('国内直连','s:direct');
   put('全部-自动','s:autoAll');put('全部-手动','s:manAll');put('全部-订阅','s:manAll');put('全部-负载均衡','s:lb');
   for(const r of p.regions)for(const k of ['手动','自动','故转'])put(`${r.name}-${k}`,'r:'+r.id);
   for(const g of [...GROUPS,...Object.values(CORE)])put(g.name,'g:'+g.id);

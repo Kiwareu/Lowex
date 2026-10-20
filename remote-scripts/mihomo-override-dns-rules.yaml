@@ -1,60 +1,50 @@
 # ============================================================================
-# 名称：Lowex 优化版 · Mihomo 覆写配置（DNS 防泄漏 + 精确 fallback）
-# 用途：给 ClashMi / Clash Verge Rev / Mihomo Party / FlClash 的「覆写 / Override」
-#       入口添加的配置链接（.yaml）。DNS 防泄漏整段替换 + fallback 精确化注释 +
-#       分流规则骨架。基于 Lowex 9.8+ 分析优化（三个参考配置取长：F2 的
-#       health-check 与 fallback 精确参数，F3 的 600 秒测速间隔与 hosts 思路）。
+# 名称：Lowex 优化版 · Mihomo 覆写配置（DNS 防泄漏）
+# 用途：给 ClashMi / Clash Verge Rev / Mihomo Party / FlClash 的「覆写 /
+#       Override」入口添加的配置链接（.yaml）。
+# 依据：官方文档（wiki.metacubex.one/config/dns）——nameserver-policy 优先于
+#       nameserver/fallback 查询；境外 DoH 经 respect-rules 走代理加密。
+#       本文件不再写 fallback。dns 整段替换，写覆写时必须写全段。
 # 用法：在代理软件的「覆写 / Override」里「添加配置链接」，粘贴本文件 URL。
-#       合并语义（已核实）：prepend-rules 插到规则最前（优先级最高）；
-#       dns 等整段是整体替换——写覆写文件时 dns 必须写全段，不能只写一半。
 # 注意：本文件不含任何节点/订阅；节点仍由你自己的订阅提供。
 # ============================================================================
 
-# —— DNS 防泄漏（整段替换订阅里的 dns；只补全、不依赖订阅原有值）——
 dns:
   enable: true
   listen: 127.0.0.1:1053
-  default-nameserver:
-    - 223.5.5.5
-    - 119.29.29.29
-  nameserver:
-    - https://dns.alidns.com/dns-query
-    - https://doh.pub/dns-query
-  fallback:
-    - tls://1.0.0.1
-    - tls://8.8.8.8
-  fallback-filter:
-    geoip: true
-    geoip-code: CN
-    ipcidr:
-      - 240.0.0.0/4
-      - 0.0.0.0/32
-      - 10.0.0.0/8
-      - 127.0.0.0/8
-      - 172.16.0.0/12
-      - 192.168.0.0/16
-      - 100.64.0.0/10
-    domain:
-      - '+.cn'
-
-# —— 订阅健康检查（注释说明：Lowex 9.8+ 精确 fallback 要求）——
-# 你的订阅在客户端里应开启 health-check，否则节点变红/超时不会自动跳转：
-# proxy-providers:
-#   <你的订阅名>:
-#     health-check:
-#       enable: true
-#       url: https://www.gstatic.com/generate_204
-#       interval: 300
-# fallback / url-test 策略组的精确参数（在你的订阅配置或客户端覆写里对照调整）：
-#   - url-test 组：interval: 600，tolerance: 50
-#   - fallback 组：interval: 600，lazy: false（节点故障时立即自动切换）
-# 注意：上面只是注释说明，不要直接取消注释——proxy-providers 的 url 必须填你自己的真实订阅。
-
-# —— 分流规则骨架（全部注释掉，按需取消注释；键名已核实）——
-# prepend-rules 插到订阅规则最前面，优先级最高，适合放你自己的精确规则。
+  ipv6: false
+  prefer-h3: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter-mode: blacklist
+  fake-ip-filter:
+    - '+.lan'
+    - '+.local'
+    - '+.localdomain'
+    - '+.arpa'
+    - 'time.*.com'
+    - 'ntp.*.com'
+    - '+.pool.ntp.org'
+    - '+.ntp.org'
+    - 'time.*.gov'
+    - 'time.*.apple.com'
+    - '+.connectivitycheck.gstatic.com'
+    - '+.msftconnecttest.com'
+    - '+.msftncsi.com'
+    - 'captive.apple.com'
+    - 'connectivitycheck.android.com'
+    - 'detectportal.firefox.com'
+    - 'nmcheck.gnome.org'
+  respect-rules: true
+  use-hosts: true
+  use-system-hosts: false
+  default-nameserver: [223.5.5.5, 119.29.29.29]
+  nameserver: [https://1.1.1.1/dns-query, https://8.8.8.8/dns-query]
+  proxy-server-nameserver: [https://223.5.5.5/dns-query, https://doh.pub/dns-query]
+  direct-nameserver: [https://223.5.5.5/dns-query, https://doh.pub/dns-query]
+  direct-nameserver-follow-policy: false
+  nameserver-policy:
+    'rule-set:gs_private': system
+    'rule-set:gs_cn': [https://223.5.5.5/dns-query, https://doh.pub/dns-query]
 # prepend-rules:
-#   - DOMAIN-SUFFIX,internal.example.com,DIRECT
-#   - DOMAIN-SUFFIX,example.com,DIRECT
-# append-rules 追加到规则最后（订阅若已有 MATCH 规则，append 的规则可能永远轮不到）：
-# append-rules:
-#   - GEOIP,CN,DIRECT
+#   - OR,((DST-PORT,3478-3479),(DST-PORT,5349),(DST-PORT,19302-19309)),REJECT

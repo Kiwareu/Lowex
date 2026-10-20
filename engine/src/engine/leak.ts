@@ -45,8 +45,8 @@ function leakBase(s:State):LeakItem[]{
     why:rich?'对 TLS / QUIC / HTTP 嗅探域名用于规则匹配，不改写目标地址（HTTP 除外），避免直接用 IP 访问时规则失效而走错出口。':'此客户端自行处理。'});
   add({id:'geoip',group:'IP',title:'geoip 与 DNS 解析',status:'ok',
     why:'IP 规则都带 no-resolve，不会为了匹配 IP 规则而额外做本地 DNS；不使用 GeoIP 数据库（geo-auto-update: false），全部用 .mrs / .srs 规则集，体积小、可更新。'});
-  add({id:'webrtc-stun',group:'WebRTC',title:'STUN / WebRTC 的 UDP 流量',status:o.stun==='off'?'off':(f==='shadowrocket'||f==='qx'||f==='loon'||f==='surge'||f==='egern')?'partial':'ok',
-    why:o.stun==='off'?'未处理 STUN：WebRTC 可能直接问 STUN 服务器拿到你的真实公网 IP。':o.stun==='reject'?'STUN 端口（3478-3479、5349、19302-19309）已拦截：WebRTC 拿不到公网地址，通话类网页可能连不上。':'STUN 端口走代理：WebRTC 看到的是代理出口 IP（需要节点支持 UDP）。'+(f==='mihomo'||f==='stash'||sb?'':'　注意：该客户端规则能力有限，仅对能写出规则的部分生效。')});
+  add({id:'webrtc-stun',group:'WebRTC',title:'STUN / WebRTC 流量',status:o.stun==='off'?'off':(f==='shadowrocket'||f==='qx'||f==='loon'||f==='surge'||f==='egern')?'partial':'ok',
+    why:o.stun==='off'?'未处理 STUN：WebRTC 可能直接问 STUN 服务器拿到你的真实公网 IP。':o.stun==='reject'?'STUN / TURN 端口（3478-3479、5349、19302-19309）已拦截'+(f==='mihomo'||sb?'（TCP 与 UDP）':'')+'：WebRTC 拿不到公网地址，通话类网页可能连不上。'+(f==='mihomo'?'需要网页通话时，在客户端把「WebRTC」组切到「一键代理」。':''):'STUN 端口走代理：WebRTC 看到的是代理出口 IP（需要节点支持 UDP）。'+(f==='mihomo'||f==='stash'||sb?'':'　注意：该客户端规则能力有限，仅对能写出规则的部分生效。')});
   add({id:'webrtc-browser',group:'WebRTC',title:'浏览器自身的 WebRTC 泄漏（局域网 IP、绕过代理的 UDP）',status:'manual',
     why:'配置只能管「流量去哪」，管不了浏览器把本机/局域网地址写进 WebRTC 的 ICE 候选。现代 Chrome / Edge 默认用 mDNS 隐藏局域网 IP，但公网 IP 在 TUN 全局接管下已经是出口 IP；仍想彻底关闭，需要在浏览器里设置。',
     how:'Firefox：地址栏输入 about:config，把 media.peerconnection.enabled 设为 false（会让网页视频通话失效）。Chrome / Edge：没有内置开关，安装 uBlock Origin 并在设置里勾选「阻止 WebRTC 泄漏本地 IP」，或安装「WebRTC Leak Prevent」类扩展；Edge 还可在 edge://flags 搜索 WebRTC 相关选项。Safari / iOS：无需处理，系统不暴露局域网 IP。',

@@ -39,7 +39,7 @@ export interface Plan{
   nodes:Node[];appMode:boolean;badNodes:number;subs:{name:string;url:string}[];overseas:boolean;
   pname:(p:Policy)=>string;conflicts:Conflict[];
 }
-export const N={proxy:'一键代理',direct:'DIRECT',reject:'REJECT',home:'回国',update:'资源更新',final:'漏网之鱼'};
+export const N={proxy:'一键代理',direct:'DIRECT',reject:'REJECT',home:'回国',update:'资源更新',final:'漏网之鱼',webrtc:'WebRTC'};
 export const regionGroup=(r:Region,kind:'手动'|'自动'|'故转')=>`${r.name}-${kind}`;
 /** 分层预设 A/B（9.8+）：A = 有故障转移（服务组 → 地区-故转 → 自动/手动 → 节点）；
  *  B = 无故障转移（服务组 → 地区-自动 → 手动/自动 → 节点）。

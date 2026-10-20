@@ -249,7 +249,7 @@ export function genShadowrocket(s:State,plan?:Plan):string{
       case'process':L.push(`PROCESS-NAME,${r.v},${c.tgt(r.p)}`);break;
       case'package':L.push(`# 包名分流（Android）Shadowrocket 不支持，已跳过：${r.v}`);break;
       case'quic':break;
-      case'stun':L.push(`AND,((PROTOCOL,UDP),(OR,((DST-PORT,3478),(DST-PORT,3479),(DST-PORT,5349),(DST-PORT,19302),(DST-PORT,19303),(DST-PORT,19304),(DST-PORT,19305),(DST-PORT,19306),(DST-PORT,19307),(DST-PORT,19308),(DST-PORT,19309)))),${c.tgt(r.p)}`);break;
+      case'stun':L.push(`OR,((DST-PORT,3478),(DST-PORT,3479),(DST-PORT,5349),(DST-PORT,19302),(DST-PORT,19303),(DST-PORT,19304),(DST-PORT,19305),(DST-PORT,19306),(DST-PORT,19307),(DST-PORT,19308),(DST-PORT,19309)),${c.tgt(r.p)}`);break; // TCP+UDP；固定 REJECT/代理，无独立组
       case'wifi':for(const d of r.domains)L.push(`DOMAIN-SUFFIX,${d},${c.tgt(r.p)}`);break;
       case'final':L.push(`GEOIP,CN,${p.overseas?N.home:'DIRECT'}`,`FINAL,${r.p==='PROXY'?N.final:'DIRECT'}`);break;
     }

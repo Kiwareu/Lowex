@@ -66,7 +66,7 @@ export function genSingbox(s:State,plan?:Plan):string{
       case'package':rules.push({package_name:[r.v],...outbound(tg(r.p))});break;
       case'rset':{const t='cs-'+tag(r.id);rs[t]={type:'remote',tag:t,format:setFmt(r.url)==='srs'?'binary':'source',url:r.url,update_interval:o.lowMemory?'3d':'1d',download_detour:'direct'};rules.push({rule_set:[t],...outbound(tg(r.p))});break}
       case'quic':rules.push({type:'logical',mode:'and',rules:[{network:'udp'},{port:443},{rule_set:[rsAdd('site','cn'),rsAdd('ip','cn')],invert:true}],action:'reject'});break;
-      case'stun':rules.push({network:'udp',port:[3478,3479,5349],port_range:['19302:19309'],...outbound(tg(r.p))});break;
+      case'stun':rules.push({port:[3478,3479,5349],port_range:['19302:19309'],...outbound(tg(r.p))});break; // 不限 network → TCP+UDP；sing-box reject 是规则动作，不能做成可切换组（docs: route rule port）
       case'wifi':rules.push({type:'logical',mode:'and',rules:[{network:'udp'},{port:[500,4500]},{domain_suffix:r.domains}],...outbound(tg(r.p))});rules.push({domain_suffix:r.domains,...outbound(tg(r.p))});break;
       case'final':break;
       case'site':{

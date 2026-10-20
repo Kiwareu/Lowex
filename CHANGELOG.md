@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.7.11 — 2026-10-20
+
+- 防泄漏加固：STUN / WebRTC 端口规则覆盖 TCP + UDP（之前只拦 UDP，TCP 的 STUN 可能漏真实 IP）；Mihomo 系新增「WebRTC」策略组，默认拦截、组内不放直连，需要网页通话时在客户端面板切到「一键代理」。
+- DNS 精简：Mihomo 系去掉 fallback / fallback-filter——nameserver-policy 优先分流 + 境外加密 DoH 经代理（respect-rules）已覆盖防投毒，少一轮并发查询，解析更快；Stash 保持不变。
+- fake-ip 排除补全：微软 / 苹果 / 安卓 / Firefox 的联网检测与校时域名不再返回假 IP，避免 Wi-Fi「无网络」误判与校时失败。
+- sing-box / Shadowrocket 的 STUN 拦截同步覆盖 TCP + UDP；脚本库两个原创覆写同步新标准。
+
 ## v1.7.10 — 2026-10-20
 
 - 分组行开关换成系统原生开关：iOS 26 上自动是液态玻璃效果（和「只看收藏」同款），旧系统上是经典扁开关，自绘小开关已彻底删除，全 App 开关统一。
