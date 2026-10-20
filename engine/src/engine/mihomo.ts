@@ -117,7 +117,7 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   const opts=[N.proxy,...regionNames,'DIRECT'];
   const polAll=(first:string)=>{const f=first;return [f,...opts.filter(x=>x!==f),...(p.overseas&&f!==N.home?[N.home]:[])]};
   for(const x of p.services){pg.push({name:x.g.name,type:'select',proxies:polAll(pn(x.p))})}
-  pg.push({name:N.final,type:'select',proxies:[o.unknown==='proxy'?N.proxy:'DIRECT',N.proxy,'DIRECT']});
+  {const ff=o.unknown==='proxy'?N.proxy:'DIRECT';pg.push({name:N.final,type:'select',proxies:[ff,...[N.proxy,'DIRECT'].filter(x=>x!==ff)]});}
   // rule providers
   const rp:Record<string,any>={};const rules:string[]=[];
   const rpush=(kind:'site'|'ip',name:string,aliasHint?:string)=>{
