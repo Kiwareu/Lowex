@@ -17,6 +17,7 @@ final class Store: ObservableObject {
     @Published var recommendList: [[String: Any]] = []
     @Published var tab: AppTab = .home
     @Published var generating = false
+    @Published var fetchingSubs = false // 正在联网拉取订阅正文
     @Published var pasteNote = ""
     @Published var showDisclaimer = false
     @Published var showSplash = true
@@ -375,26 +376,7 @@ final class Store: ObservableObject {
             return
         }
 
-        if family == "singbox" {
-            // URL 对 sing-box 无用；只收节点正文
-            if !urls.isEmpty && body.isEmpty {
-                pasteNote = L("sing-box / Karing 不能把订阅 URL 写进 JSON。请先在别处下载订阅，把节点链接或 base64 正文粘贴到这里。")
-                return
-            }
-            if !body.isEmpty {
-                let joined = body.joined(separator: "\n")
-                let old = (s["nodesText"] as? String) ?? ""
-                s["nodesText"] = old.isEmpty ? joined : old + "\n" + joined
-            }
-            s["subs"] = []
-            state = s
-            if !urls.isEmpty { pasteNote = L("其中 {} 条订阅 URL 已忽略（sing-box / Karing 不能写订阅 URL）。", urls.count); return }
-            let nLinks = ((s["nodesText"] as? String) ?? "").split(whereSeparator: \.isNewline).filter { $0.contains("://") }.count
-            pasteNote = L("已写入节点正文") + (nLinks > 0 ? L("（约 {} 条链接）", nLinks) : "") + L("，生成时展开进 outbounds。")
-            return
-        }
-
-        if embedsSub && !urls.isEmpty {
+        if !urls.isEmpty {
             var cur = (s["subs"] as? [[String: Any]]) ?? []
             for u in urls where !cur.contains(where: { ($0["url"] as? String) == u }) { cur.append(["name": "", "url": u]) }
             s["subs"] = cur
@@ -404,10 +386,11 @@ final class Store: ObservableObject {
             let old = (s["nodesText"] as? String) ?? ""
             s["nodesText"] = old.isEmpty ? joined : old + "\n" + joined
         }
-        if !embedsSub { s["subs"] = [] }
         state = s
         var parts: [String] = []
-        if embedsSub && !urls.isEmpty { parts.append(L("{} 条订阅 URL（将写进配置）", urls.count)) }
+        if !urls.isEmpty {
+            parts.append(embedsSub ? L("{} 条订阅 URL（将写进配置）", urls.count) : L("{} 条订阅 URL（生成时将联网拉取并展开为节点）", urls.count))
+        }
         let nLinks = ((s["nodesText"] as? String) ?? "").split(whereSeparator: \.isNewline).filter { $0.contains("://") }.count
         if nLinks > 0 { parts.append(L("约 {} 条节点链接", nLinks)) }
         else if !body.isEmpty { parts.append(L("节点正文")) }
@@ -500,17 +483,81 @@ final class Store: ObservableObject {
         save()
     }
 
+    /// 订阅拉取结果：ok=正文；yaml=拉到了但 engine 解析不了的 Clash YAML；network=没拉到
+    private enum SubFetch { case ok(String), yaml, network }
+    /// 拉取订阅正文。UA 让多数机场返回 Base64 链接列表（engine 能解析的格式）。
+    private static func fetchSub(_ urlString: String) async -> SubFetch {
+        guard let url = URL(string: urlString), ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return .network }
+        var req = URLRequest(url: url, timeoutInterval: 25)
+        req.setValue("Shadowrocket/2.2.62 (iPhone; iOS 17.5.1; Scale/3.00)", forHTTPHeaderField: "User-Agent")
+        req.setValue("*/*", forHTTPHeaderField: "Accept")
+        do {
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            guard (resp as? HTTPURLResponse)?.statusCode == 200, !data.isEmpty, data.count < 8 * 1024 * 1024 else { return .network }
+            var text = (String(data: data, encoding: .utf8) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if text.isEmpty {
+                let compact = (String(data: data, encoding: .ascii) ?? "").filter { !$0.isWhitespace }
+                if let d = Data(base64Encoded: compact, options: .ignoreUnknownCharacters),
+                   let t = String(data: d, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty { text = t }
+            }
+            guard !text.isEmpty else { return .network }
+            // Clash YAML 订阅 engine 解析不了：单独区分，给出准确提示
+            if text.range(of: "^\\s*proxies\\s*:", options: .regularExpression) != nil { return .yaml }
+            return .ok(text)
+        } catch { return .network }
+    }
+
     func generate() {
+        let urls = subs.compactMap { $0["url"] as? String }.filter { !$0.isEmpty }
+        // 订阅 URL 写不进配置的客户端（如 sing-box / Karing）：生成时联网拉取订阅正文，展开成节点再生成
+        if !appMode, !embedsSub, !urls.isEmpty {
+            generating = true
+            fetchingSubs = true
+            Task { [weak self] in
+                guard let self else { return }
+                var bodies: [String] = []
+                var failed = 0
+                var yamlHit = false
+                for u in urls {
+                    switch await Self.fetchSub(u) {
+                    case .ok(let t): bodies.append(t)
+                    case .yaml: yamlHit = true
+                    case .network: failed += 1
+                    }
+                }
+                await MainActor.run {
+                    self.fetchingSubs = false
+                    self.generateNow(extraNodes: bodies.joined(separator: "\n"), fetchFailed: failed, fetchYaml: yamlHit, fetchTotal: urls.count)
+                }
+            }
+            return
+        }
+        generateNow(extraNodes: "", fetchFailed: 0, fetchYaml: false, fetchTotal: 0)
+    }
+
+    private func generateNow(extraNodes: String, fetchFailed: Int, fetchYaml: Bool, fetchTotal: Int) {
         generating = true
         defer { generating = false }
+        // 拉取到的订阅正文只放进本次生成的临时 state，不污染已保存的节点（避免重复生成时叠加）
+        var st = state
+        if !extraNodes.isEmpty {
+            let old = (st["nodesText"] as? String) ?? ""
+            st["nodesText"] = old.isEmpty ? extraNodes : old + "\n" + extraNodes
+        }
         // 文件名用配置名
         let pn = profileName.components(separatedBy: CharacterSet(charactersIn: "/\\:*?\"<>|")).joined(separator: "-")
         if let ext = clientInfo?.fileExt {
             // engine names from client; we rename after
             _ = ext
         }
-        result = engine.generate(state: state)
+        result = engine.generate(state: st)
         validationIssues = (result.error == nil && !result.text.isEmpty) ? engine.validateConfig(family: family, text: result.text) : []
+        if fetchTotal > 0 {
+            var warns = result.warnings
+            if fetchFailed > 0 { warns.append(L("有 {} 条订阅拉取失败（网络或链接失效），已用其余内容生成。", fetchFailed)) }
+            if fetchYaml { warns.append(L("有订阅返回的是 Clash YAML 格式，Lowex 解析不了——请换 Base64 格式的订阅链接，或把正文粘贴到「节点链接」区。")) }
+            if warns.count != result.warnings.count { result = GenResult(text: result.text, name: result.name, warnings: warns) }
+        }
         if result.error == nil, !result.text.isEmpty {
             let ext = (result.name as NSString).pathExtension
             let base = pn.isEmpty ? "lowex" : pn
