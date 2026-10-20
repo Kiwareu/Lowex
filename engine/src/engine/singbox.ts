@@ -15,7 +15,7 @@ export function singboxOut(n:Node):Record<string,any>{
   const base:any={tag:n.name,server:n.server,server_port:n.port};
   switch(n.type){
     case'socks5':return{type:'socks',tag:n.name,server:n.server,server_port:n.port,version:'5',...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{})};
-    case'http':return{type:'http',tag:n.name,server:n.server,server_port:n.port,...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{}),...(n.tls?{tls:{enabled:true,server_name:n.server}}:{})};
+    case'http':return{type:'http',tag:n.name,server:n.server,server_port:n.port,...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{}),...(n.tls?{tls:{enabled:true,server_name:n.sni??n.server}}:{})};
     case'ss':return{type:'shadowsocks',...base,method:n.cipher,password:n.password,...(n.plugin?{plugin:n.plugin==='obfs'?'obfs-local':n.plugin,plugin_opts:Object.entries(n.pluginOpts||{}).map(([k,v])=>`${k}=${v}`).join(';')}:{})};
     case'vmess':return{type:'vmess',...base,uuid:n.uuid,security:n.cipher||'auto',alter_id:n.alterId||0,...(tls?{tls}:{}),...(transport?{transport}:{})};
     case'vless':return{type:'vless',...base,uuid:n.uuid,...(n.flow?{flow:n.flow}:{}),...(tls?{tls}:{}),...(transport?{transport}:{})};

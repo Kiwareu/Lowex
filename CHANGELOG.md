@@ -1,5 +1,77 @@
 # Changelog
 
+## v1.7.3 — 2026-10-20
+
+- 远程覆写页面重做：按「覆写配置链接 / 配置级 JS 覆写 / HTTP 重写」三种类型分别显示支持情况，不支持的类型列出支持的客户端名单；修正 ClashMi 覆写配置链接被误判为「不支持」；Egern 的 HTTP 重写按官方文档确认为支持；MITM 能力补上 Egern。
+- 引用表单按类型自适应：覆写配置链接只填 .yaml 链接；JS 类型 SHA256 可选锁定；MITM 字段只在 HTTP 重写下出现。
+- ClashMi 的覆写支持 JS 类型（核心设置 → 覆写 → 添加配置链接 → 选 JS，覆写方式改为「内置-覆写」）。
+- 脚本库新增分享：Perfect Rules ClashMi 一键覆写（n0de-sudo，全文已审查）；原创 DNS 修复脚本对 ClashMi 开放。
+
+
+## v1.7.2 — 2026-10-20
+
+- 修复：安装包的版本号之前在 `project.yml` 里是写死的 `1.6.0`/`47`（v1.6.0/v1.7.0/v1.7.1 的包在 TrollStore 里都显示 1.6.0），现改为引用构建设置 `$(MARKETING_VERSION)`/`$(CURRENT_PROJECT_VERSION)`，以后只改一处版本号即可。
+
+
+## Unreleased
+
+- 远程覆写页面重做（修复能力误判）：按三种类型分别显示支持情况——覆写配置链接 / 配置级 JS 覆写 / HTTP 重写；ClashMi 的覆写配置链接之前被误判为「不支持」，现已修正；Egern 的 HTTP 重写按官方文档确认为支持（脚本 API 与 Surge 系不同，已注明）。不支持的类型会列出支持的客户端名单。
+- 引用表单按类型自适应：覆写配置链接只填 .yaml 链接（无 SHA256/MITM）；JS 类型保留 SHA256 可选锁定；MITM 字段只在 HTTP 重写下出现。校验器同样按类型分流。
+- 举一反三：MITM 能力补上 Egern（官方文档确认支持 MITM），帮助文案同步。
+- ClashMi 的覆写也支持 JS 类型（核心设置 → 覆写 → 添加配置链接 → 选 JS；加完后覆写方式改为「内置-覆写」）：能力矩阵补上，脚本库原创 DNS 修复脚本对 ClashMi 开放。
+- 脚本库新增分享：Perfect Rules ClashMi 一键覆写（n0de-sudo，1957 行已全文审查：无外发/无窃密/无硬编码订阅；会接管基础配置如 mixed-port 7890，保留机场分组；未做哈希锁定）。
+
+
+- 远程 JS 体验优化：SHA256 锁定改为可选——不填也能用（仅警告「未锁定」，只用信任的来源）；填错格式仍会拦截。自建脚本的 SHA256 已填好，脚本库可一键「填入引用」。
+- 脚本库新增第三方分享：Chunlion「DNS 防泄漏 + 完整分流（43 策略组）」与轻量版（24 策略组），配置级 JS 覆写，附来源与审查备注（已审查无外发/无窃密；会覆写端口为 7893、开 TUN、面板 secret 默认为 123456；未做哈希锁定）。
+
+
+## v1.7.1 — 2026-10-20
+
+- 包名修正：`native/project.yml` 的 `PRODUCT_BUNDLE_IDENTIFIER` 由 `com.wenx.lowex.native` 改为之前确认的正式包名 `com.wenx.lowex`。注意：iOS 把不同包名视为不同应用，需重新安装；旧包名 App 的数据不会自动迁移——请先在旧 App「更多 → 备份」导出完整备份，再在新 App 里导入恢复。
+
+
+## v1.7.0 — 2026-10-20
+
+- 地区分组新增加拿大、菲律宾、东南亚、澳大利亚（节点页地区分组；含各自图标 region-CA/PH/SEA/AU，已上传 Lowex-Icons 仓库；OT「其他」排除列表同步更新；东南亚不含已独立成组的新加坡/菲律宾，避免重复）。
+
+- 订阅历史记录 + 清空二次确认（分支 `feat/upgrade-98`，未合并到 main）：
+  - 节点页订阅卡片新增「历史记录」区：用户贴过的订阅 URL 自动记入历史（UserDefaults 持久化，最多 30 条、最新在前、按字符串去重，无论客户端家族都记录）；历史逐条可删除，也可点一条恢复导入到上方订阅列表（已在列表中的显示「已添加」且整行禁用）。
+  - 「清空订阅」「清空历史」均加二次确认弹窗，杜绝误触一下全删；清空订阅不影响历史记录。
+
+- 远程 JS「脚本库」分享区（分支 `feat/upgrade-98`，未合并到 main）：
+  - 新增 `engine/src/engine/remoteJsLibrary.ts`：三种类型按客户端 gating——config-overwrite（JS 配置覆写，仅 Party/Verge/FlClash）、http-rewrite（HTTP 重写 .js，仅 Surge/Loon/QX/Shadowrocket/Stash）、config-override（覆写配置链接 .yaml；经核实支持 merge 键 prepend-rules/append-rules 等的 Mihomo 系：clashmi/verge/clashparty/flclash；Stash 的 Override 用另一套语法暂不收录；Surge/Loon/QX/Shadowrocket 等价机制未核实留空）。
+  - 种子只放两类：本仓库 `remote-scripts/` 自建（raw 链接，SHA256 待合并到 main 后填入）+ 一个格式示例空条目；绝不硬编码任何未核验的第三方 URL。4 条种子：Mihomo DNS 防泄漏加固覆写（.js）、Surge 系空重写脚本（.js）、Mihomo 覆写配置（.yaml：DNS 防泄漏整段 + fallback 精确化注释 + 规则骨架，基于 Lowex 9.8+ 分析优化）、示例分享条目。
+  - 新增 `remote-scripts/mihomo-dns-leak-fix.js`（只补缺不覆盖，绝不碰 IPv6 与已有规则）、`remote-scripts/surge-noop.js`（$done({}) + [Script]/[MITM] 片段示例）、`remote-scripts/mihomo-override-dns-rules.yaml`（DNS 整段 + health-check/精确 fallback 注释说明 + 注释掉的 prepend-rules 示例；无真实节点/订阅）。
+  - App「远程 JS」页新增第四张卡片「脚本库」：每行显示类型与「原创/分享·作者」徽标；可复制链接、复制来源标注；.js 行在 SHA256 已锁定时可「填入引用」；config-override 行只给复制链接/来源标注（在代理软件的「覆写/Override」里添加配置链接，不走 App 校验）；未哈希锁定的分享条目显示橙色提示；分支未合并的条目提示“待分支合并到 main 后链接生效”；可「添加我的收藏」（类型三选，url 按类型校验 https + .js / .yaml/.yml）。
+  - 入口新增 `remoteJsLibrary` / `remoteJsLibraryAttribution`；`Engine.swift` 加同名桥接；`Store.swift` 加 `libraryCustom`（UserDefaults `lowex.library.custom.v1`）。
+  - 版本号保持 1.6.0 / Build 47，未 bump。
+
+## v1.6.0 — 2026-10-20
+
+9.8+ 升级（分支 `feat/upgrade-98`，全部改动在该分支上，未动 main）：
+
+- 安全：`prelude.js` 的 `crypto.getRandomValues` 改用原生 `SecRandomCopyBytes` 注入的真随机，无可信随机源时直接抛错，绝不回退 `Math.random`（`Engine.swift` 新增 `installSecureRandom`）。
+- 校验器：`validate.ts` 首次被接入（之前是死代码），入口新增 `validateConfig`；同步 Surge / Loon / Shadowrocket `[General]` 白名单与 Egern `https` 节点类型；新增 fallback / 健康检查 / TUN / STUN 断言。
+- 地区正则：`regions.json` 为唯一源，OT 改为 `(?i)` + 全量关键词镜像（修小写 hk/us/eu 误入“其他”）；INI 各家族删第二套 `SIMPLE_RE`，改用 `toPortableFilter` 做方言适配（lookbehind 展开为可移植写法）；回国正则统一到 `HOME_REGEX`。
+- 分流：Mihomo 的 package 注释说明与 `PROCESS-NAME` 的关系（Android 默认进程名即包名；`plan.ts` 已按平台分流）；Surge / Loon / Shadowrocket 补 `PROCESS-NAME` 生成（之前静默丢弃），QX / Egern 丢弃时写明原因；Surge / Shadowrocket 的 macOS 开 `processRules`。
+- sing-box / Egern 的 HTTP 出站 TLS SNI 改为 `n.sni ?? n.server`。
+- 能力矩阵：QUIC / STUN 拆三档并经 `tiers()` 暴露；Egern 图标移除（未核实）；failover / tolerance / 节点过滤 / 本地端口 / 日志级别加边界注释；Shadowrocket STUN 补 Google 端口 19302–19309。
+- Fallback 精确可靠：订阅 `health-check` 默认开（间隔 600 秒）；fallback 组 `lazy: false` + 间隔 ≤600 秒；默认测速间隔 1800 → 600 秒；预设同步。
+- DNS：Mihomo 加 `fallback` + `fallback-filter`（只信任非 CN 答案，防投毒）。
+- 分层预设 A/B：显式定义（A 有故障转移 / B 无故障转移），入口新增 `presetMode()`；sing-box 的 A 自动降级为地区-自动。
+- 远程 JS 独立模块（`remoteJs.ts`，与生成配置互斥，不写进配置文件）：Mihomo 系配置级覆写（仅 Party / Verge Rev / FlClash）与 Surge 系 HTTP 重写（Surge / Loon / QX / Shadowrocket / Stash）分客户端 gating；仅 https + `.js` + SHA256 锁定 + 自建/受信源；MITM 最小范围，敏感域名需显式确认；付费绕过关键词拒绝；附自建模板。
+- 各预设各自优化到最佳（`tools.ts` PRESETS，全在 `feat/upgrade-98` 上）：
+  - 统一安全基线：未知域名走代理、IPv6 关、fake-ip + TUN 开、境外 QUIC 拦、STUN 走代理、广告 Lite + 追踪/遥测拦截、故障转移开、测速 600 秒、负载均衡关、局域网关；差异只在定位。
+  - 修 `balanced` 之前是空操作（返回 `{groups:{}}`）：现在真正重置为全新方案默认开启的分组。
+  - 修多数预设悄悄关掉广告/遥测/追踪器拦截（`only()` 会把未列出的组关掉，而 `opts.ads='lite'` 成了死配置）：现在各预设统一开拦截（REJECT）。
+  - AI 预设：AI 组出口由 `R:US`（经故障转移，IP 会跳）改为 `R:US/m`（固定手动节点，防 AI 风控）。
+  - 流媒体预设：补 `media-more`（Hulu / Crunchyroll 等）；开发者预设：补 `cloud-dev`（AWS / Azure / GCP / Vercel 等）。
+  - 数字游民预设：删死条目 `line`（该分组已在 `groups.ts` 的 REMOVED 里，选了也不生效）；金融组出口固定 `R:DE/m`（之前按输入 state 的 regions 判断，输入通常没开 DE 会误取 SG，而预设本身会开启 DE）。
+  - `all` 预设：补开广告/遥测/追踪器拦截（之前因 `category==='reject'` 被过滤，沿用旧状态）。
+  - 分层预设 A：Surge / Loon / Shadowrocket / Egern 的故转组测速间隔钳到 ≤600 秒（之前直接用 `urlTestInterval`，设大了切换迟钝），与 Mihomo 一致。
+- 打包：重新构建并提交 `native/Resources/engine.js`（IPA 构建直接用仓库内的该文件，不重新构建引擎）。
+
 ## v1.5.2 — 2026-10-18
 
 - 修复：Mihomo 系 / Stash 配置里的「资源更新」组不再被隐藏，会正常显示在客户端面板主列表。

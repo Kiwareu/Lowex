@@ -57,6 +57,11 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
     'proxy-server-nameserver':dnsCnDoh,'direct-nameserver':cnNs,'direct-nameserver-follow-policy':false,
     'nameserver-policy':dnsPolicy,
     nameserver:[...o.dnsRemote,...(stash?[]:['tls://8.8.4.4'])],
+    // 境外回退防投毒（Mihomo 官方 pattern）：nameserver 返回 CN 结果时走
+    // fallback 重查；fallback 只信任非 CN 答案（geoip-code CN 丢弃）+ 丢弃
+    // fake-ip 段（240.0.0.0/4），防 DNS 投毒。geoip 用 Mihomo 内置默认 GeoIP 库。
+    fallback:o.dnsRemote,
+    'fallback-filter':{geoip:true,'geoip-code':'CN',ipcidr:['240.0.0.0/4']},
   };
   if(p.overseas&&!stash){dns['nameserver-policy']={...dnsPolicy,'rule-set:cn_domain':cnNs}}
   const tun:Record<string,any>={enable:o.tun,stack:o.tunStack,'dns-hijack':['any:53','tcp://any:53'],'auto-route':true,'auto-detect-interface':true,'strict-route':true,mtu:o.mtu,'udp-timeout':300};
@@ -67,7 +72,7 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   const proxies=p.nodes.map(mihomoProxy);
   const providers:Record<string,any>={};
   const subs=p.appMode?[]:(p.subs.length?p.subs:(p.nodes.length?[]:[{name:'',url:'{{SUB_URL_1}}'}]));
-  subs.forEach((x,i)=>{providers['sub'+(i+1)]={type:'http',url:x.url,interval:86400,...(o.nodeInclude?.trim()?{filter:o.nodeInclude.trim()}:{}),...(o.nodeExclude?.trim()?{'exclude-filter':o.nodeExclude.trim()}:{}),...(stash?{}:{proxy:N.update,'health-check':{enable:false},
+  subs.forEach((x,i)=>{providers['sub'+(i+1)]={type:'http',url:x.url,interval:86400,...(o.nodeInclude?.trim()?{filter:o.nodeInclude.trim()}:{}),...(o.nodeExclude?.trim()?{'exclude-filter':o.nodeExclude.trim()}:{}),...(stash?{}:{proxy:N.update,'health-check':{enable:true,interval:600,url:o.testUrl},
     override:{...(x.name?{'additional-prefix':`[${x.name}] `}:{}),'override-expr':['(select(.type == "vless" or .type == "vmess" or .type == "trojan" or .type == "anytls" or .tls == true) | ."client-fingerprint") |= (. // "chrome")']}})}});
   // groups
   const pg:any[]=[];
@@ -81,20 +86,21 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
   const regionHas=(r:{regex:string})=>{if(!p.nodes.length||p.subs.length)return true;const re=safeRe(r.regex);return p.nodes.some(n=>re.test(n.name))};
   const usable=reg.filter(regionHas);
   const mk=(name:string,type:string,extra:any)=>({name,type,...(stash?{use:Object.keys(providers).length?Object.keys(providers):undefined,...(p.nodes.length?{}:{})}:{'include-all':true}),...extra});
-  const lazy:any={url:o.testUrl,interval:o.urlTestInterval,lazy:true,timeout:3000,'max-failed-times':2,tolerance:o.tolerance};
+  const lazy:any={url:o.testUrl,interval:Math.min(o.urlTestInterval,600),lazy:true,timeout:3000,'max-failed-times':2,tolerance:o.tolerance};
   const useFo=o.failover!==false;
   for(const r of usable){
     const man=regionGroup(r,'手动'),au=regionGroup(r,'自动'),fo=regionGroup(r,'故转');
     const f=r.regex;
     pg.push(stash?{name:man,type:'select',...(Object.keys(providers).length?{use:Object.keys(providers)}:{}),filter:stripFlags(f)}:{name:man,type:'select','include-all':true,filter:f,'empty-fallback':'REJECT'});
     pg.push(stash?{name:au,type:'url-test',...(Object.keys(providers).length?{use:Object.keys(providers)}:{}),filter:stripFlags(f),url:o.testUrl,interval:o.urlTestInterval,tolerance:o.tolerance}:{name:au,type:'url-test','include-all':true,filter:f,...lazy,'empty-fallback':'REJECT'});
-    if(useFo){pg.push({name:fo,type:'fallback',proxies:[man,au],url:o.testUrl,interval:o.urlTestInterval,lazy:true,timeout:3000,'max-failed-times':2,hidden:true,'empty-fallback':'REJECT'});regionNames.push(fo)}
+    // 精确 fallback：lazy:false 才能后台持续探测，节点变红/超时才自动跳转；间隔钳到 ≤600 秒
+    if(useFo){pg.push({name:fo,type:'fallback',proxies:[man,au],url:o.testUrl,interval:Math.min(o.urlTestInterval,600),lazy:false,timeout:3000,'max-failed-times':2,hidden:true,'empty-fallback':'REJECT'});regionNames.push(fo)}
     else regionNames.push(au);
   }
-  const autoAll={name:'全部-自动',type:'url-test',...(stash?(Object.keys(providers).length?{use:Object.keys(providers)}:{}):{'include-all':true}),url:o.testUrl,interval:o.urlTestInterval,tolerance:o.tolerance,...(stash?{}:{lazy:true,timeout:3000,'max-failed-times':2})};
+  const autoAll={name:'全部-自动',type:'url-test',...(stash?(Object.keys(providers).length?{use:Object.keys(providers)}:{}):{'include-all':true}),url:o.testUrl,interval:Math.min(o.urlTestInterval,600),tolerance:o.tolerance,...(stash?{}:{lazy:true,timeout:3000,'max-failed-times':2})};
   const manAll={name:'全部-手动',type:'select',...(stash?(Object.keys(providers).length?{use:Object.keys(providers)}:{}):{'include-all':true})};
   if(stash&&p.nodes.length){(autoAll as any).proxies=allNodes();(manAll as any).proxies=allNodes()}
-  const lb:any={name:'全部-负载均衡',type:'load-balance',strategy:'consistent-hashing',...(stash?(Object.keys(providers).length?{use:Object.keys(providers)}:{}):{'include-all':true}),url:o.testUrl,interval:o.urlTestInterval,...(stash?{}:{lazy:true})};
+  const lb:any={name:'全部-负载均衡',type:'load-balance',strategy:'consistent-hashing',...(stash?(Object.keys(providers).length?{use:Object.keys(providers)}:{}):{'include-all':true}),url:o.testUrl,interval:Math.min(o.urlTestInterval,600),...(stash?{}:{lazy:true})};
   if(stash&&p.nodes.length)lb.proxies=allNodes();
   pg.push({name:'国内直连',type:'select',proxies:['DIRECT'],hidden:true});
   const manNames=usable.map(r=>regionGroup(r,'手动'));
@@ -134,6 +140,10 @@ export function genMihomo(s:State,plan?:Plan,stash=false):string{
       case'suffix':rules.push(`DOMAIN-SUFFIX,${r.v},${r.via&&r.p!=='REJECT'?p.services.find(x=>x.g.id===r.via)?.g.name||targetName(r.p):targetName(r.p)}`);break;
       case'ipcidr':rules.push(`IP-CIDR,${r.v},${targetName(r.p)},no-resolve`);break;
       case'process':rules.push(`PROCESS-NAME,${r.v},${targetName(r.p)}`);break;
+      // Mihomo 没有独立的包名规则类型：Android 上应用默认进程名即包名，所以
+      // package 与 process 在 Mihomo 里都写 PROCESS-NAME。plan.ts 已按平台
+      // 分流（package 只在 android 下产生，process 只在桌面端产生），这里
+      // 不做二次区分；sing-box 才有独立的 package_name 字段。
       case'package':rules.push(`PROCESS-NAME,${r.v},${targetName(r.p)}`);break;
       case'rset':{const f=setFmt(r.url);const k='cs_'+r.id.replace(/[^A-Za-z0-9]/g,'');rp[k]={type:'http',behavior:r.kind==='ip'?'ipcidr':r.kind,format:f==='mrs'?'mrs':f==='yaml'?'yaml':'text',interval:86400,...(stash?{}:{proxy:N.update}),url:r.url};
         rules.push(`RULE-SET,${k},${targetName(r.p)}${r.kind==='domain'?'':',no-resolve'}`);break}

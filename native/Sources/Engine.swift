@@ -1,5 +1,6 @@
 import Foundation
 import JavaScriptCore
+import Security
 
 /// 生成引擎 = 网页版同一份 TypeScript 引擎（engine.js），在 JavaScriptCore 运行。界面原生，规则逻辑不重写。
 final class Engine {
@@ -9,10 +10,24 @@ final class Engine {
 
     private init() {
         ctx.exceptionHandler = { _, e in NSLog("Lowex JS error: %@", e?.toString() ?? "?") }
+        Self.installSecureRandom(into: ctx)
         let url = Bundle.main.url(forResource: "engine", withExtension: "js")!
         let src = try! String(contentsOf: url, encoding: .utf8)
         ctx.evaluateScript(src)
         api = ctx.objectForKeyedSubscript("Lowex")
+    }
+
+    /// 真随机：把 SecRandomCopyBytes 注入 JSC，供 prelude.js 的 crypto.getRandomValues 使用。
+    /// 注入失败时 prelude 会直接抛错（绝不回退 Math.random），App 会在启动时失败而不是静默生成可预测的密钥。
+    private static func installSecureRandom(into ctx: JSContext) {
+        let secureRandom: @convention(block) (Int) -> [NSNumber]? = { count in
+            guard count > 0, count <= 4096 else { return nil }
+            var bytes = [UInt8](repeating: 0, count: count)
+            let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+            guard status == errSecSuccess else { return nil }
+            return bytes.map { NSNumber(value: $0) }
+        }
+        ctx.setObject(secureRandom as AnyObject, forKeyedSubscript: "__lowexSecureRandom" as NSString)
     }
 
     /// Lowex-Icons 仓库里已上传的组 id 列表（JSON 数组字符串）；引擎据此改用仓库图标
@@ -90,6 +105,62 @@ final class Engine {
     }
     func presets() -> [[String: Any]] {
         (try? JSONSerialization.jsonObject(with: Data(call("presets", []).utf8))) as? [[String: Any]] ?? []
+    }
+
+    // MARK: 9.8+ 接线（直通引擎 API，不经翻译，避免校验文案 / 脚本模板被改写）
+    struct ValidationIssue: Identifiable {
+        let id = UUID(); let level: String; let msg: String
+        var isError: Bool { level == "error" }
+    }
+    func validateConfig(family: String, text: String) -> [ValidationIssue] {
+        let s = api.objectForKeyedSubscript("validateConfig")?.call(withArguments: [family, text])?.toString() ?? "[]"
+        guard let d = s.data(using: .utf8), let arr = try? JSONSerialization.jsonObject(with: d) as? [[String: Any]] else { return [] }
+        return arr.compactMap { item in
+            guard let msg = item["msg"] as? String else { return nil }
+            return ValidationIssue(level: item["level"] as? String ?? "warn", msg: msg)
+        }
+    }
+    struct Tiers { let quic: String; let stun: String }
+    func tiers(client: String) -> Tiers {
+        let r = json(api.objectForKeyedSubscript("tiers")?.call(withArguments: [client])?.toString() ?? "{}")
+        return Tiers(quic: r["quic"] as? String ?? "unknown", stun: r["stun"] as? String ?? "unknown")
+    }
+    /// 分层预设 A/B：由 opts.failover 决定（true = A，false = B）
+    func presetMode(state: [String: Any]) -> String {
+        guard let d = try? JSONSerialization.data(withJSONObject: state), let s = String(data: d, encoding: .utf8) else { return "A" }
+        let r = json(api.objectForKeyedSubscript("presetMode")?.call(withArguments: [s])?.toString() ?? "{}")
+        return r["mode"] as? String ?? "A"
+    }
+    struct RemoteJsKindInfo { let kind: String; let supported: Bool; let note: String; let supporters: [String] }
+    struct RemoteJsSupport { let kinds: [RemoteJsKindInfo]; let anySupported: Bool }
+    func remoteJsSupport(client: String) -> RemoteJsSupport {
+        let r = json(api.objectForKeyedSubscript("remoteJsSupport")?.call(withArguments: [client])?.toString() ?? "{}")
+        let kinds = (r["kinds"] as? [[String: Any]] ?? []).map { d in
+            RemoteJsKindInfo(kind: d["kind"] as? String ?? "", supported: d["supported"] as? Bool ?? false,
+                             note: d["note"] as? String ?? "", supporters: d["supporters"] as? [String] ?? [])
+        }
+        return RemoteJsSupport(kinds: kinds, anySupported: r["anySupported"] as? Bool ?? false)
+    }
+    struct RemoteJsCheck { let blocked: [String]; let warns: [String] }
+    func remoteJsValidate(kind: String, url: String, sha256: String, name: String, mitmHosts: [String], confirmSensitive: Bool) -> RemoteJsCheck {
+        let input: [String: Any] = ["kind": kind, "url": url, "sha256": sha256, "name": name, "mitmHosts": mitmHosts, "confirmSensitive": confirmSensitive]
+        guard let d = try? JSONSerialization.data(withJSONObject: input), let s = String(data: d, encoding: .utf8) else {
+            return RemoteJsCheck(blocked: ["无法序列化"], warns: [])
+        }
+        let r = json(api.objectForKeyedSubscript("remoteJsValidate")?.call(withArguments: [s])?.toString() ?? "{}")
+        return RemoteJsCheck(blocked: r["blocked"] as? [String] ?? [], warns: r["warns"] as? [String] ?? [])
+    }
+    func remoteJsTemplate(kind: String) -> String {
+        let r = json(api.objectForKeyedSubscript("remoteJsTemplate")?.call(withArguments: [kind])?.toString() ?? "{}")
+        return r["text"] as? String ?? ""
+    }
+    func remoteJsLibrary(client: String) -> [[String: Any]] {
+        let s = api.objectForKeyedSubscript("remoteJsLibrary")?.call(withArguments: [client])?.toString() ?? "[]"
+        return (try? JSONSerialization.jsonObject(with: Data(s.utf8))) as? [[String: Any]] ?? []
+    }
+    func remoteJsLibraryAttribution(id: String) -> [String: String] {
+        let r = json(api.objectForKeyedSubscript("remoteJsLibraryAttribution")?.call(withArguments: [id])?.toString() ?? "{}")
+        return ["url": r["url"] as? String ?? "", "text": r["text"] as? String ?? ""]
     }
     func applyPreset(id: String, state: [String: Any]) -> [String: Any]? {
         guard let d = try? JSONSerialization.data(withJSONObject: state), let s = String(data: d, encoding: .utf8) else { return nil }

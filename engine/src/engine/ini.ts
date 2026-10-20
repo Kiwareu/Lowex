@@ -1,17 +1,23 @@
-import {makePlan,N,BM7,regionGroup,type Plan,type Rule} from './plan';
+import {makePlan,N,BM7,regionGroup,HOME_REGEX,type Plan,type Rule} from './plan';
 import {safeRe} from './mihomo';
 import type {State} from './types';
 import type {Node} from './nodes';
 import {flow,block} from './yaml';
 import {iconLines,iconMap,iconsOn} from './icons';
 
-export const SIMPLE_RE:Record<string,string>={HK:'香港|HK|Hong ?Kong|🇭🇰',TW:'台湾|台灣|TW|Taiwan|🇹🇼',JP:'日本|JP|Japan|Tokyo|🇯🇵',SG:'新加坡|SG|Singapore|🇸🇬',KR:'韩国|KR|Korea|Seoul|🇰🇷',US:'美国|US|United States|America|🇺🇸',EU:'欧洲|荷兰|瑞典|芬兰|意大利|西班牙|波兰|Europe|Netherlands|🇪🇺|🇳🇱',UK:'英国|UK|GB|United Kingdom|London|🇬🇧',FR:'法国|France|Paris|🇫🇷',DE:'德国|Germany|Frankfurt|🇩🇪',OT:'其他'};
-const HOME_SIMPLE='回国|中国|大陆|China|上海|北京|广州|深圳|🇨🇳';
+/** 地区正则唯一源 = regions.json（plan.ts 的 Region.regex）与 HOME_REGEX。
+ *  INI 各家族的正则方言不同：Surge / Loon / QX 在调用处包一层 (?i)；
+ *  Shadowrocket 的 (?i)/大小写行为未核实，不包 (?i)。
+ *  toPortableFilter 把 (?<![a-zA-Z]) / (?![a-zA-Z]) 展开成 (^|[^a-zA-Z]) /
+ *  ([^a-zA-Z]|$)，所有正则引擎都支持。旧 SIMPLE_RE 已删除：它丢了机场
+ *  代码/城市名，OT 更是字面「其他」，几乎收不到节点。 */
+export function toPortableFilter(r:string){const s=r.startsWith("(?i)")?r.slice(4):r;return s.split("(?<![a-zA-Z])").join("(^|[^a-zA-Z])").split("(?![a-zA-Z])").join("([^a-zA-Z]|$)");}
+function regionFilter(p:Plan,r:{id:string;regex?:string}){return toPortableFilter(r.regex||r.id)}
+const HOME_FILTER=toPortableFilter(HOME_REGEX);
 const nm=(s:string)=>s.replace(/[,=]/g,' ').trim();
 const stripOi=(r:string)=>r;
 type Fmt='surge'|'loon'|'qx'|'shadowrocket';
 const listExt:Record<Fmt,[string,string]>={surge:['Surge','list'],loon:['Loon','list'],qx:['QuantumultX','list'],shadowrocket:['Shadowrocket','list']};
-function regionFilter(p:Plan,r:{id:string;regex?:string}){return SIMPLE_RE[r.id]||(r.regex||r.id).replace(/^\(\?i\)/,'')}
 function matches(p:Plan,r:{id:string;regex:string}){const re=safeRe(r.regex);return p.nodes.filter(n=>re.test(n.name)).map(n=>nm(n.name))}
 /** 把各区/服务组 / 规则展开成通用结构，各格式分别渲染 */
 function common(p:Plan,fmt:Fmt){
@@ -118,11 +124,11 @@ export function genSurge(s:State,plan?:Plan):string{
     const f=subs.length?`policy-regex-filter=(?i)${reg}`:'';
     L.push(`${regionGroup(r,'自动')} = url-test, ${mem(names,f)}, interval=${o.urlTestInterval}, tolerance=${o.tolerance}`);
     L.push(`${regionGroup(r,'手动')} = select, ${mem(names,f)}`);
-    if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback, ${regionGroup(r,'手动')}, ${regionGroup(r,'自动')}, interval=${o.urlTestInterval}`);
+    if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback, ${regionGroup(r,'手动')}, ${regionGroup(r,'自动')}, interval=${Math.min(o.urlTestInterval,600)}`); // 故转间隔钳到 ≤600 秒，与 Mihomo 一致
   }
   L.push(`全部-自动 = url-test, ${mem(allNodes,'')}, interval=${o.urlTestInterval}, tolerance=${o.tolerance}`);
   L.push(`${N.proxy} = select, ${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'].join(', ')}`);
-  if(p.overseas)L.push(`${N.home} = select, ${['DIRECT',subs.length?incl:'',subs.length?`policy-regex-filter=(?i)${HOME_SIMPLE}`:''].filter(Boolean).join(', ')}`);
+  if(p.overseas)L.push(`${N.home} = select, ${['DIRECT',subs.length?incl:'',subs.length?`policy-regex-filter=(?i)${HOME_FILTER}`:''].filter(Boolean).join(', ')}`);
   L.push(...svcGroupLines(p,c,', '));
   L.push(`${N.final} = select, ${o.unknown==='proxy'?N.proxy:'DIRECT'}, ${N.proxy}, DIRECT`,'');
   L.push('[Rule]');
@@ -133,6 +139,8 @@ export function genSurge(s:State,plan?:Plan):string{
       case'comment':L.push('// '+r.v);break;
       case'suffix':L.push(`DOMAIN-SUFFIX,${r.v},${r.via&&r.p!=='REJECT'?p.services.find(x=>x.g.id===r.via)?.g.name||c.tgt(r.p):c.tgt(r.p)}`);break;
       case'ipcidr':L.push(`IP-CIDR,${r.v},${c.tgt(r.p)},no-resolve`);break;
+      case'process':L.push(`PROCESS-NAME,${r.v},${c.tgt(r.p)}`);break;
+      case'package':L.push(`// 包名分流（Android）Surge 不支持，已跳过：${r.v}`);break;
       case'quic':L.push('AND,((PROTOCOL,QUIC),(NOT,((GEOIP,CN)))),REJECT-NO-DROP');break;
       case'stun':L.push(`PROTOCOL,STUN,${c.tgt(r.p)}`);break;
       case'wifi':for(const d of r.domains)L.push(`DOMAIN-SUFFIX,${d},${c.tgt(r.p)}`);break;
@@ -153,10 +161,10 @@ export function genLoon(s:State,plan?:Plan):string{
   const subList=p.subs.length?p.subs.map((x,i)=>nm(x.name)||'订阅'+(i+1)):(p.nodes.length?[]:['订阅1']);const subNames=subList.join(',');
   // 官方示例：名称 = NameRegex,订阅别名...,FilterKey = 正则（必须列出订阅别名）
   if(subNames){for(const r of c.regionsUsed)L.push(`${r.id}节点 = NameRegex,${subNames},FilterKey = "(?i)${regionFilter(p,r)}"`);
-    if(p.overseas)L.push(`回国节点 = NameRegex,${subNames},FilterKey = "(?i)${HOME_SIMPLE}"`)}
+    if(p.overseas)L.push(`回国节点 = NameRegex,${subNames},FilterKey = "(?i)${HOME_FILTER}"`)}
   L.push('','[Proxy Group]');
   const rmem=(r:{id:string;regex:string})=>{const a=[...matches(p,r)];if(subNames)a.push(`${r.id}节点`);return a.length?a.join(','):'DIRECT'};
-  for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,${rmem(r)},url=${o.testUrl},interval=${o.urlTestInterval},tolerance=${o.tolerance}`);L.push(`${regionGroup(r,'手动')} = select,${rmem(r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,${rmem(r)},url=${o.testUrl},interval=${o.urlTestInterval},max-timeout=3000`)}
+  for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,${rmem(r)},url=${o.testUrl},interval=${o.urlTestInterval},tolerance=${o.tolerance}`);L.push(`${regionGroup(r,'手动')} = select,${rmem(r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,${rmem(r)},url=${o.testUrl},interval=${Math.min(o.urlTestInterval,600)},max-timeout=3000`)}
   L.push(`全部-自动 = url-test,${[...p.nodes.map(n=>nm(n.name)),...subList].join(',')||'DIRECT'},url=${o.testUrl},interval=${o.urlTestInterval},tolerance=${o.tolerance}`);
   L.push(`${N.proxy} = select,${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'].join(',')}`);
   if(p.overseas)L.push(`${N.home} = select,${subNames?'回国节点,':''}DIRECT`);
@@ -170,6 +178,8 @@ export function genLoon(s:State,plan?:Plan):string{
       case'comment':rule.push('# '+r.v);break;
       case'suffix':rule.push(`DOMAIN-SUFFIX,${r.v},${r.via&&r.p!=='REJECT'?p.services.find(x=>x.g.id===r.via)?.g.name||c.tgt(r.p):c.tgt(r.p)}`);break;
       case'ipcidr':rule.push(`IP-CIDR,${r.v},${c.tgt(r.p)},no-resolve`);break;
+      case'process':rule.push(`PROCESS-NAME,${r.v},${c.tgt(r.p)}`);break;
+      case'package':rule.push(`# 包名分流（Android）Loon 不支持，已跳过：${r.v}`);break;
       case'quic':rule.push('AND,((PROTOCOL,QUIC),(NOT,((GEOIP,CN)))),REJECT');break;
       case'stun':rule.push(`PROTOCOL,STUN,${c.tgt(r.p)}`);break;
       case'wifi':for(const d of r.domains)rule.push(`DOMAIN-SUFFIX,${d},${c.tgt(r.p)}`);break;
@@ -190,7 +200,7 @@ export function genQX(s:State,plan?:Plan):string{
   for(const r of c.regionsUsed){const rg=regionFilter(p,r);L.push(`url-latency-benchmark=${regionGroup(r,'自动')}, server-tag-regex=(?i)${rg}, check-interval=${o.urlTestInterval}, tolerance=${o.tolerance}, alive-checking=false`);L.push(`static=${regionGroup(r,'手动')}, server-tag-regex=(?i)${rg}`);if(c.fo)L.push(`available=${regionGroup(r,'故转')}, server-tag-regex=(?i)${rg}`)}
   L.push(`url-latency-benchmark=全部-自动, server-tag-regex=.*, check-interval=${o.urlTestInterval}, tolerance=${o.tolerance}, alive-checking=false`);
   L.push(`static=${N.proxy}, ${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','direct'].join(', ')}`);
-  if(p.overseas)L.push(`static=${N.home}, direct, server-tag-regex=(?i)${HOME_SIMPLE}`);
+  if(p.overseas)L.push(`static=${N.home}, direct, server-tag-regex=(?i)${HOME_FILTER}`);
   for(const x of p.services){const f=c.tgt(x.p);L.push(`static=${x.g.name}, ${c.svcOrder(f).map(lc).join(', ')}`)}
   L.push(`static=${N.final}, ${lc(o.unknown==='proxy'?N.proxy:'DIRECT')}, ${N.proxy}, direct`,'');
   L.push('[server_remote]');
@@ -204,6 +214,8 @@ export function genQX(s:State,plan?:Plan):string{
       case'comment':fl.push('; '+r.v);break;
       case'suffix':fl.push(`host-suffix, ${r.v}, ${lc(r.via&&r.p!=='REJECT'?p.services.find(x=>x.g.id===r.via)?.g.name||c.tgt(r.p):c.tgt(r.p))}`);break;
       case'ipcidr':fl.push(`ip-cidr, ${r.v}, ${lc(c.tgt(r.p))}, no-resolve`);break;
+      case'process':fl.push(`; 进程分流 QX 无已核实的官方规则写法，已跳过：${r.v}`);break;
+      case'package':fl.push(`; 包名分流（Android）QX 不支持，已跳过：${r.v}`);break;
       case'quic':fl.push('; QUIC 通过 [general] 的 udp_drop_list 丢弃（官方示例）：会连国内 QUIC 一起丢，浏览器自动回落 TCP');break;
       case'stun':fl.push(r.p==='REJECT'?'; STUN 通过 udp_drop_list 丢弃':'; STUN 走代理：QX 无按端口的官方规则写法，保持默认');break;
       case'wifi':for(const d of r.domains)fl.push(`host-suffix, ${d}, ${lc(c.tgt(r.p))}`);break;
@@ -221,10 +233,10 @@ export function genShadowrocket(s:State,plan?:Plan):string{
    `skip-proxy = ${COMMON_SKIP}`,'tun-excluded-routes = 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 255.255.255.255/32',
    `dns-server = ${o.dnsCn.join(', ')}`,'fallback-dns-server = https://dns.alidns.com/dns-query, https://doh.pub/dns-query',`ipv6 = ${o.ipv6}`,'dns-direct-system = false','prefer-ipv6 = false','private-ip-answer = true','dns-direct-fallback-proxy = true','icmp-auto-reply = true',`hijack-dns = ${HARD_DNS}`,`always-real-ip = ${REAL_IP}`,...(o.stun==='reject'?['stun-response-ip = 1.1.1.1']:[]),'udp-policy-not-supported-behaviour = REJECT',
    `block-quic = ${o.blockQuic==='foreign'?'all-proxy':'always-allow'}`,'',...(()=>{const ml=p.nodes.filter(n=>n.manual).map(n=>nodeLine(n,'shadowrocket')).filter(Boolean) as string[];return ml.length?['[Proxy]',...ml,'']:[]})(),'[Proxy Group]'];
-  for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=${regionFilter(p,r)}`);L.push(`${regionGroup(r,'手动')} = select,policy-regex-filter=${regionFilter(p,r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,policy-regex-filter=${regionFilter(p,r)}`)}
+  for(const r of c.regionsUsed){L.push(`${regionGroup(r,'自动')} = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=${regionFilter(p,r)}`);L.push(`${regionGroup(r,'手动')} = select,policy-regex-filter=${regionFilter(p,r)}`);if(c.fo)L.push(`${regionGroup(r,'故转')} = fallback,url=${o.testUrl},interval=${Math.min(o.urlTestInterval,600)},timeout=5,policy-regex-filter=${regionFilter(p,r)}`)}
   L.push(`全部-自动 = url-test,url=${o.testUrl},interval=${o.urlTestInterval},timeout=5,tolerance=${o.tolerance},policy-regex-filter=.*`);
   L.push(`${N.proxy} = select,${[...c.regionNames,...c.regionsUsed.map(r=>regionGroup(r,'手动')),'全部-自动','DIRECT'].join(',')}`);
-  if(p.overseas)L.push(`${N.home} = select,DIRECT,policy-regex-filter=${HOME_SIMPLE}`);
+  if(p.overseas)L.push(`${N.home} = select,DIRECT,policy-regex-filter=${HOME_FILTER}`);
   L.push(...svcGroupLines(p,c,','));
   L.push(`${N.final} = select,${o.unknown==='proxy'?N.proxy:'DIRECT'},${N.proxy},DIRECT`,'','[Rule]');
   for(const it of c.items){
@@ -234,8 +246,10 @@ export function genShadowrocket(s:State,plan?:Plan):string{
       case'comment':L.push('# '+r.v);break;
       case'suffix':L.push(`DOMAIN-SUFFIX,${r.v},${r.via&&r.p!=='REJECT'?p.services.find(x=>x.g.id===r.via)?.g.name||c.tgt(r.p):c.tgt(r.p)}`);break;
       case'ipcidr':L.push(`IP-CIDR,${r.v},${c.tgt(r.p)},no-resolve`);break;
+      case'process':L.push(`PROCESS-NAME,${r.v},${c.tgt(r.p)}`);break;
+      case'package':L.push(`# 包名分流（Android）Shadowrocket 不支持，已跳过：${r.v}`);break;
       case'quic':break;
-      case'stun':L.push(`AND,((PROTOCOL,UDP),(OR,((DST-PORT,3478),(DST-PORT,3479),(DST-PORT,5349)))),${c.tgt(r.p)}`);break;
+      case'stun':L.push(`AND,((PROTOCOL,UDP),(OR,((DST-PORT,3478),(DST-PORT,3479),(DST-PORT,5349),(DST-PORT,19302),(DST-PORT,19303),(DST-PORT,19304),(DST-PORT,19305),(DST-PORT,19306),(DST-PORT,19307),(DST-PORT,19308),(DST-PORT,19309)))),${c.tgt(r.p)}`);break;
       case'wifi':for(const d of r.domains)L.push(`DOMAIN-SUFFIX,${d},${c.tgt(r.p)}`);break;
       case'final':L.push(`GEOIP,CN,${p.overseas?N.home:'DIRECT'}`,`FINAL,${r.p==='PROXY'?N.final:'DIRECT'}`);break;
     }
@@ -250,7 +264,7 @@ export function egernProxy(n:Node):Record<string,any>|null{
   const tr=()=>{if(n.network==='ws')return n.tls?{wss:{path:n.path||'/',sni:n.sni||n.host||n.server}}:{ws:{path:n.path||'/'}};return undefined};
   switch(n.type){
     case'socks5':if(n.tls)return null;return{socks5:{...base,...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{}),udp_relay:true}};
-    case'http':return{[n.tls?'https':'http']:{...base,...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{}),...(n.tls?{sni:n.server}:{})}};
+    case'http':return{[n.tls?'https':'http']:{...base,...(n.username?{username:n.username}:{}),...(n.password?{password:n.password}:{}),...(n.tls?{sni:n.sni??n.server}:{})}};
     case'ss':if(n.plugin)return null;return{shadowsocks:{...base,method:n.cipher,password:n.password,udp_relay:true}};
     case'trojan':if(n.network&&n.network!=='tcp')return null;return{trojan:{...base,password:n.password,sni:n.sni,...(n.insecure?{skip_tls_verify:true}:{}),udp_relay:true}};
     case'vmess':{if(n.network&&n.network!=='tcp'&&n.network!=='ws')return null;const t=tr();return{vmess:{...base,user_id:n.uuid,security:n.cipher||'auto',legacy:!!n.alterId,...(t?{transport:t}:{}),udp_relay:true}}}
@@ -277,7 +291,7 @@ export function genEgern(s:State,plan?:Plan):string{
     const local=[...okNames].filter(n=>safeRe(r.regex).test(n));
     if(subUrls.length){pg.push({external:{name:man,type:'select',urls:subUrls,filter:r.regex.replace(/^\(\?i\)/,''),interval:600,update_interval:86400}});manNames.push(man)}
     if(local.length){pg.push({auto_test:{name:au,policies:local,interval:o.urlTestInterval,tolerance:o.tolerance,timeout:5}});autoNames.push(au);if(!subUrls.length){pg.push({select:{name:man,policies:local}});manNames.push(man)}}
-    if(useFo&&(manNames.includes(man)||autoNames.includes(au))){const pols=[manNames.includes(man)?man:null,autoNames.includes(au)?au:null].filter(Boolean) as string[];if(pols.length){pg.push({fallback:{name:fo,policies:pols,interval:o.urlTestInterval,timeout:5}});foNames.push(fo)}}
+    if(useFo&&(manNames.includes(man)||autoNames.includes(au))){const pols=[manNames.includes(man)?man:null,autoNames.includes(au)?au:null].filter(Boolean) as string[];if(pols.length){pg.push({fallback:{name:fo,policies:pols,interval:Math.min(o.urlTestInterval,600),timeout:5}});foNames.push(fo)}}
   }
   if(!subUrls.length&&!manNames.length&&!autoNames.length&&!okNames.size)pg.push({select:{name:'全部-手动',policies:['DIRECT']}}),manNames.push('全部-手动');
   if(allMan.length){pg.push({auto_test:{name:'全部-自动',policies:allMan,interval:o.urlTestInterval,tolerance:o.tolerance,timeout:5}});autoNames.push('全部-自动')}
@@ -301,6 +315,8 @@ export function genEgern(s:State,plan?:Plan):string{
       case'comment':rules.push('  # '+r.v);break;
       case'suffix':R('domain_suffix',{match:r.v,policy:pol(r.via&&r.p!=='REJECT'?p.services.find(x=>x.g.id===r.via)?.g.name||c.tgt(r.p):c.tgt(r.p))});break;
       case'ipcidr':R('ip_cidr',{match:r.v,policy:pol(c.tgt(r.p)),no_resolve:true});break;
+      case'process':rules.push(`  # 进程分流 Egern 官方示例无对应写法，已跳过：${r.v}`);break;
+      case'package':rules.push(`  # 包名分流（Android）Egern 不支持，已跳过：${r.v}`);break;
       case'quic':R('and',{match:[{protocol:{match:'quic'}},{not:{match:{geoip:{match:'CN'}}}}],policy:'REJECT'});break;
       case'stun':R('protocol',{match:'stun',policy:pol(c.tgt(r.p))});break;
       case'wifi':for(const d of r.domains)R('domain_suffix',{match:d,policy:pol(c.tgt(r.p))});break;

@@ -16,6 +16,9 @@ function vMihomo(text:string,stash:boolean):Issue[]{
   const known=new Set([...proxies,...gn,...BUILTIN]);
   for(const g of groups){
     if(!['select','url-test','fallback','load-balance','relay'].includes(g.type))I.push({level:'error',msg:`策略组「${g.name}」类型 ${g.type} 不被支持`});
+    // 9.8+ 精确 fallback：fallback 组必须后台持续探测，否则节点变红/超时不会自动跳转
+    if(g.type==='fallback'&&g.lazy!==false)I.push({level:'warn',msg:`策略组「${g.name}」是 fallback 但 lazy 不是 false：不会后台持续探测，节点超时不会自动跳转`});
+    if(g.type==='fallback'&&!(g.interval&&g.interval<=600))I.push({level:'warn',msg:`策略组「${g.name}」是 fallback 但测速间隔 ${g.interval||'未设置'} 秒过长（应 ≤600 秒），切换会迟钝`});
     for(const m of g.proxies||[])if(!known.has(m))I.push({level:'error',msg:`策略组「${g.name}」引用了不存在的「${m}」`});
     for(const u of g.use||[])if(!providers.includes(u))I.push({level:'error',msg:`策略组「${g.name}」use 了不存在的订阅 ${u}`});
     if(!(g.proxies?.length)&&!(g.use?.length)&&!g['include-all']&&!stash)I.push({level:'warn',msg:`策略组「${g.name}」没有成员`});
@@ -34,6 +37,12 @@ function vMihomo(text:string,stash:boolean):Issue[]{
   if(!stash&&y.dns?.['nameserver-policy']){for(const k of Object.keys(y.dns['nameserver-policy']))if(k.startsWith('rule-set:')&&!rps.includes(k.slice(9)))I.push({level:'error',msg:`dns.nameserver-policy 引用了不存在的规则集 ${k}`})}
   const plc=(y.proxies||[]).filter((p:any)=>/\{\{/.test(JSON.stringify(p)));if(plc.length)I.push({level:'warn',msg:'节点里还有占位符 {{…}}'});
   if(/\{\{SUB_URL_\d+\}\}/.test(text))I.push({level:'warn',msg:'配置里还有订阅占位符 {{SUB_URL_1}}，导入前请替换成真实订阅链接'});
+  // 订阅健康检查：关了它，fallback 就不知道哪个节点变红（9.8+ 要求默认开）
+  for(const [k,v] of Object.entries<any>(y['proxy-providers']||{})){if(v['health-check']&&v['health-check'].enable!==true)I.push({level:'warn',msg:`订阅 ${k} 的 health-check 未开启：节点变红不会被及时发现，fallback 无法自动跳转`})}
+  // TUN 一条链：TUN 开了但 dns-hijack 缺失时，App 仍可能用系统 DNS 泄漏
+  if(y.tun?.enable===true&&!(y.tun['dns-hijack']||[]).length)I.push({level:'warn',msg:'TUN 已开但缺少 dns-hijack：应用仍可能用系统 DNS 解析，造成泄漏'});
+  // STUN 斜杠连写（如 DST-PORT,3478-3479/5349）疑似不生效，应为 OR 逐端口
+  for(const r of rules)if(/DST-PORT,[^,]*(?:\d\/\d)/.test(String(r)))I.push({level:'warn',msg:`规则「${r}」：STUN 端口用了斜杠连写，可能不生效，请用 OR 逐端口`});
   return I;
 }
 /* ---- sing-box（JSON） ---- */
@@ -57,9 +66,9 @@ const SECTIONS:Record<string,string[]>={
   qx:['general','dns','policy','server_remote','filter_remote','server_local','filter_local'],
 };
 const GENERAL_KEYS:Record<string,string[]>={
-  surge:['ipv6','loglevel','dns-server','encrypted-dns-server','skip-proxy','proxy-test-url','test-timeout','allow-wifi-access','internet-test-url'],
-  loon:['ip-mode','skip-proxy','bypass-tun','doh-server','dns-server','allow-wifi-access','proxy-test-url','test-timeout','disable-stun','internet-test-url'],
-  shadowrocket:['skip-proxy','tun-excluded-routes','dns-server','fallback-dns-server','ipv6','private-ip-answer','dns-direct-fallback-proxy','udp-policy-not-supported-behaviour','block-quic'],
+  surge:['ipv6','loglevel','dns-server','encrypted-dns-server','skip-proxy','proxy-test-url','test-timeout','allow-wifi-access','internet-test-url','ipv6-vif','hijack-dns','always-real-ip'],
+  loon:['ip-mode','skip-proxy','bypass-tun','doh-server','dns-server','allow-wifi-access','proxy-test-url','test-timeout','disable-stun','internet-test-url','sni-sniffing'],
+  shadowrocket:['skip-proxy','tun-excluded-routes','dns-server','fallback-dns-server','ipv6','private-ip-answer','dns-direct-fallback-proxy','udp-policy-not-supported-behaviour','block-quic','dns-direct-system','prefer-ipv6','icmp-auto-reply','hijack-dns','always-real-ip','stun-response-ip'],
   qx:['server_check_url','dns_exclusion_list','udp_drop_list','fallback_udp_policy','network_check_url'],
 };
 const GROUP_TYPES:Record<string,string[]>={surge:['select','url-test','fallback','load-balance','smart','subnet'],loon:['select','url-test','fallback','load-balance','ssid'],shadowrocket:['select','url-test','fallback','load-balance','random']};
@@ -122,7 +131,7 @@ function vQx(text:string):Issue[]{
 /* ---- Egern（YAML，键名取自官方示例） ---- */
 const EGERN_TOP=['ipv6','http_port','socks_port','allow_external_connections','block_quic','proxy_latency_test_url','dns','proxies','policy_groups','rules','auto_update','bypass_tunnel_proxy','real_ip_domains','hijack_dns'];
 const EGERN_RULES=['domain','domain_keyword','domain_suffix','domain_regex','domain_wildcard','geoip','ip_cidr','ip_cidr6','asn','url_regex','user_agent','dest_port','protocol','rule_set','ssid','bssid','cellular','and','or','not','default'];
-const EGERN_PROXY=['shadowsocks','trojan','vless','vmess','hysteria2','tuic','socks5','http','wireguard'];
+const EGERN_PROXY=['shadowsocks','trojan','vless','vmess','hysteria2','tuic','socks5','http','https','wireguard'];
 const EGERN_GROUP=['select','auto_test','fallback','load_balance','external','conditional'];
 function vEgern(text:string):Issue[]{
   const I:Issue[]=[];let y:any;try{y=yamlParse(text)}catch(e:any){return[{level:'error',msg:'YAML 解析失败：'+e.message}]}

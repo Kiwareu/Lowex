@@ -8,7 +8,7 @@ final class Store: ObservableObject {
     @Published var catalog: Catalog
     @Published var state: [String: Any] {
         didSet {
-            if !result.text.isEmpty || result.error != nil { result = GenResult(text: "", name: "", warnings: []) }
+            if !result.text.isEmpty || result.error != nil { result = GenResult(text: "", name: "", warnings: []); validationIssues = [] }
             scheduleSave()
         }
     }
@@ -24,6 +24,17 @@ final class Store: ObservableObject {
     @Published var celebrate = 0
     @Published var remoteURL = ""
     @Published var qrNote = ""
+    @Published var validationIssues: [Engine.ValidationIssue] = []
+    // 远程 JS（独立模块，与生成配置互斥；存在 UserDefaults，不进方案 state，避免污染生成）
+    @Published var remoteJsMode = false
+    @Published var remoteJsURL = ""
+    @Published var remoteJsSHA256 = ""
+    @Published var remoteJsName = ""
+    @Published var remoteJsMITM = ""
+    @Published var remoteJsConfirmSensitive = false
+    @Published var remoteJsKind = "" // config-override / config-overwrite / http-rewrite（空=自动取当前客户端第一个支持的）
+    // 脚本库：用户自己收藏的脚本（UserDefaults 持久化，字段 id/name/url/author/sourceKind/desc/kind）
+    @Published var libraryCustom: [[String: String]] = []
     private var needsDisclaimer = false
 
     private let key = "lowex.native.state.v3"
@@ -85,6 +96,8 @@ final class Store: ObservableObject {
                 ?? cat.clients.first?.id ?? "shadowrocket"
             state = Engine.shared.initialState(client: first, platform: "ios")
         }
+        loadRemoteJs()
+        loadSubHistory()
     }
 
     static let iconsReadyKey = "lowex.icons.ready.v1"
@@ -203,6 +216,8 @@ final class Store: ObservableObject {
             ("allowLan", "allowLan"), ("wifiCalling", "wifi")]
         var reset: [String] = []
         for (k, f) in map where !supports(f) {
+            // sing-box 的 failover 开关 = 分层预设 A/B 选择（A 降级为地区-自动），有实际意义，不重置
+            if k == "failover" && family == "singbox" { continue }
             if let d = defOpts[k], "\(o[k] ?? "")" != "\(d)" { o[k] = d; reset.append(k) }
             else if o[k] == nil, let d = defOpts[k] { o[k] = d }
         }
@@ -315,6 +330,9 @@ final class Store: ObservableObject {
     }
 
     // MARK: 节点 / 订阅
+    /// 订阅历史（防误删：用户贴过的订阅 URL，持久化，可逐条恢复；最多 30 条）
+    private let subHistoryKey = "lowex.subs.history.v1"
+    @Published var subHistory: [String] = []
     var nodesText: String {
         get { str("nodesText") }
         set { var s = state; s["nodesText"] = newValue; state = s }
@@ -405,6 +423,7 @@ final class Store: ObservableObject {
     /// 只清除已生成的结果（选项、节点、订阅都保留）
     func clearResult() {
         result = GenResult(text: "", name: "", warnings: [])
+        validationIssues = []
         remoteURL = ""
         qrNote = ""
     }
@@ -424,6 +443,7 @@ final class Store: ObservableObject {
         fresh["manualNodes"] = []
         state = fresh
         result = GenResult(text: "", name: "", warnings: [])
+        validationIssues = []
         pasteNote = ""; remoteURL = ""; qrNote = ""
         recommendNote = L("已恢复全部默认设置。")
         flushSave()
@@ -440,12 +460,15 @@ final class Store: ObservableObject {
         fresh["favoriteGroups"] = state["favoriteGroups"] ?? []
         state = fresh
         result = GenResult(text: "", name: "", warnings: [])
+        validationIssues = []
         pasteNote = ""
         recommendNote = L("已恢复默认选项（保留客户端与配置名）。")
         save()
     }
 
     // MARK: 推荐 / 生成
+    /// 校验错误（非警告）存在时，导出与导入必须阻止（警告不阻止）
+    var hasValidationErrors: Bool { validationIssues.contains { $0.isError } }
     func applyPreset(_ id: String) {
         guard let patched = engine.applyPreset(id: id, state: state) else {
             recommendNote = L("预设应用失败。")
@@ -487,12 +510,81 @@ final class Store: ObservableObject {
             _ = ext
         }
         result = engine.generate(state: state)
+        validationIssues = (result.error == nil && !result.text.isEmpty) ? engine.validateConfig(family: family, text: result.text) : []
         if result.error == nil, !result.text.isEmpty {
             let ext = (result.name as NSString).pathExtension
             let base = pn.isEmpty ? "lowex" : pn
             result.name = ext.isEmpty ? base : "\(base).\(ext)"
             celebrate += 1
             recordHistory()
+        }
+    }
+
+    // MARK: 远程 JS（独立模块，与生成配置互斥）
+    func saveRemoteJs() {
+        let d = UserDefaults.standard
+        d.set(remoteJsMode, forKey: "lowex.remoteJs.mode.v1")
+        d.set(remoteJsURL, forKey: "lowex.remoteJs.url.v1")
+        d.set(remoteJsSHA256, forKey: "lowex.remoteJs.sha256.v1")
+        d.set(remoteJsName, forKey: "lowex.remoteJs.name.v1")
+        d.set(remoteJsMITM, forKey: "lowex.remoteJs.mitm.v1")
+        d.set(remoteJsConfirmSensitive, forKey: "lowex.remoteJs.confirmSensitive.v1")
+        d.set(remoteJsKind, forKey: "lowex.remoteJs.kind.v1")
+    }
+    private func loadRemoteJs() {
+        let d = UserDefaults.standard
+        remoteJsMode = d.bool(forKey: "lowex.remoteJs.mode.v1")
+        remoteJsURL = d.string(forKey: "lowex.remoteJs.url.v1") ?? ""
+        remoteJsSHA256 = d.string(forKey: "lowex.remoteJs.sha256.v1") ?? ""
+        remoteJsName = d.string(forKey: "lowex.remoteJs.name.v1") ?? ""
+        remoteJsMITM = d.string(forKey: "lowex.remoteJs.mitm.v1") ?? ""
+        remoteJsConfirmSensitive = d.bool(forKey: "lowex.remoteJs.confirmSensitive.v1")
+        remoteJsKind = d.string(forKey: "lowex.remoteJs.kind.v1") ?? ""
+        libraryCustom = UserDefaults.standard.array(forKey: "lowex.library.custom.v1") as? [[String: String]] ?? []
+    }
+    /// 脚本库：添加用户收藏（id 用 UUID）
+    func addLibraryCustom(name: String, url: String, author: String, sourceKind: String, desc: String, kind: String) {
+        var e: [String: String] = [:]
+        e["id"] = UUID().uuidString
+        e["name"] = name
+        e["url"] = url
+        e["author"] = author
+        e["sourceKind"] = sourceKind // "original" 原创 / "shared" 分享
+        e["desc"] = desc
+        e["kind"] = kind
+        libraryCustom.append(e)
+        UserDefaults.standard.set(libraryCustom, forKey: "lowex.library.custom.v1")
+    }
+    func removeLibraryCustom(id: String) {
+        libraryCustom.removeAll { $0["id"] == id }
+        UserDefaults.standard.set(libraryCustom, forKey: "lowex.library.custom.v1")
+    }
+    var presetMode: String { engine.presetMode(state: state) }
+    var remoteJsSupport: Engine.RemoteJsSupport { engine.remoteJsSupport(client: client) }
+    /// 当前选中的覆写类型：用户显式选的优先，否则取当前客户端第一个支持的
+    var remoteJsActiveKind: String {
+        let sup = remoteJsSupport
+        if !remoteJsKind.isEmpty, sup.kinds.contains(where: { $0.kind == remoteJsKind && $0.supported }) { return remoteJsKind }
+        return sup.kinds.first(where: { $0.supported })?.kind ?? ""
+    }
+    func remoteJsCheck() -> Engine.RemoteJsCheck {
+        let hosts = remoteJsMITM.components(separatedBy: CharacterSet(charactersIn: ",，")).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return engine.remoteJsValidate(kind: remoteJsActiveKind, url: remoteJsURL, sha256: remoteJsSHA256, name: remoteJsName, mitmHosts: hosts, confirmSensitive: remoteJsConfirmSensitive)
+    }
+    var quicTierText: String {
+        switch engine.tiers(client: client).quic {
+        case "precise": return L("精确拦境外：境内 QUIC 不受影响")
+        case "global-drop": return L("只能全局丢：国内 QUIC 也会一起丢，浏览器回落 TCP")
+        case "not-generated": return L("该客户端不生成 QUIC 规则")
+        default: return ""
+        }
+    }
+    var stunTierText: String {
+        switch engine.tiers(client: client).stun {
+        case "port": return L("按端口逐个拦（3478-3479 / 5349 / 19302-19309）")
+        case "protocol": return L("按 PROTOCOL,STUN（全端口）")
+        case "drop-only": return L("仅丢 UDP（QX udp_drop_list）")
+        default: return ""
         }
     }
 
@@ -528,7 +620,7 @@ final class Store: ObservableObject {
         let all: [(String, String)] = [(L("故障转移"), "failover"), (L("广告拦截"), "ads"), (L("拦截追踪器"), "trackers"), (L("拦截遥测"), "telemetry"),
             (L("策略组图标"), "icons"), (L("关闭 IPv6"), "ipv6"), ("TUN", "tun"), ("fake-ip", "fakeIp"), (L("QUIC 拦截"), "quic"), (L("STUN 防护"), "stun"),
             (L("局域网连接"), "allowLan"), (L("Wi-Fi 通话"), "wifi")]
-        return all.filter { !supports($0.1) }.map { $0.0 }
+        return all.filter { ($0.1 == "failover" && family == "singbox") ? false : !supports($0.1) }.map { $0.0 }
     }
 
     // MARK: 手动节点（SOCKS5 / HTTP / HTTPS）
@@ -562,6 +654,7 @@ final class Store: ObservableObject {
         let urls = lines.filter { $0.lowercased().hasPrefix("http://") || $0.lowercased().hasPrefix("https://") }
         let other = lines.count - urls.count
         if urls.isEmpty { pasteNote = L("没有识别到 http(s):// 订阅 URL") + (other > 0 ? L("；节点链接请粘贴到下面的「节点链接」区。") : "。"); return }
+        recordSubHistory(urls)
         applyPaste(urls.joined(separator: "\n"))
         if other > 0 { pasteNote += L("（另有 {} 行不是订阅 URL，已忽略，节点链接请放到「节点链接」区。）", other) }
     }
@@ -570,6 +663,38 @@ final class Store: ObservableObject {
         guard cur.indices.contains(i) else { return }
         cur.remove(at: i); s["subs"] = cur; state = s
     }
+    private func loadSubHistory() {
+        subHistory = UserDefaults.standard.stringArray(forKey: subHistoryKey) ?? []
+    }
+    private func saveSubHistory() {
+        UserDefaults.standard.set(subHistory, forKey: subHistoryKey)
+    }
+    /// 记录用户贴过的订阅 URL：去重、最新在前、最多 30 条（无论客户端家族都记录）
+    func recordSubHistory(_ urls: [String]) {
+        var h = subHistory
+        for u in urls { h.removeAll { $0 == u }; h.insert(u, at: 0) }
+        subHistory = Array(h.prefix(30))
+        saveSubHistory()
+    }
+    /// 从历史恢复一条订阅到上方列表
+    func restoreSub(_ url: String) {
+        let urls = subs.compactMap { $0["url"] as? String }
+        if urls.contains(url) { pasteNote = L("该订阅已在列表中"); return }
+        if family == "shadowrocket" {
+            UIPasteboard.general.string = url
+            pasteNote = L("已复制订阅 URL 到剪贴板。请打开 Shadowrocket 首页 → 右上角 + → 用「类型：Subscribe」添加。")
+            return
+        }
+        var s = state; var cur = (s["subs"] as? [[String: Any]]) ?? []
+        cur.append(["name": "", "url": url])
+        s["subs"] = cur; state = s
+        pasteNote = L("已恢复导入 1 条订阅")
+    }
+    func removeSubHistory(at i: Int) {
+        guard subHistory.indices.contains(i) else { return }
+        subHistory.remove(at: i); saveSubHistory()
+    }
+    func clearSubHistory() { subHistory = []; saveSubHistory() }
     func clearNodeText() { var s = state; s["nodesText"] = ""; state = s; pasteNote = L("已清空节点链接。") }
 
     // MARK: 流程进度

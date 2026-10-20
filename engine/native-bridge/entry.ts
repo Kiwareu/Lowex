@@ -11,10 +11,15 @@ import {RESEARCH} from '../src/data/research';
 import {resolveIcon,setIconsReady,ICON_AUDIT} from '../src/data/icon-audit';
 import {VERSION} from '../src/version';
 import {has,CAPS} from '../src/data/caps';
+import {QUIC_TIERS,STUN_TIERS} from '../src/data/caps';
 import {makePlan} from '../src/engine/plan';
+import {presetMode} from '../src/engine/plan';
+import {remoteJsSupport,validateRemoteJs,MIHOMO_SCRIPT_TEMPLATE,SURGE_SCRIPT_TEMPLATE,OVERRIDE_YAML_TEMPLATE} from '../src/engine/remoteJs';
+import {libraryList,libraryAttribution} from '../src/engine/remoteJsLibrary';
 import {leakChecklist,leakScore,STATUS_TEXT} from '../src/engine/leak';
 import {CARRIERS} from '../src/data/carriers';
 import {parseModule,safety,KIND_NAME,supportsModules} from '../src/engine/modules';
+import {validate} from '../src/engine/validate';
 import {PRESETS} from '../src/engine/tools';
 import {CLIENTS as CL2} from '../src/data/clients';
 const J=(x:unknown)=>JSON.stringify(x);
@@ -35,10 +40,21 @@ const J=(x:unknown)=>JSON.stringify(x);
   sharedList:()=>J(SHARED),
   modInfo:(name:string,url:string,content:string)=>{try{const P=content.trim()?parseModule(content):null;const S=safety({name,url,content},P);return J({fmt:P?P.fmt:'unknown',name:P?P.name:'',rw:P?P.rewrites.length:0,sc:P?P.scripts.length:0,blocked:S.blocked,warns:S.warns})}catch(e:any){return J({error:String(e)})}},
   supportsModules:(client:string)=>{const c=CL2.find(x=>x.id===client);return !!c&&supportsModules(c.family)},
+  /** 校验生成的配置文本（结构/引用/白名单 + fallback 精确性断言）。之前 validate.ts 未被接入，是死代码。 */
+  validateConfig:(family:string,text:string)=>{try{return J(validate(family as any,text))}catch(e:any){return J([{level:'error',msg:String(e&&e.message||e)}])}},
   recommend:(net:string,loc:string,platform:string)=>J(recommend(net as any,loc as any,platform)),
   supports:(client:string,feat:string)=>has(client,feat as any),
+  /** QUIC / STUN 三档（caps.ts），供界面按档显示，不再用一个“支持”概括 */
+  tiers:(client:string)=>{const c=CL2.find(x=>x.id===client);if(!c)return J({});return J({quic:QUIC_TIERS[c.family],stun:STUN_TIERS[c.family]})},
   presets:()=>J(PRESETS.map(p=>({id:p.id,name:p.name,desc:p.desc}))),
   applyPreset:(id:string,stateJson:string)=>{try{const s=JSON.parse(stateJson);const pr=PRESETS.find(x=>x.id===id);if(!pr)return J({error:'unknown preset'});const patch=pr.apply(s);return J({...s,...patch,opts:{...s.opts,...(patch.opts||{})},groups:{...s.groups,...(patch.groups||{})}})}catch(e:any){return J({error:String(e&&e.message||e)})}},
-  /** 入参：方案 JSON；返回 {text,ext,mime,name,warnings} 或 {error} */
+  /** 远程 JS 独立模块（与生成配置互斥，不写进配置文件） */
+  remoteJsSupport:(client:string)=>J(remoteJsSupport(client)),
+  remoteJsValidate:(json:string)=>{try{return J(validateRemoteJs(JSON.parse(json)))}catch(e:any){return J({blocked:[String(e&&e.message||e)],warns:[]})}},
+  remoteJsTemplate:(kind:string)=>J({text:kind==='config-override'?OVERRIDE_YAML_TEMPLATE:(kind==='config-overwrite'?MIHOMO_SCRIPT_TEMPLATE:SURGE_SCRIPT_TEMPLATE)}),
+  /** 脚本库：分享区（原创脚本给链接+SHA256 锁定，分享的第三方只给链接+来源标注） */
+  remoteJsLibrary:(client:string)=>J(libraryList(client||'')),
+  remoteJsLibraryAttribution:(id:string)=>J(libraryAttribution(id)),
+  presetMode:(stateJson:string)=>{try{const s=JSON.parse(stateJson);return J({mode:presetMode(s)})}catch(e:any){return J({error:String(e&&e.message||e)})}},
   generate:(stateJson:string)=>{try{const s=JSON.parse(stateJson);const r=generate(s);return J({...r,warnings:makePlan(s).warnings})}catch(e:any){return J({error:String(e&&e.message||e)})}},
 };
