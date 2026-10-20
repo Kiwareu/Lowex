@@ -24,6 +24,8 @@
 
 Lowex runs on iPhone / iPad. Pick a target client and options, paste *your own* nodes or subscription, and export a config file (rules, policy groups, DNS, leak protection) that fits that client. Everything is generated on the device — there is no server, and nodes or subscriptions are never uploaded.
 
+> **Can't install the IPA? Use the web version (no install needed)**: open **[262819.xyz](https://262819.xyz)** in your browser. It uses the same generation standard as the app, runs entirely locally in your browser, and uploads nothing — ideal if your iOS version can't use TrollStore or you don't want to sideload.
+
 ## Features
 
 - **14 clients**: Clash Verge Rev, FlClash, Clash Mi, Clash Meta for Android, Mihomo Party, Mihomo core, sing-box, Karing, Surge, Quantumult X, Shadowrocket, Loon, Stash, Egern.
@@ -81,6 +83,10 @@ Per-client research, confidence levels and primary sources: [docs/CLIENTS.md](do
 ## Install
 
 > Lowex is not on the App Store. It ships as an **unsigned IPA**.
+
+**If you can't install the IPA, use the web version instead**: open [262819.xyz](https://262819.xyz) — no installation, no signing; generate the same-standard configs right in your browser.
+
+To install the IPA:
 
 1. Download the latest `Lowex-vX.Y.Z.ipa` from [Releases](https://github.com/Kiwareu/Lowex/releases) (the `.sha256` file next to it verifies integrity).
 2. Install with either:
