@@ -26,31 +26,6 @@ extension EnvironmentValues {
 }
 
 /// 轻量开关：纯形状绘制，代替每行一个 UISwitch + scaleEffect（长列表里最贵的控件之一）。
-struct MiniSwitch: View {
-    let on: Bool
-    var action: (Bool) -> Void
-    var body: some View {
-        Button {
-            Haptics.light()
-            withAnimation(.spring(response: 0.30, dampingFraction: 0.80)) { action(!on) }
-        } label: {
-            ZStack(alignment: on ? .trailing : .leading) {
-                // 系统开关绿（与原生开关同色），扁、绿+白
-                Capsule().fill(on ? Color(red: 0.204, green: 0.780, blue: 0.349) : Color.secondary.opacity(0.30))
-                Circle().fill(Color.white)
-                    .shadow(color: .black.opacity(0.18), radius: 2, x: 0, y: 1)
-                    .padding(2.5)
-            }
-            .frame(width: 44, height: 26)
-            .frame(width: 48, height: 36)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityValue(on ? "on" : "off")
-    }
-}
-
 /// 隐藏的帧率浮层（More → 关于 里连点版本号 7 次开关）。CADisplayLink 统计，每秒刷新一次显示，不会引起额外重绘。
 final class FPSMeter: ObservableObject {
     static let shared = FPSMeter()
