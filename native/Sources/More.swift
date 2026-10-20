@@ -85,12 +85,16 @@ struct MoreView: View {
             }
             .hideNavBar()
         }
-        .confirmationDialog(L("恢复默认设置"), isPresented: $confirmReset, titleVisibility: .visible) {
-            Button(L("只重置选项（保留节点、订阅、历史）")) { store.resetSelections(); resetNote = L("已重置选项，节点、订阅与历史保留") }
-            Button(L("全部重置（含节点、订阅、历史）"), role: .destructive) { store.resetEverything(); resetNote = L("已恢复全部默认设置") }
-            Button(L("取消"), role: .cancel) {}
-        } message: {
-            Text(L("Lowex 会记住你所有的选择；这里可以把它们恢复成默认。外观与语言不受影响。建议先到「备份与恢复」导出一份备份。"))
+        .overlay {
+            if confirmReset {
+                GlassConfirm(title: L("恢复默认设置"),
+                    message: L("Lowex 会记住你所有的选择；这里可以把它们恢复成默认。外观与语言不受影响。建议先到「备份与恢复」导出一份备份。"),
+                    actions: [
+                        .init(title: L("只重置选项（保留节点、订阅、历史）"), destructive: false) { store.resetSelections(); resetNote = L("已重置选项，节点、订阅与历史保留") },
+                        .init(title: L("全部重置（含节点、订阅、历史）"), destructive: true) { store.resetEverything(); resetNote = L("已恢复全部默认设置") },
+                    ],
+                    dismiss: { confirmReset = false })
+            }
         }
     }
 
@@ -367,17 +371,28 @@ struct WifiInline: View {
     }
 }
 
+/// 按 App / 自定义域名 / Wi-Fi 通话的出口选择（系统菜单样式，已紧凑）。
+/// 选项与规则页出口弹窗对齐：全部节点（自动/手动）+ 全部地区（故转/自动/手动）；选中未启用的地区会自动启用。
 struct PolicyPicker: View {
     @EnvironmentObject var store: Store
     @Binding var policy: String
     var body: some View {
         Picker(L("出口"), selection: $policy) {
             Text(L("代理")).tag("PROXY"); Text(L("直连")).tag("DIRECT"); Text(L("拦截")).tag("REJECT")
-            ForEach(store.catalog.regions.filter { store.regions.contains($0.id) }) {
-                Text(L("{} 节点", $0.name)).tag("R:\($0.id)")
+            Text(L("全部 · 自动")).tag("ALL/a"); Text(L("全部 · 手动")).tag("ALL/m")
+            ForEach(store.catalog.regions) { r in
+                Text(L("{} · {}", r.name, L("故转"))).tag("R:\(r.id)")
+                Text(L("{} · {}", r.name, L("自动"))).tag("R:\(r.id)/a")
+                Text(L("{} · {}", r.name, L("手动"))).tag("R:\(r.id)/m")
             }
         }
         .pickerStyle(.menu)
+        .onChange(of: policy) { p in
+            if p.hasPrefix("R:") {
+                let id = String(p.dropFirst(2).split(separator: "/").first ?? "")
+                if !id.isEmpty && !store.regions.contains(id) { store.toggleRegion(id) }
+            }
+        }
     }
 }
 
@@ -490,7 +505,7 @@ struct ModulesView: View {
     }
 }
 
-// MARK: 远程 JS（独立模块，与生成配置互斥，不写进配置文件）
+// MARK: 远程 JS（独立模块，不写进配置文件，与生成配置互不影响）
 struct RemoteJsView: View {
     @EnvironmentObject var store: Store
     @State private var check: Engine.RemoteJsCheck?
@@ -563,7 +578,7 @@ struct RemoteJsView: View {
     var body: some View {
         PageChrome(title: L("远程覆写 / 脚本重写")) {
             PlainCard {
-                Text(L("与「生成配置」互斥独立：只想要远程覆写 / 脚本时用这里，不要同时生成配置。"))
+                Text(L("远程覆写 / 脚本是独立功能：与「生成配置」互不影响，可同时使用；覆写内容不会写进配置文件。"))
                     .font(.footnote).foregroundStyle(.secondary)
                 let sup = store.remoteJsSupport
                 Text(L("当前客户端支持情况")).font(.subheadline.weight(.semibold))
@@ -580,9 +595,9 @@ struct RemoteJsView: View {
                     }
                     .padding(.vertical, 2)
                 }
-                Toggle(L("启用远程覆写模式（与生成配置互斥）"), isOn: Binding(
+                Toggle(L("启用远程覆写"), isOn: Binding(
                     get: { store.remoteJsMode },
-                    set: { store.remoteJsMode = $0; if $0 { store.clearResult() }; store.saveRemoteJs() }
+                    set: { store.remoteJsMode = $0; store.saveRemoteJs() }
                 )).tint(Brand.pink).disabled(!sup.anySupported)
                 if !sup.anySupported {
                     Text(L("当前客户端三种类型都不支持，已禁用。")).font(.caption2).foregroundStyle(.secondary)
