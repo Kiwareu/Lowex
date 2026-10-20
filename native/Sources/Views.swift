@@ -441,10 +441,7 @@ struct NodesView: View {
                     .disabled(subDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     if !store.subs.isEmpty {
                         Button(L("清空订阅"), role: .destructive) { showClearSubsConfirm = true }.buttonStyle(.bordered)
-                            .confirmationDialog(L("清空全部订阅？"), isPresented: $showClearSubsConfirm, titleVisibility: .visible) {
-                                Button(L("全部删除"), role: .destructive) { var s = store.state; s["subs"] = []; store.state = s }
-                                Button(L("取消"), role: .cancel) {}
-                            }
+
                     }
                 }
                 if !store.subs.isEmpty && !isSR {
@@ -464,10 +461,7 @@ struct NodesView: View {
                         Button(L("清空历史"), role: .destructive) { showClearHistoryConfirm = true }
                             .font(.caption).foregroundStyle(.red)
                     }
-                    .confirmationDialog(L("清空全部历史记录？"), isPresented: $showClearHistoryConfirm, titleVisibility: .visible) {
-                        Button(L("全部删除"), role: .destructive) { store.clearSubHistory() }
-                        Button(L("取消"), role: .cancel) {}
-                    }
+
                     Text(L("点一条恢复导入到上方列表；垃圾桶只删这条历史，不影响已添加的订阅。")).font(.caption2).foregroundStyle(.secondary)
                     ForEach(Array(store.subHistory.enumerated()), id: \.offset) { i, url in
                         let added = store.subs.contains { ($0["url"] as? String) == url }
@@ -599,6 +593,18 @@ struct NodesView: View {
                 Text(L("有 {} 个手动节点当前客户端写不出，生成时会跳过并在结果里提示。", store.manualBlockedCount)).font(.caption2).foregroundStyle(.orange)
             }
         }
+        .overlay {
+            if showClearSubsConfirm {
+                GlassConfirm(title: L("清空全部订阅？"), message: "",
+                    actions: [.init(title: L("全部删除"), destructive: true) { var s = store.state; s["subs"] = []; store.state = s }],
+                    dismiss: { showClearSubsConfirm = false })
+            }
+            if showClearHistoryConfirm {
+                GlassConfirm(title: L("清空全部历史记录？"), message: "",
+                    actions: [.init(title: L("全部删除"), destructive: true) { store.clearSubHistory() }],
+                    dismiss: { showClearHistoryConfirm = false })
+            }
+        }
     }
 
     private func kindLabel(_ m: [String: Any]) -> String {
@@ -700,6 +706,122 @@ struct ManualNodeForm: View {
         var d = draft; d.kind = type == 0 ? "socks5" : "http"
         if type == 1 { d.tls = false }; if type == 2 { d.tls = true }
         store.upsertManual(d.dict); Haptics.success(); dismiss()
+    }
+}
+
+/// 出口选择弹窗：液态玻璃小窗（可滚动），替代原来的全屏 confirmationDialog。
+/// 顶部：代理 / 直连 / 拦截；中部：全部节点（自动/手动）；下部：每个地区（故转/自动/手动）。
+/// 选中未启用的地区会自动启用该地区。
+struct ExitPicker: View {
+    @EnvironmentObject var store: Store
+    let group: Catalog.Group
+    var onClose: () -> Void
+
+    private var current: String { (store.groupState[group.id]?["policy"] as? String) ?? group.def }
+
+    private func pick(_ policy: String) {
+        if policy.hasPrefix("R:") {
+            let id = String(policy.dropFirst(2).split(separator: "/").first ?? "")
+            if !id.isEmpty && !store.regions.contains(id) { store.toggleRegion(id) }
+        }
+        store.setGroup(group, policy: policy)
+        Haptics.light()
+        onClose()
+    }
+
+    private var selectedFill: some ShapeStyle {
+        AnyShapeStyle(LinearGradient(colors: [Brand.pink, Brand.lilac], startPoint: .leading, endPoint: .trailing))
+    }
+
+    /// 地区行里的小胶囊：故转 / 自动 / 手动
+    private func chip(_ title: String, _ policy: String) -> some View {
+        let on = current == policy
+        return Button { pick(policy) } label: {
+            Text(title)
+                .font(.caption.weight(on ? .bold : .regular))
+                .foregroundStyle(on ? Color.white : Brand.ink)
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(Capsule().fill(on ? selectedFill : AnyShapeStyle(Color.secondary.opacity(0.12))))
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// 顶部大按钮：代理 / 直连 / 拦截
+    private func baseButton(_ title: String, _ policy: String) -> some View {
+        let on = current == policy
+        return Button { pick(policy) } label: {
+            Text(title)
+                .font(.subheadline.weight(on ? .bold : .regular))
+                .foregroundStyle(on ? Color.white : Brand.ink)
+                .frame(maxWidth: .infinity).padding(.vertical, 8)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(on ? selectedFill : AnyShapeStyle(Color.secondary.opacity(0.12))))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func regionRow(_ r: Catalog.Region) -> some View {
+        HStack(spacing: 6) {
+            Text(r.name).font(.subheadline).foregroundStyle(Brand.ink)
+            if !store.regions.contains(r.id) {
+                Text(L("未启用")).font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer()
+            chip(L("故转"), "R:" + r.id)
+            chip(L("自动"), "R:" + r.id + "/a")
+            chip(L("手动"), "R:" + r.id + "/m")
+        }
+        .padding(.vertical, 4)
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.30).ignoresSafeArea()
+                .onTapGesture { onClose() }
+            VStack(spacing: 0) {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L("出口")).font(.headline).foregroundStyle(Brand.ink)
+                        Text(group.name).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button { onClose() } label: {
+                        Image(systemName: "xmark.circle.fill").font(.title3).foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 10)
+                HStack(spacing: 8) {
+                    baseButton(L("代理"), "PROXY")
+                    baseButton(L("直连"), "DIRECT")
+                    baseButton(L("拦截"), "REJECT")
+                }
+                .padding(.horizontal, 16).padding(.bottom, 10)
+                Divider().padding(.horizontal, 16)
+                ScrollView {
+                    VStack(spacing: 4) {
+                        HStack(spacing: 6) {
+                            Text(L("全部节点")).font(.subheadline).foregroundStyle(Brand.ink)
+                            Spacer()
+                            chip(L("自动"), "ALL/a")
+                            chip(L("手动"), "ALL/m")
+                        }
+                        .padding(.vertical, 4)
+                        ForEach(store.catalog.regions) { r in regionRow(r) }
+                        Text(L("选中未启用的地区会自动启用；故转 = 故障转移（节点挂了自动切换）。"))
+                            .font(.caption2).foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 6)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 8)
+                }
+                .frame(maxHeight: 320)
+            }
+            .frame(maxWidth: 370)
+            .glassCard(heavy: true)
+            .clipShape(RoundedRectangle(cornerRadius: Brand.radius + 4, style: .continuous))
+            .padding(.horizontal, 18)
+        }
     }
 }
 
@@ -815,14 +937,14 @@ struct RulesView: View {
             }
             .buttonStyle(.borderedProminent).tint(Brand.pink)
         }
-        .confirmationDialog(L("出口"), isPresented: Binding(get: { policyTarget != nil }, set: { if !$0 { policyTarget = nil } }), titleVisibility: .visible, presenting: policyTarget) { g in
-            Button(L("代理")) { store.setGroup(g, policy: "PROXY") }
-            Button(L("直连")) { store.setGroup(g, policy: "DIRECT") }
-            Button(L("拦截")) { store.setGroup(g, policy: "REJECT") }
-            ForEach(store.catalog.regions.filter { store.regions.contains($0.id) }) { r in
-                Button(L("{} 节点", r.name)) { store.setGroup(g, policy: "R:" + r.id) }
+        .overlay {
+            if let g = policyTarget {
+                ExitPicker(group: g) { policyTarget = nil }
+                    .transition(.opacity)
+                    .zIndex(10)
             }
-        } message: { g in Text(g.name) }
+        }
+        .animation(.easeOut(duration: 0.18), value: policyTarget?.id)
         .sheet(item: $detailTarget) { g in GroupDetailSheet(group: g, cat: store.catalog.cats[g.cat] ?? g.cat) }
     }
 
@@ -844,8 +966,17 @@ struct RulesView: View {
         case "PROXY": return L("代理")
         case "DIRECT": return L("直连")
         case "REJECT": return L("拦截")
+        case "ALL/a": return L("全部 · 自动")
+        case "ALL/m": return L("全部 · 手动")
+        case "LB": return L("负载均衡")
         default:
-            if p.hasPrefix("R:"), let r = store.catalog.regions.first(where: { "R:" + $0.id == p }) { return L("{} 节点", r.name) }
+            if p.hasPrefix("R:") {
+                let parts = p.dropFirst(2).split(separator: "/").map(String.init)
+                if let id = parts.first, let r = store.catalog.regions.first(where: { $0.id == id }) {
+                    let mode = parts.count > 1 ? (parts[1] == "a" ? L("自动") : L("手动")) : L("故转")
+                    return L("{} · {}", r.name, mode)
+                }
+            }
             return p
         }
     }
