@@ -1,5 +1,6 @@
-export const VERSION='1.7.2';
+export const VERSION='1.7.3';
 export const CHANGELOG:{v:string;date:string;items:string[]}[]=[
+ {v:'1.7.3',date:'2026-10-20',items:['远程覆写页面重做：三种类型分别显示支持情况，修正 ClashMi 覆写误判，Egern HTTP 重写按官方文档确认为支持；ClashMi 覆写支持 JS 类型；脚本库新增 Perfect Rules ClashMi 一键覆写（已审查）。']},
  {v:'1.7.2',date:'2026-10-20',items:['修复：安装包 Info.plist 里的版本号之前是写死的 1.6.0/47，改为跟随构建设置，TrollStore/系统设置里显示的版本不再错乱。']},
  {v:'1.7.1',date:'2026-10-20',items:['修复：Bundle ID 改为正式包名 com.wenx.lowex（之前确认的正式 ID）。注意：iOS 把不同包名视为不同应用，需重新安装；旧包名 App 的数据不会自动迁移，请先在旧 App「更多 → 备份」导出完整备份，新 App 导入恢复。']},
  {v:'1.7.0',date:'2026-10-20',items:['新增：远程 JS「脚本库」分享区——自建脚本（.js / .yaml 覆写配置）带 SHA256 锁 + 链接分享 + 来源标注，按客户端 gating。','新增：订阅历史记录（自动记住贴过的订阅，可一键恢复导入）+「清空订阅 / 清空历史」二次确认，防误删。','新增：节点页地区分组——加拿大、菲律宾、东南亚、澳大利亚（含配套图标；东南亚不含已独立成组的新加坡 / 菲律宾）。']},
