@@ -261,18 +261,19 @@ struct PopupGlass: ViewModifier {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *), !Appearance.shared.performanceMode {
             content
-                .glassEffect(.regular, in: .rect(cornerRadius: radius))
-                // 水润高光：顶部亮、向下快速渐隐，像系统菜单的镜面反光
-                .overlay {
-                    RoundedRectangle(cornerRadius: radius, style: .continuous).fill(
-                        LinearGradient(colors: [.white.opacity(0.26), .white.opacity(0.07), .clear],
-                                       startPoint: .top, endPoint: .bottom)
-                    )
+                // clear 是最透明的一档：本身不带灰白底色，后面的颜色能透进来，不再发灰
+                .glassEffect(.clear, in: .rect(cornerRadius: radius))
+                // 水润高光：只压顶部一段，亮而不糊字
+                .overlay(alignment: .top) {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(LinearGradient(colors: [.white.opacity(0.45), .white.opacity(0.12), .clear],
+                                               startPoint: .top, endPoint: .bottom))
+                        .frame(height: 100)
                 }
                 // 镜面亮边：上亮下暗
                 .overlay {
                     RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(
-                        LinearGradient(colors: [.white.opacity(0.85), .white.opacity(0.25), .white.opacity(0.08), .white.opacity(0.35)],
+                        LinearGradient(colors: [.white.opacity(0.9), .white.opacity(0.3), .white.opacity(0.08), .white.opacity(0.4)],
                                        startPoint: .topLeading, endPoint: .bottomTrailing),
                         lineWidth: 1.0
                     )
