@@ -241,30 +241,49 @@ struct CapMatrixCard: View {
 
 struct PresetButtons: View {
     @EnvironmentObject var store: Store
+    // 默认模板常驻在上；其余预设默认收起，点收放按钮展开，避免一屏全是卡片
+    @State private var expanded = false
     private let order = ["balanced", "nomad", "crypto-pack", "antileak", "safe", "min", "stream", "dev", "ai", "cn", "all"]
     var body: some View {
         let all = store.engine.presets()
         let list = order.compactMap { id in all.first { ($0["id"] as? String) == id } }
-        ForEach(Array(list.enumerated()), id: \.offset) { _, pr in
-            Button {
-                if let id = pr["id"] as? String {
-                    store.applyPreset(id)
-                }
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(pr["name"] as? String ?? "")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Brand.ink)
-                    Text(pr["desc"] as? String ?? "")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.leading)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+        } label: {
+            HStack {
+                Text(L("更多预设（{} 个）", list.count)).font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink)
+                Spacer()
+                Image(systemName: "chevron.down").font(.footnote.weight(.semibold)).foregroundStyle(Brand.pink)
+                    .rotationEffect(.degrees(expanded ? 180 : 0))
             }
-            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
+            .padding(10)
+            .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        if expanded {
+            ForEach(Array(list.enumerated()), id: \.offset) { _, pr in
+                Button {
+                    if let id = pr["id"] as? String {
+                        store.applyPreset(id)
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(pr["name"] as? String ?? "")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Brand.ink)
+                        Text(pr["desc"] as? String ?? "")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+            .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
         }
     }
 }
@@ -457,23 +476,26 @@ struct NodesView: View {
                         let nm = (sub["name"] as? String) ?? ""
                         HStack(spacing: 8) {
                             VStack(alignment: .leading, spacing: 1) {
-                                if !nm.isEmpty { Text(nm).font(.caption.weight(.semibold)).lineLimit(1) }
-                                Text((sub["url"] as? String) ?? "").font(.caption2).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                                if !nm.isEmpty { Text(nm).font(.footnote.weight(.semibold)).lineLimit(1) }
+                                Text((sub["url"] as? String) ?? "").font(.caption).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Button { renameCtx = SubRenameContext(title: L("订阅名称"), initial: nm) { store.renameSub(i, $0) } } label: { Image(systemName: "pencil").font(.caption) }.buttonStyle(.plain).foregroundStyle(Brand.pink)
-                            Button { store.removeSub(i) } label: { Image(systemName: "trash").font(.caption) }.buttonStyle(.plain).foregroundStyle(.red)
+                            Button { renameCtx = SubRenameContext(title: L("订阅名称"), initial: nm) { store.renameSub(i, $0) } } label: { Image(systemName: "pencil").font(.footnote) }.buttonStyle(.plain).foregroundStyle(Brand.pink)
+                                .frame(width: 36, height: 36).contentShape(Rectangle())
+                            Button { store.removeSub(i) } label: { Image(systemName: "trash").font(.footnote) }.buttonStyle(.plain).foregroundStyle(.red)
+                                .frame(width: 36, height: 36).contentShape(Rectangle())
                         }
+                        .padding(.vertical, 4)
                     }
-                    Text(L("点铅笔可随时改名；名称会写进生成的配置，替换原来的 sub1、sub2…。")).font(.caption2).foregroundStyle(.tertiary)
+                    Text(L("点铅笔可随时改名。")).font(.caption2).foregroundStyle(.tertiary)
                 }
                 // 订阅历史：防误删——清空订阅后可从这里逐条恢复
                 if !store.subHistory.isEmpty {
                     HStack {
-                        Text(L("历史记录（{}）", store.subHistory.count)).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(L("历史记录（{}）", store.subHistory.count)).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                         Spacer()
                         Button(L("清空历史"), role: .destructive) { showClearHistoryConfirm = true }
-                            .font(.caption).foregroundStyle(.red)
+                            .font(.footnote).foregroundStyle(.red)
                     }
 
                     Text(L("点一条恢复导入到上方列表；垃圾桶只删这条历史，不影响已添加的订阅。")).font(.caption2).foregroundStyle(.secondary)
@@ -481,17 +503,20 @@ struct NodesView: View {
                         let added = store.subs.contains { ($0["url"] as? String) == entry.url }
                         HStack(spacing: 8) {
                             VStack(alignment: .leading, spacing: 1) {
-                                if !entry.name.isEmpty { Text(entry.name).font(.caption.weight(.semibold)).lineLimit(1) }
-                                Text(entry.url).font(.caption2).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                                if !entry.name.isEmpty { Text(entry.name).font(.footnote.weight(.semibold)).lineLimit(1) }
+                                Text(entry.url).font(.caption).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Button { renameCtx = SubRenameContext(title: L("订阅名称"), initial: entry.name) { store.renameSubHistory(i, $0) } } label: { Image(systemName: "pencil").font(.caption) }.buttonStyle(.plain).foregroundStyle(Brand.pink)
+                            Button { renameCtx = SubRenameContext(title: L("订阅名称"), initial: entry.name) { store.renameSubHistory(i, $0) } } label: { Image(systemName: "pencil").font(.footnote) }.buttonStyle(.plain).foregroundStyle(Brand.pink)
+                                .frame(width: 36, height: 36).contentShape(Rectangle())
                             if added {
-                                Text(L("已添加")).font(.caption2).foregroundStyle(.tertiary)
+                                Text(L("已添加")).font(.caption).foregroundStyle(.tertiary)
                             } else {
-                                Button { store.removeSubHistory(at: i) } label: { Image(systemName: "trash").font(.caption) }.buttonStyle(.plain).foregroundStyle(.red)
+                                Button { store.removeSubHistory(at: i) } label: { Image(systemName: "trash").font(.footnote) }.buttonStyle(.plain).foregroundStyle(.red)
+                                    .frame(width: 36, height: 36).contentShape(Rectangle())
                             }
                         }
+                        .padding(.vertical, 4)
                         .contentShape(Rectangle())
                         .onTapGesture { if !added { store.restoreSub(entry) } }
                     }
@@ -566,10 +591,10 @@ struct NodesView: View {
     }
 
     private var subHelper: String {
-        L("名称在前、链接在后：一行一个 URL，点「添加订阅」→ 下方列表可逐条改名 / 删除。一次只贴一条时，上面的名称会给到这条订阅；名称生成时写入 {} 替换 sub1、sub2…，客户端面板里显示的也是它。一次贴多条时名称不生效，添加后点铅笔逐条起。", target("sub"))
+        L("名称在前、链接在后，一行一个 URL。一次只贴一条时，名称会给到这条订阅并写入配置（替换 sub1、sub2…）；贴多条时名称不生效，添加后点铅笔逐条改名。")
     }
     private var linkHelper: String {
-        L("支持 ss / vmess / vless / trojan / hysteria2 / tuic / anytls 链接（每行一条）或整段 Base64 订阅正文。点「写入方案」→ 生成时写入 {}；客户端不支持的协议会跳过并提示。", target("link"))
+        L("每行一条节点链接，或整段 Base64 订阅正文。点「写入方案」→ 生成时写入 {}；不支持的协议会跳过并提示。", target("link"))
     }
 
     @ViewBuilder private var manualCard: some View {
@@ -900,8 +925,12 @@ struct RulesView: View {
                     TextField(L("搜索服务分组"), text: $query)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    HStack {
-                        Toggle(L("只看收藏"), isOn: $onlyFav).font(.subheadline)
+                    HStack(spacing: 8) {
+                        Text(L("只看收藏")).font(.subheadline)
+                        // 开关统一缩小一档：仍是系统原生开关，只做缩放
+                        Toggle("", isOn: $onlyFav).labelsHidden()
+                            .scaleEffect(0.8)
+                            .frame(width: 41, height: 25)
                     }
                     DensityBar()
                 }
@@ -1125,8 +1154,11 @@ struct GroupRow: View, Equatable {
     }
     private var toggle: some View {
         // 系统原生开关：iOS 26 上自动是液态玻璃（和「只看收藏」同款），旧系统是经典扁开关，全 App 统一
+        // 四种布局共用：统一缩小一档（0.8），卡片里更协调，仍是系统原生控件
         Toggle("", isOn: Binding(get: { on }, set: { Haptics.light(); onOn($0) }))
             .labelsHidden()
+            .scaleEffect(0.8)
+            .frame(width: 41, height: 25)
     }
     private var policyChip: some View {
         Button(action: onPolicy) {
