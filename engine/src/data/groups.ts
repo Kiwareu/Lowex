@@ -28,10 +28,10 @@ const base:RuleGroup[]=(raw as any).groups.filter((g:any)=>!REMOVED[g.id]).map((
 }));
 // AI 四组合并为一个 AI 组（2026-10-21）：只保留主流 AI，ai-more / ai-agent 已删除。
 // 保留：OpenAI（ChatGPT、Codex，走 openai 规则集）、Anthropic（Claude、Muse，走 anthropic 规则集）、
-// Google Gemini（含 AI Studio / NotebookLM / Labs）、xAI Grok、Meta AI；其余小众 AI 不再收录。
+// Google Gemini（含 AI Studio / NotebookLM / Labs）、xAI Grok、Muse（muse.ai）；其余小众 AI 不再收录。
 // 注意：category-ai-!cn 太宽（会把所有非国内 AI 都包进来），与“只留主流”的目标冲突，故去掉。
 const aiBase=base.find(g=>g.id==='ai');
-if(aiBase){aiBase.name='AI';aiBase.geosite=['openai','anthropic'];aiBase.custom=true;aiBase.domains=['gemini.google.com','aistudio.google.com','ai.google.dev','generativelanguage.googleapis.com','labs.google','notebooklm.google','deepmind.google','x.ai','grok.com','meta.ai','ai.meta.com','llama.com'];aiBase.notes='只保留主流 AI：OpenAI（ChatGPT、Codex）、Anthropic（Claude、Muse）、Google Gemini（含 AI Studio / NotebookLM / Labs）、xAI Grok、Meta AI；其余小众 AI 不再收录。AI 站点常按 IP 地区封锁，香港节点多数不可用，建议美/日/新。';}
+if(aiBase){aiBase.name='AI';aiBase.geosite=['openai','anthropic'];aiBase.custom=true;aiBase.domains=['gemini.google.com','aistudio.google.com','ai.google.dev','generativelanguage.googleapis.com','labs.google','notebooklm.google','deepmind.google','x.ai','grok.com','muse.ai'];aiBase.notes='只保留主流 AI：OpenAI（ChatGPT、Codex）、Anthropic（Claude、Muse）、Google Gemini（含 AI Studio / NotebookLM / Labs）、xAI Grok、Muse；其余小众 AI 不再收录。AI 站点常按 IP 地区封锁，香港节点多数不可用，建议美/日/新。';}
 // 手写域名组（知识库里没有现成规则集；域名为公开的官网主域名，未做逐条校验）
 const extra:RuleGroup[]=[
  {id:'bank-overseas',name:'海外银行 / 券商',category:'finance',cat:'finance',geosite:[],geoip:[],custom:true,def:'PROXY',defOn:true,risk:'高',

@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.7.21 — 2026-10-21
+
+- AI 组纠正：拿掉 Meta AI，换成 Muse（muse.ai）。
+
 ## v1.7.20 — 2026-10-21
 
 - 规则页 AI 四组合并为一个「AI」组：只保留 OpenAI（ChatGPT、Codex）、Anthropic（Claude、Muse）、Google Gemini（含 AI Studio / NotebookLM / Labs）、xAI Grok、Meta AI，其余小众 AI 不再收录；国内 AI 不动。
