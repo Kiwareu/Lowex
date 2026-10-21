@@ -252,14 +252,32 @@ extension View {
     }
 }
 
-/// 弹窗专用玻璃：比卡片更奶白、更不透，接近系统菜单（图一）的质感。
-/// iOS 26 用真实 liquid glass；低版本用 regularMaterial 强模糊 + 高光叠层，保证背景不穿帮。
+/// 弹窗专用玻璃：对齐图一系统菜单质感——通透、水润、磨砂。
+/// iOS 26 用真实 liquid glass + 顶部高光 + 镜面亮边；低版本用 regularMaterial 强模糊 + 高光叠层，保证背景不穿帮。
+/// 注意：弹窗背后的遮罩必须淡（各弹窗用 0.12），遮罩太黑会把玻璃折射的背景压灰，玻璃再亮也水润不起来。
 struct PopupGlass: ViewModifier {
     var radius: CGFloat = 20
     func body(content: Content) -> some View {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *), !Appearance.shared.performanceMode {
-            content.glassEffect(.regular, in: .rect(cornerRadius: radius))
+            content
+                .glassEffect(.regular, in: .rect(cornerRadius: radius))
+                // 水润高光：顶部亮、向下快速渐隐，像系统菜单的镜面反光
+                .overlay {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous).fill(
+                        LinearGradient(colors: [.white.opacity(0.26), .white.opacity(0.07), .clear],
+                                       startPoint: .top, endPoint: .bottom)
+                    )
+                }
+                // 镜面亮边：上亮下暗
+                .overlay {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(
+                        LinearGradient(colors: [.white.opacity(0.85), .white.opacity(0.25), .white.opacity(0.08), .white.opacity(0.35)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing),
+                        lineWidth: 1.0
+                    )
+                }
+                .shadow(color: .black.opacity(0.16), radius: 26, y: 10)
         } else {
             fallback(content)
         }
@@ -319,7 +337,7 @@ struct GlassConfirm: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.35).ignoresSafeArea()
+            Color.black.opacity(0.12).ignoresSafeArea()
                 .onTapGesture { dismiss() }
             VStack(spacing: 0) {
                 Text(title).font(.headline).foregroundStyle(Brand.ink)

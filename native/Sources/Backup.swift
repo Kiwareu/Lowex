@@ -208,7 +208,7 @@ struct BackupView: View {
         .overlay {
             if confirmRestore {
                 ZStack {
-                    Color.black.opacity(0.35).ignoresSafeArea()
+                    Color.black.opacity(0.12).ignoresSafeArea()
                         .onTapGesture { confirmRestore = false; pending = nil }
                     VStack(spacing: 0) {
                         Text(L("导入备份")).font(.headline).foregroundStyle(Brand.ink)
