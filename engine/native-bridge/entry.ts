@@ -21,6 +21,7 @@ import {CARRIERS} from '../src/data/carriers';
 import {parseModule,safety,KIND_NAME,supportsModules} from '../src/engine/modules';
 import {validate} from '../src/engine/validate';
 import {PRESETS} from '../src/engine/tools';
+import {GUIDES} from '../src/data/guides';
 import {CLIENTS as CL2} from '../src/data/clients';
 const J=(x:unknown)=>JSON.stringify(x);
 (globalThis as any).Lowex={
@@ -47,6 +48,8 @@ const J=(x:unknown)=>JSON.stringify(x);
   /** QUIC / STUN 三档（caps.ts），供界面按档显示，不再用一个“支持”概括 */
   tiers:(client:string)=>{const c=CL2.find(x=>x.id===client);if(!c)return J({});return J({quic:QUIC_TIERS[c.family],stun:STUN_TIERS[c.family]})},
   presets:()=>J(PRESETS.map(p=>({id:p.id,name:p.name,desc:p.desc}))),
+  /** 某客户端的使用指南（无则 null） */
+  guides:(client:string)=>J(GUIDES[client]||null),
   applyPreset:(id:string,stateJson:string)=>{try{const s=JSON.parse(stateJson);const pr=PRESETS.find(x=>x.id===id);if(!pr)return J({error:'unknown preset'});const patch=pr.apply(s);return J({...s,...patch,opts:{...s.opts,...(patch.opts||{})},groups:{...s.groups,...(patch.groups||{})}})}catch(e:any){return J({error:String(e&&e.message||e)})}},
   /** 远程 JS 独立模块（与生成配置互斥，不写进配置文件） */
   remoteJsSupport:(client:string)=>J(remoteJsSupport(client)),

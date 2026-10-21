@@ -1,5 +1,6 @@
-export const VERSION='1.7.22';
+export const VERSION='1.7.23';
 export const CHANGELOG:{v:string;date:string;items:string[]}[]=[
+  {v:'1.7.23',date:'2026-10-21',items:['各客户端使用指南：14 个客户端的导入步骤、关键设置与注意事项，按官方文档整理，没核实的点标「未核实」；入口在首页选中客户端后的「查看使用指南」，以及更多页的「各客户端使用指南」。']},
   {v:'1.7.22',date:'2026-10-21',items:['Meta 系分开：WhatsApp、Instagram 各自成组（规则集完整移过去，排在 Meta 组前面），Facebook / Threads 留在 Meta 组；各组单独选出口，和账号常用地区对上。']},
   {v:'1.7.21',date:'2026-10-21',items:['AI 组纠正：拿掉 Meta AI，换成 Muse（muse.ai）。']},
   {v:'1.7.20',date:'2026-10-21',items:['规则页 AI 四组合并为一个「AI」组：只保留 OpenAI（ChatGPT、Codex）、Anthropic（Claude、Muse）、Google Gemini（含 AI Studio / NotebookLM / Labs）、xAI Grok、Meta AI，其余小众 AI 不再收录；国内 AI 不动。']},

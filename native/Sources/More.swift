@@ -40,6 +40,7 @@ struct MoreView: View {
                         .padding(.horizontal, Space.l).padding(.vertical, 6).frame(minHeight: Space.tap).softCard()
 
                         moreSection(L("工具"))
+                        navCard(L("各客户端使用指南"), icon: "book", dest: GuideListView())
                         navCard(L("防泄漏检查清单"), icon: "shield.lefthalf.filled", dest: LeakView())
                         if store.engine.supportsModules(client: store.client) {
                             navCard(L("模块与脚本"), icon: "puzzlepiece.extension", dest: ModulesView())
@@ -963,5 +964,70 @@ struct WifiCallNote: View {
         }
         .font(.caption2).foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+// MARK: - 各客户端使用指南
+struct GuideListView: View {
+    @EnvironmentObject var store: Store
+    var body: some View {
+        PageChrome(title: L("各客户端使用指南")) {
+            PlainCard {
+                Text(L("每个客户端的导入步骤、关键设置与注意事项，按官方文档整理；标「未核实」的是没在官方文档核实的点。"))
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            ForEach(store.catalog.clients) { c in
+                NavigationLink { ClientGuideView(client: c) } label: {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(c.name).foregroundStyle(Brand.ink)
+                            if let b = c.blurb { Text(b).font(.caption).foregroundStyle(.secondary) }
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Brand.pink.opacity(0.8))
+                    }
+                    .padding(Space.l).frame(minHeight: Space.tap).contentShape(Rectangle()).softCard()
+                }.buttonStyle(PressableStyle())
+            }
+        }
+    }
+}
+
+struct ClientGuideView: View {
+    let client: Catalog.Client
+    @EnvironmentObject var store: Store
+    @State private var guide: ClientGuide?
+    var body: some View {
+        PageChrome(title: client.name + L("使用指南")) {
+            if let g = guide {
+                PlainCard {
+                    Text(L("依据：") + g.basis).font(.footnote).foregroundStyle(.secondary)
+                    Text(L("会被客户端覆盖的项：") + g.over).font(.footnote).foregroundStyle(.secondary)
+                }
+                ForEach(g.sections) { s in
+                    PlainCard {
+                        Text(s.t).font(.headline)
+                        ForEach(s.items) { it in
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack {
+                                    Text(it.t).font(.subheadline.weight(.semibold))
+                                    if it.unverified == true {
+                                        Text(L("未核实")).font(.caption2)
+                                            .padding(.horizontal, 6).padding(.vertical, 2)
+                                            .background(Color.primary.opacity(0.08), in: Capsule()).foregroundStyle(.secondary)
+                                    }
+                                }
+                                Text(it.body).font(.footnote).foregroundStyle(.secondary)
+                            }.padding(.top, 4)
+                        }
+                    }
+                }
+            } else {
+                PlainCard {
+                    Text(L("暂无该客户端的指南")).font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .onAppear { guide = store.engine.guides(client: client.id) }
     }
 }

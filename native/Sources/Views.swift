@@ -5,6 +5,7 @@ import UIKit
 struct HomeView: View {
     @EnvironmentObject var store: Store
     @State private var showRecs = false
+    @State private var showGuide = false
     private let networks = [
         ("mobile", L("移动宽带")), ("telecom", L("电信宽带")), ("unicom", L("联通宽带")), ("cbn", L("广电宽带 / 5G")),
         ("cell-cmcc", L("移动 手机流量")), ("cell-unicom", L("联通 手机流量")), ("cell-telecom", L("电信 手机流量")),
@@ -46,6 +47,17 @@ struct HomeView: View {
                     Text((c.placement == "both" ? L("订阅 / 节点：可写进配置，也可在客户端 App 内自己添加（在「节点」页选择）") : (c.embedsSubscription ? L("订阅 / 节点：写进配置文件") : L("订阅 / 节点：展开成节点写进配置（无订阅字段）"))) + L(" · 资料可信度：") + c.confLabel)
                         .font(.caption2).foregroundStyle(.secondary)
                     Text(L("按应用分流：") + platformRuleText).font(.caption2).foregroundStyle(.secondary)
+                    Button { showGuide = true } label: {
+                        Label(L("查看使用指南"), systemImage: "book").font(.subheadline.weight(.medium)).foregroundStyle(Brand.pink)
+                    }.buttonStyle(PressableStyle()).padding(.top, 2)
+                }
+            }
+            .sheet(isPresented: $showGuide) {
+                if let c = store.clientInfo {
+                    NavStack {
+                        ClientGuideView(client: c)
+                            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("完成")) { showGuide = false } } }
+                    }
                 }
             }
 

@@ -40,7 +40,7 @@ final class Engine {
     private func call(_ name: String, _ args: [Any]) -> String {
         let raw = api.objectForKeyedSubscript(name).call(withArguments: args)?.toString() ?? "{}"
         // 这些返回的是状态 / 数据，不是显示文案：不翻译
-        if ["initial", "applyPreset", "version"].contains(name) { return raw }
+        if ["initial", "applyPreset", "version", "guides"].contains(name) { return raw }
         var skip: Set<String> = []
         if name == "generate" { skip = ["text", "name", "ext", "mime"] }
         if name == "catalog" { skip = ["apps", "icon", "ext", "id", "family", "platforms"] }
@@ -204,6 +204,28 @@ struct Catalog: Decodable {
     let clients: [Client]; let platforms: [Platform]; let capList: [Cap]; let groups: [Group]; let regions: [Region]
     let cats: [String: String]; let apps: [AppEntry]
     static let empty = Catalog(clients: [], platforms: [], capList: [], groups: [], regions: [], cats: [:], apps: [])
+}
+
+struct ClientGuide: Decodable {
+    struct Section: Decodable, Identifiable {
+        var id: String { t }
+        let t: String
+        let items: [Item]
+        struct Item: Decodable, Identifiable {
+            var id: String { t }
+            let t: String; let body: String; let unverified: Bool?
+        }
+    }
+    let basis: String; let over: String; let sections: [Section]
+}
+
+// MARK: - 客户端使用指南
+extension Engine {
+    func guides(client: String) -> ClientGuide? {
+        let s = call("guides", [client])
+        guard s != "null" else { return nil }
+        return try? JSONDecoder().decode(ClientGuide.self, from: Data(s.utf8))
+    }
 }
 
 struct LeakItem: Identifiable {
