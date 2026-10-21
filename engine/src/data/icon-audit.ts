@@ -17,8 +17,6 @@ export const ICON_AUDIT:Record<string,IconAudit>={
   'social-more':{s:'single',was:'Bluesky 图标（只代表 Bluesky）',want:'「社交 / 去中心化」组图标'},
   privacy:{s:'single',was:'Proton Mail 图标（只代表 Proton）',want:'「隐私 / 密码 / 邮箱工具」组图标'},
   'shop-more':{s:'single',was:'Etsy 图标（只代表 Etsy）',want:'「购物（更多海外）」组图标'},
-  'ai-more':{s:'single',was:'Gemini 星芒图标（组里还有 Claude / Grok 等）',want:'「AI（更多）」组图标'},
-  'ai-agent':{s:'generic',was:'通用 AI 类别图标',want:'「AI 智能体 / 编程助手」组图标'},
   'ai-cn':{s:'generic',was:'通用 AI 类别图标',want:'「国内 AI」组图标'},
   blizzard:{s:'generic',was:'通用手柄图标',want:'暴雪战网 Battle.net 标志'},
   'bybit-eu':{s:'generic',was:'通用加密币图标',want:'Bybit 标志'},
@@ -41,7 +39,7 @@ export const ICON_AUDIT:Record<string,IconAudit>={
 };
 /** 已上传到 Lowex-Icons 的组 id（运行时由 App 通过 GitHub API 列出仓库文件更新；这里是内置默认值） */
 /** v1.5：这些组的图标已画好并上传到 Lowex-Icons（512×512 圆角方块），App 内置此列表，不依赖联网也直接引用仓库路径 */
-export const NEW_ICONS:string[]=["ads", "ai", "ai-more", "amazon", "apple", "bank-eu", "bank-hk", "bank-overseas", "bank-sg", "bilibili", "bitget-wallet", "biz-banking", "blackcat", "blizzard", "brokers", "bunq", "bybit-eu", "cloud-dev", "cloudflare", "cn", "cn-bank-direct", "crypto", "crypto-more", "discord", "disney", "docker", "dropbox", "ebay", "epic", "fintech", "games-cn", "games-more", "github", "gitlab", "google", "hsbc", "krak", "linkedin", "maya", "media-more", "meta", "mexc", "microsoft", "netflix", "nintendo", "nomad-tools", "nomad-work", "notion", "npm", "onedrive", "paypal", "playstation", "primevideo", "privacy", "private", "proxy-fallback", "pt", "reddit", "region-DE", "region-CA", "region-PH", "region-SEA", "region-AU", "region-EU", "region-FR", "region-HK", "region-JP", "region-KR", "region-OT", "region-SG", "region-TW", "region-UK", "region-US", "s-autoAll", "s-direct", "s-final", "s-home", "s-lb", "s-manAll", "s-proxy", "s-update", "scholar", "shop-more", "signal", "slack", "social-more", "spotify", "steam", "sumup", "telegram", "telemetry", "tiktok", "trackers", "travel", "twitch", "twitter", "whatsapp", "wikimedia", "xbox", "youtube", "zoom"];
+export const NEW_ICONS:string[]=["ads", "ai", "amazon", "apple", "bank-eu", "bank-hk", "bank-overseas", "bank-sg", "bilibili", "bitget-wallet", "biz-banking", "blackcat", "blizzard", "brokers", "bunq", "bybit-eu", "cloud-dev", "cloudflare", "cn", "cn-bank-direct", "crypto", "crypto-more", "discord", "disney", "docker", "dropbox", "ebay", "epic", "fintech", "games-cn", "games-more", "github", "gitlab", "google", "hsbc", "krak", "linkedin", "maya", "media-more", "meta", "mexc", "microsoft", "netflix", "nintendo", "nomad-tools", "nomad-work", "notion", "npm", "onedrive", "paypal", "playstation", "primevideo", "privacy", "private", "proxy-fallback", "pt", "reddit", "region-DE", "region-CA", "region-PH", "region-SEA", "region-AU", "region-EU", "region-FR", "region-HK", "region-JP", "region-KR", "region-OT", "region-SG", "region-TW", "region-UK", "region-US", "s-autoAll", "s-direct", "s-final", "s-home", "s-lb", "s-manAll", "s-proxy", "s-update", "scholar", "shop-more", "signal", "slack", "social-more", "spotify", "steam", "sumup", "telegram", "telemetry", "tiktok", "trackers", "travel", "twitch", "twitter", "whatsapp", "wikimedia", "xbox", "youtube", "zoom"];
 let READY:string[]=[];
 export const setIconsReady=(l:string[])=>{READY=Array.isArray(l)?l.filter(x=>typeof x==='string'):[]};
 export const iconsReady=()=>READY;

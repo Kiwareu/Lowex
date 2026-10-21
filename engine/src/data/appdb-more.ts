@@ -137,13 +137,8 @@ Zalando|Zalando|de.zalando.mobile|||zalando.com|shop-more|
 Vinted|Vinted|fr.vinted|||vinted.com|shop-more|
 Mercari|Mercari|com.kouzoh.mercari|||mercari.com|shop-more|
 Rakuten|Rakuten|jp.co.rakuten.android|||rakuten.co.jp,rakuten.com|shop-more|
-Mistral Le Chat|Le Chat|ai.mistral.chat|||mistral.ai|ai-more|
-Poe|Poe|com.poe.android|||poe.com|ai-more|
-Midjourney|Midjourney||||midjourney.com|ai-more|
 Meta AI|Meta AI||||meta.ai,facebook.com|meta|
-NotebookLM|NotebookLM||||notebooklm.google|ai-more|
-Suno|Suno||||suno.com|ai-more|
-ElevenLabs|ElevenLabs||||elevenlabs.io|ai-more|
+NotebookLM|NotebookLM||||notebooklm.google|ai|
 快手|Kuaishou|com.smile.gifmaker||com.jiuyi.kuaishou|kuaishou.com,yximgs.com||1
 腾讯视频|Tencent Video|com.tencent.qqlive|QQLive.exe||v.qq.com,gtimg.com||1
 爱奇艺|iQIYI|com.qiyi.video|QyClient.exe||iqiyi.com,qiyipic.com||1

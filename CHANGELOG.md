@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.7.20 — 2026-10-21
+
+- 规则页 AI 四组合并为一个「AI」组：只保留 OpenAI（ChatGPT、Codex）、Anthropic（Claude、Muse）、Google Gemini（含 AI Studio / NotebookLM / Labs）、xAI Grok、Meta AI，其余小众 AI 不再收录；国内 AI 不动。
+
 ## v1.7.19 — 2026-10-21
 
 - 弹窗玻璃按图一实测参数重调：系统菜单不是靠透明，是面板约 83% 白 + 17% 模糊底色（亮度 251，顶部无高光）；之前弹窗亮度只有 215、基本就是底色本身，所以发灰。这版玻璃加 0.8 白 tint 还原这层白，粉色这类鲜艳底色仍能透进来，字不受影响。

@@ -170,7 +170,7 @@ export function makePlan(s:State):Plan{
   const custom=order.filter(x=>x.g.custom),std=order.filter(x=>!x.g.custom);
   push({t:'comment',v:'服务分流'});
   for(const x of [...custom,...std]){
-    if(x.g.custom){for(const d of x.g.domains||[])push({t:'suffix',v:d,p:x.p,via:x.g.id});continue}
+    if(x.g.custom){for(const d of x.g.domains||[])push({t:'suffix',v:d,p:x.p,via:x.g.id});for(const n of x.g.geosite)push({t:'site',name:n,g:x.g,p:x.p});continue}
     for(const n of x.g.geosite)push({t:'site',name:n,g:x.g,p:x.p});
   }
   for(const x of std)for(const n of x.g.geoip)push({t:'ip',name:n,g:x.g,p:x.p});
