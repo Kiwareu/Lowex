@@ -253,32 +253,25 @@ extension View {
 }
 
 /// 弹窗专用玻璃：对齐图一系统菜单质感——通透、水润、磨砂。
-/// iOS 26 用真实 liquid glass + 顶部高光 + 镜面亮边；低版本用 regularMaterial 强模糊 + 高光叠层，保证背景不穿帮。
-/// 注意：弹窗背后的遮罩必须淡（各弹窗用 0.12），遮罩太黑会把玻璃折射的背景压灰，玻璃再亮也水润不起来。
+/// 图一实测参数（系统菜单，无代码参数可读，数值来自截图采样）：面板 ≈ 0.83 白 + 0.17 模糊底色，
+/// 亮度 ~251（接近纯白），顶部无高光（顶部只比面板亮 1.1）。tint 白 0.8 还原这层白，字在玻璃上面不受影响；
+/// 暗色模式用黑 0.65，避免白板。低版本走 fallback（regularMaterial + 高光叠层）。
 struct PopupGlass: ViewModifier {
     var radius: CGFloat = 20
+    @Environment(\.colorScheme) private var scheme
     func body(content: Content) -> some View {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *), !Appearance.shared.performanceMode {
             content
-                // clear 是最透明的一档：本身不带灰白底色，后面的颜色能透进来，不再发灰
-                .glassEffect(.clear, in: .rect(cornerRadius: radius))
-                // 水润高光：只压顶部一段，亮而不糊字
-                .overlay(alignment: .top) {
-                    RoundedRectangle(cornerRadius: radius, style: .continuous)
-                        .fill(LinearGradient(colors: [.white.opacity(0.45), .white.opacity(0.12), .clear],
-                                               startPoint: .top, endPoint: .bottom))
-                        .frame(height: 100)
-                }
-                // 镜面亮边：上亮下暗
+                .glassEffect(.clear.tint(scheme == .dark ? .black.opacity(0.65) : .white.opacity(0.8)), in: .rect(cornerRadius: radius))
+                // 细亮边 + 柔和阴影，像系统菜单的边缘
                 .overlay {
                     RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(
-                        LinearGradient(colors: [.white.opacity(0.9), .white.opacity(0.3), .white.opacity(0.08), .white.opacity(0.4)],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: 1.0
+                        Color.white.opacity(scheme == .dark ? 0.25 : 0.5),
+                        lineWidth: 0.75
                     )
                 }
-                .shadow(color: .black.opacity(0.16), radius: 26, y: 10)
+                .shadow(color: .black.opacity(0.14), radius: 24, y: 8)
         } else {
             fallback(content)
         }
