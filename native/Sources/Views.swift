@@ -885,7 +885,7 @@ struct RulesView: View {
 
     /// 常用度排序（只影响界面顺序，不影响生成结果）：越常用越靠前，未列出的保持原顺序排在后面。
     private static let popularity: [String: Int] = {
-        let order = ["ai", "ai-cn", "telegram", "youtube", "netflix", "google", "apple", "microsoft", "discord", "twitter", "meta",
+        let order = ["ai", "ai-cn", "telegram", "youtube", "netflix", "google", "apple", "microsoft", "discord", "twitter", "meta", "whatsapp", "instagram",
                      "tiktok", "github", "steam", "disney", "spotify", "primevideo", "twitch", "reddit", "paypal", "bank-overseas",
                      "crypto", "crypto-more", "xbox", "playstation", "epic", "nintendo", "blizzard", "onedrive", "cloudflare",
                      "notion", "slack", "zoom", "dropbox", "linkedin", "signal", "amazon", "ebay", "docker", "npm", "gitlab",

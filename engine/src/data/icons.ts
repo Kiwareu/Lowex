@@ -104,4 +104,5 @@ export const ICONS:Record<string,string>={
 "g:nomad-work": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/Server.png",
 "g:nomad-tools": "https://raw.githubusercontent.com/Semporia/Hand-Painted-icon/HEAD/Accommodation/Online_Booking.png",
 "g:whatsapp": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/WhatsApp.png",
+"g:instagram": "https://raw.githubusercontent.com/Koolson/Qure/HEAD/IconSet/Color/Instagram.png",
 };

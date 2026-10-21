@@ -32,6 +32,10 @@ const base:RuleGroup[]=(raw as any).groups.filter((g:any)=>!REMOVED[g.id]).map((
 // 注意：category-ai-!cn 太宽（会把所有非国内 AI 都包进来），与“只留主流”的目标冲突，故去掉。
 const aiBase=base.find(g=>g.id==='ai');
 if(aiBase){aiBase.name='AI';aiBase.geosite=['openai','anthropic'];aiBase.custom=true;aiBase.domains=['gemini.google.com','aistudio.google.com','ai.google.dev','generativelanguage.googleapis.com','labs.google','notebooklm.google','deepmind.google','x.ai','grok.com','muse.ai'];aiBase.notes='只保留主流 AI：OpenAI（ChatGPT、Codex）、Anthropic（Claude、Muse）、Google Gemini（含 AI Studio / NotebookLM / Labs）、xAI Grok、Muse；其余小众 AI 不再收录。AI 站点常按 IP 地区封锁，香港节点多数不可用，建议美/日/新。';}
+// Meta 系分开（2026-10-21）：WhatsApp / Instagram 各自成组，Meta 组只留 Facebook / Threads。
+// IP 侧无法再分：Meta 的 ASN（gi_facebook）本就含 Instagram / WhatsApp 的 IP，纯 IP 流量仍走 Meta 组；域名流量已分开。
+const metaBase=base.find(g=>g.id==='meta');
+if(metaBase){metaBase.name='Meta（Facebook / Threads）';metaBase.geosite=['facebook','threads'];}
 // 手写域名组（知识库里没有现成规则集；域名为公开的官网主域名，未做逐条校验）
 const extra:RuleGroup[]=[
  {id:'bank-overseas',name:'海外银行 / 券商',category:'finance',cat:'finance',geosite:[],geoip:[],custom:true,def:'PROXY',defOn:true,risk:'高',
@@ -40,6 +44,12 @@ const extra:RuleGroup[]=[
  {id:'crypto-more',name:'加密货币（更多交易所 / 钱包）',category:'crypto',cat:'crypto',geosite:[],geoip:[],custom:true,def:'PROXY',defOn:false,risk:'高',
   notes:'手写域名：Coinbase、Bitget、Gate、KuCoin、HTX、MetaMask、Trust Wallet、Uniswap、TradingView、CoinGecko、CoinMarketCap、Etherscan 等。与「加密货币平台」组互补。',
   domains:['coinbase.com','bitget.com','gate.io','gate.com','kucoin.com','htx.com','huobi.com','mexc.com','mexc.fm','mexc.link','mexc.me','mexcservices.com','mexcstatic.com','bitfinex.com','bitstamp.net','gemini.com','crypto.com','metamask.io','trustwallet.com','phantom.app','uniswap.org','pancakeswap.finance','1inch.io','opensea.io','etherscan.io','bscscan.com','solscan.io','tradingview.com','coingecko.com','coinmarketcap.com','dexscreener.com','debank.com','ledger.com','trezor.io','binance.us','okx.com','bybit.com','kraken.com','bitmex.com','deribit.com','bingx.com','phemex.com','lbank.com','bitrue.com','upbit.com','bithumb.com','coincheck.com','bitflyer.com','bitvavo.com','bitpanda.com','blockchain.com','exodus.com','safepal.com','tokenpocket.pro','rabby.io','walletconnect.com','walletconnect.org','alchemy.com','infura.io','chainlink.com','lido.fi','aave.com','curve.fi','compound.finance','binance.th','tether.to','circle.com','dune.com','defillama.com','coinglass.com','tokenterminal.com','cryptoquant.com','glassnode.com','arkhamintelligence.com','layerzero.network','jup.ag','raydium.io','magiceden.io','blur.io','ens.domains','safe.global','zerion.io','zapper.xyz']},
+ {id:'whatsapp',name:'WhatsApp',category:'social',cat:'social',geosite:['whatsapp'],geoip:[],custom:true,def:'PROXY',defOn:true,risk:'低',
+  notes:'Meta 系单列：WhatsApp 的规则集与主域名；出口按本组单独选，和账号常用地区对上，避免和 Instagram / Facebook 共用一个出口触发异地验证。',
+  domains:['whatsapp.com','whatsapp.net','wa.me']},
+ {id:'instagram',name:'Instagram',category:'social',cat:'social',geosite:['instagram'],geoip:[],custom:true,def:'PROXY',defOn:true,risk:'低',
+  notes:'Meta 系单列：Instagram 的规则集与主域名；出口按本组单独选，和账号常用地区对上。',
+  domains:['instagram.com','cdninstagram.com']},
  {id:'ai-cn',name:'国内 AI（直连）',category:'ai',cat:'ai',geosite:[],geoip:[],custom:true,def:'DIRECT',defOn:true,risk:'低',
   notes:'手写域名：DeepSeek、Kimi / Moonshot、通义千问 Qwen、智谱 / ChatGLM / Z.ai、豆包、腾讯元宝、文心一言、MiniMax / 海螺、硅基流动、魔搭、可灵等。这些服务在国内可直连，默认直连以免绕路；想走代理可把出口改掉。',
   domains:['deepseek.com','kimi.com','moonshot.cn','moonshot.ai','qwen.ai','tongyi.aliyun.com','chatglm.cn','z.ai','doubao.com','yuanbao.tencent.com','yiyan.baidu.com','minimax.io','minimaxi.com','hailuoai.com','siliconflow.cn','siliconflow.com','modelscope.cn','klingai.com','kling.ai']},

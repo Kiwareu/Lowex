@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.7.22 — 2026-10-21
+
+- Meta 系分开：WhatsApp、Instagram 各自成组（规则集完整移过去，排在 Meta 组前面），Facebook / Threads 留在 Meta 组；各组单独选出口，和账号常用地区对上。
+
 ## v1.7.21 — 2026-10-21
 
 - AI 组纠正：拿掉 Meta AI，换成 Muse（muse.ai）。

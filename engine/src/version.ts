@@ -1,5 +1,6 @@
-export const VERSION='1.7.21';
+export const VERSION='1.7.22';
 export const CHANGELOG:{v:string;date:string;items:string[]}[]=[
+  {v:'1.7.22',date:'2026-10-21',items:['Meta 系分开：WhatsApp、Instagram 各自成组（规则集完整移过去，排在 Meta 组前面），Facebook / Threads 留在 Meta 组；各组单独选出口，和账号常用地区对上。']},
   {v:'1.7.21',date:'2026-10-21',items:['AI 组纠正：拿掉 Meta AI，换成 Muse（muse.ai）。']},
   {v:'1.7.20',date:'2026-10-21',items:['规则页 AI 四组合并为一个「AI」组：只保留 OpenAI（ChatGPT、Codex）、Anthropic（Claude、Muse）、Google Gemini（含 AI Studio / NotebookLM / Labs）、xAI Grok、Meta AI，其余小众 AI 不再收录；国内 AI 不动。']},
   {v:'1.7.19',date:'2026-10-21',items:['弹窗玻璃按图一实测参数重调：系统菜单不是靠透明，是面板约 83% 白 + 17% 模糊底色（亮度 251，顶部无高光）；之前弹窗亮度只有 215、基本就是底色本身，所以发灰。这版玻璃加 0.8 白 tint 还原这层白，粉色这类鲜艳底色仍能透进来，字不受影响。']},
