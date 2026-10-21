@@ -118,6 +118,13 @@ enum ClientOpen {
         default: return nil
         }
     }
+    static func genericScheme(family: String) -> ImportScheme? {
+        switch family {
+        case "mihomo":
+            return ImportScheme(appName: "Clash 通用", open: "clash://", build: { u, _ in "clash://install-config?url=\(enc(u))" }, note: L("Clash 通用：clash://install-config?url="))
+        default: return nil
+        }
+    }
     static func hint(for client: String) -> String? {
         switch client {
         case "shadowrocket": return L("Shadowrocket：先在首页加节点 / 订阅，再导入 conf。策略组靠正则收纳，conf 内不含节点。")
@@ -268,54 +275,77 @@ struct GenerateView: View {
             if let hint = store.importHow ?? ClientOpen.hint(for: store.client) {
                 Text(hint).font(.caption2).foregroundStyle(.secondary)
             }
-            if let sc = ClientOpen.scheme(for: store.client) {
-                Text(L("一键导入需要配置的在线（https）地址：scheme 无法携带整份本地文件。把导出的文件放到你自己的 GitHub Gist / 对象存储 / 私有服务后，把直链填到这里。"))
+            // 客户端直接列在下面：当前配置对应的排第一，同系列能打开这份配置的跟上，Mihomo 系再加一个 Clash 通用。
+            // 点名字就能把配置送过去，不用先找链接、填网址。
+            let rows = importRows
+            if rows.isEmpty {
+                Text(L("此客户端没有公开的导入 URL scheme，请使用上方导出方式。")).font(.caption2).foregroundStyle(.secondary)
+            } else {
+                Text(L("点下面的客户端名就能把配置送过去：填了直链一点直达导入，没填则走系统打开 / 分享菜单，不用自己找链接。"))
                     .font(.caption2).foregroundStyle(.secondary)
+                if store.platform != "ios" {
+                    Text(L("当前为 {} 配置：点客户端名复制导入链接或分享文件，再传到目标设备。", store.platform == "windows" ? "Windows" : "Android"))
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                    let hasLink = linkURL(row.scheme) != nil
+                    Button { importTo(row.scheme) } label: {
+                        HStack {
+                            Text(row.scheme.appName).font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink)
+                            if row.isCurrent {
+                                Text(L("当前配置")).font(.caption2.weight(.semibold)).foregroundStyle(Brand.pink)
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(Brand.pink.opacity(0.12), in: Capsule())
+                            }
+                            Spacer()
+                            Text(store.platform == "ios"
+                                 ? (hasLink ? L("直达导入") : L("打开菜单"))
+                                 : (hasLink ? L("复制链接") : L("分享文件")))
+                                .font(.caption2).foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        }
+                        .padding(10)
+                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(store.hasValidationErrors)
+                }
+                // 直链（可选）：填了直链，点客户端名直接导入；不填也能用打开 / 分享菜单送过去。
                 TextField(L("https://… 配置直链（可选）"), text: $store.remoteURL)
                     .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                     .padding(10).background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                let link = linkURL(sc)
-                if store.platform == "ios" {
-                    if link != nil {
-                        Button { openLink(link, sc) } label: {
-                            Label(L("一键导入到 {}", sc.appName), systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity)
-                        }.buttonStyle(.borderedProminent).tint(Brand.pink)
-                        .disabled(store.hasValidationErrors)
-                    } else {
-                        Text(L("还没有填配置直链：下面的「用 {} 打开文件」会把配置文件本身交给它，由它的导入页处理；只「唤起」App 不会进入导入页。", sc.appName))
-                            .font(.caption2).foregroundStyle(.secondary)
-                    }
-                    HStack(spacing: 10) {
-                        if link == nil {
-                            Button { openFile(sc) } label: {
-                                Label(L("用 {} 打开文件", sc.appName), systemImage: "square.and.arrow.down.on.square").frame(maxWidth: .infinity)
-                            }.buttonStyle(.borderedProminent).tint(Brand.pink)
-                            .disabled(store.hasValidationErrors)
-                        } else {
-                            Button { openFile(sc) } label: {
-                                Label(L("用 {} 打开文件", sc.appName), systemImage: "square.and.arrow.down.on.square").frame(maxWidth: .infinity)
-                            }.buttonStyle(.bordered).tint(Brand.pink)
-                            .disabled(store.hasValidationErrors)
-                        }
-                        Button { UIPasteboard.general.string = store.result.text; openRoot(sc, copied: true) } label: {
-                            Label(L("复制并打开"), systemImage: "doc.on.clipboard").frame(maxWidth: .infinity)
-                        }.buttonStyle(.bordered)
-                        .disabled(store.hasValidationErrors)
-                    }
-                } else {
-                    Text(L("当前为 {} 配置：请把文件传到目标设备；下面的链接可复制到目标设备上打开。", store.platform == "windows" ? "Windows" : "Android"))
-                        .font(.caption2).foregroundStyle(.secondary)
-                }
-                if let l = link {
+                if let sc = ClientOpen.scheme(for: store.client), let l = linkURL(sc) {
                     HStack(spacing: 10) {
                         actionBtn(L("复制导入链接"), icon: "link", disabled: store.hasValidationErrors) { UIPasteboard.general.string = l; toast = L("已复制导入链接") }
                         actionBtn(L("导入链接二维码"), icon: "qrcode", disabled: store.hasValidationErrors) { qrImage = QR.image(l); qrCaption = L("用目标设备扫码 / 打开：\n{}", sc.appName); showQR = qrImage != nil }
                     }
+                    Text(sc.note).font(.caption2).foregroundStyle(.secondary)
                 }
-                Text(sc.note).font(.caption2).foregroundStyle(.secondary)
-            } else {
-                Text(L("此客户端没有公开的导入 URL scheme，请使用上方导出方式。")).font(.caption2).foregroundStyle(.secondary)
             }
+        }
+    }
+
+    /// 同系列、当前平台能用的客户端（当前配置排第一）+ 通用项；点名字就能送过去。
+    private var importRows: [(scheme: ImportScheme, isCurrent: Bool)] {
+        var rows: [(ImportScheme, Bool)] = []
+        let fam = store.clientsForPlatform.filter { $0.family == store.family }
+        let ordered = fam.sorted { ($0.id == store.client) && $1.id != store.client }
+        for c in ordered {
+            if let sc = ClientOpen.scheme(for: c.id) { rows.append((sc, c.id == store.client)) }
+        }
+        if let g = ClientOpen.genericScheme(family: store.family) { rows.append((g, false)) }
+        return rows
+    }
+
+    /// 点客户端名送配置：有直链 → 本机直接导入 / 跨设备复制链接；没直链 → 本机打开菜单 / 跨设备分享文件。
+    private func importTo(_ sc: ImportScheme) {
+        if let l = linkURL(sc) {
+            if store.platform == "ios" { openLink(l, sc) }
+            else { UIPasteboard.general.string = l; toast = L("已复制导入链接，到目标设备上打开") }
+        } else if store.platform == "ios" {
+            openFile(sc)
+        } else {
+            prepareShare()
         }
     }
 
@@ -332,20 +362,10 @@ struct GenerateView: View {
             toast = L("系统没有列出可直接打开的 App，已改用分享面板")
         }
     }
-    private func openLink(_ link: String?, _ sc: ImportScheme) {
-        guard let link else { openRoot(sc, copied: false); return }
+    private func openLink(_ link: String, _ sc: ImportScheme) {
         guard let url = URL(string: link) else { toast = L("链接无效"); return }
         UIApplication.shared.open(url) { ok in
             DispatchQueue.main.async { toast = ok ? L("已交给 {}", sc.appName) : L("无法打开 {}，请确认已安装", sc.appName) }
-        }
-    }
-    private func openRoot(_ sc: ImportScheme, copied: Bool) {
-        guard let url = URL(string: sc.open) else { return }
-        UIApplication.shared.open(url) { ok in
-            DispatchQueue.main.async {
-                toast = ok ? (copied ? L("已复制配置并打开 {}，请在 App 内粘贴 / 新建配置", sc.appName) : L("已打开 {}；未填在线地址，请改用分享或复制导入", sc.appName))
-                           : L("无法打开 {}，请确认已安装", sc.appName)
-            }
         }
     }
     private func showConfigQR() {
