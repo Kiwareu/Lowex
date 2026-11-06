@@ -83,4 +83,18 @@ export const EXTRA_GROUPS:ExtraGroup[]=[
  G('trackers','追踪器 / 分析拦截（域名）','reject','REJECT',true,'中',
   '手写域名：Google/Meta/微软的广告与分析端点、Adjust、AppFlyer、Mixpanel、Amplitude、Segment、Hotjar、Criteo、Taboola、Outbrain、移动广告 SDK（Unity Ads、AppLovin、ironSource、Vungle、InMobi、Chartboost）以及国内友盟、CNZZ、TalkingData 等。只拒绝域名，不解密流量。放在服务分流之前；个别 App 登录或支付异常时，先关掉「拦截追踪器」。',
   `doubleclick.net googleadservices.com googlesyndication.com google-analytics.com app-measurement.com adservice.google.com pagead2.googlesyndication.com ads.google.com analytics.google.com adjust.com adjust.io appsflyer.com kochava.com singular.net mixpanel.com amplitude.com segment.io segment.com hotjar.com hotjar.io mouseflow.com fullstory.com scorecardresearch.com quantserve.com taboola.com outbrain.com criteo.com criteo.net adnxs.com rubiconproject.com pubmatic.com openx.net moatads.com amazon-adsystem.com adsrvr.org bat.bing.com clarity.ms ads.linkedin.com ads-twitter.com ads.tiktok.com analytics.tiktok.com unityads.unity3d.com applovin.com ironsrc.com mopub.com vungle.com inmobi.com chartboost.com flurry.com crashlytics.com umeng.com umengcloud.com cnzz.com talkingdata.com growingio.com sensorsdata.cn pangolin-sdk-toutiao.com gdt.qq.com adsmind.com ad.xiaomi.com`),
+ // —— 国产手机隐私拦截（2026-11-06 核查报告 §5/§6/§9.5；域名均有来源，未编造）——
+ // 只拦截上传，拦不住手机里录屏、截屏的动作本身；只在代理开着时生效，关了代理就不拦。
+ G('oppo-privacy','OPPO / 一加隐私拦截','reject','REJECT',true,'中',
+  '拦截 OPPO / 一加的遥测与上传域名（DCS 数据上报、广告统计等）。只拦上传，不拦手机里录屏、截屏本身；只在代理开着时生效。系统更新、推送等放行域名已排在前面。',
+  `dragate.dc.oppomobile.com dragate-in-dc.heytapmobile.com moa-upload-online.coloros.com sms.ads.heytapmobi.com data.sms.heytapmobi.com adx-in.ads.heytapmobile.com ads.heytapmobi.com ads.heytapmobile.com ads.oppomobile.com omes-sec.heytapmobi.com stat-in.dc.oppomobile.com i6.weather.oppomobile.com nearx.cn dcs.heytap.com stat.heytap.com dcs.oppo.com stat.oppo.com dcs.coloros.com conff.dc.oppomobile.com confe.dc.oppomobile.com`),
+ G('xiaomi-privacy','小米隐私拦截','reject','REJECT',true,'中',
+  '拦截小米的遥测与上传域名（含反诈通话音视频上传、SystemHelper 向联通上报设备与应用使用）。只拦上传，不拦手机里录屏、截屏本身；只在代理开着时生效。系统更新、账号、云服务等放行域名已排在前面。',
+  `detection-aigc.engine.miui.com flash.sec.miui.com dm.wo.com.cn tracking.miui.com tracking.intl.miui.com tracking.india.miui.com tracking.rus.miui.com tracking.eu.miui.com data.mistat.xiaomi.com mistat.xiaomi.com mistat.intl.xiaomi.com data.mistat.intl.xiaomi.com abtest.mistat.xiaomi.com api.ad.xiaomi.com api.ad.intl.xiaomi.com ad.xiaomi.com ad.intl.xiaomi.com sdkconfig.ad.xiaomi.com diagnosis.ad.xiaomi.com track.ad.xiaomi.com log.ad.xiaomi.com api.collect.data.intl.miui.com mqs-log.miui.com stat.miui.com stat.xiaomi.com log.avlyun.sec.miui.com logupdate.avlyun.sec.miui.com adv.sec.miui.com mazu.sec.miui.com data.sec.miui.com xlmc.sec.miui.com api.installer.xiaomi.com`),
+ G('privacy-system','系统 / 安全组件上传拦截（自选）','reject','REJECT',false,'高',
+  '默认关。勾选后拦截反诈、安全中心等系统组件的上传域名：AI 通话预警失效、骚扰拦截数据库不更新、NFC 门禁可能失效、USB 调试授权可能失败。110 / 120 应急通道不在这一项里。',
+  `detection-aigc.engine.miui.com flash.sec.miui.com engine.miui.com sec.miui.com fraud-detection.engine.miui.com api.sec.miui.com api.miui.security.xiaomi.com sec.resource.xiaomi.net srv.sec.intl.miui.com wo.com.cn nearx.cn dcs.heytap.com stat.heytap.com dcs.oppo.com stat.oppo.com dcs.coloros.com`),
+ G('privacy-emergency','110 / 120 应急通道拦截（高风险自选）','reject','REJECT',false,'高',
+  '默认关，单独开关。勾了会拦掉拨打 110 / 120 时的辅助上报（号码、时间、位置），只在你清楚接受这个风险时才勾。',
+  `eps.caict.ac.cn gateway-papa.cloud.weizhi.com`),
 ];

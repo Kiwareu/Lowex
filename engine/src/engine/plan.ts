@@ -72,6 +72,9 @@ export function wifiAllDomains(s:State):string[]{
   return[...set];
 }
 const SAFE_DIRECT=['weixin.qq.com','wx.qq.com','wechat.com','alipay.com','alipayobjects.com','tenpay.com','unionpay.com','95516.com'];
+/** 国产手机隐私拦截的放行例外（核查报告 §5 Tier C / §6 Tier C）：系统更新、推送、账号、云服务、应用商店。
+ *  必须排在拦截规则之前（先匹配先生效），否则拦截会误伤正常功能。 */
+const PRIVACY_DIRECT=['i.ota.foreign.coloros.com','otafs.foreign.coloros.com','saufs.foreign.coloros.com','push.heytapmobile.com','dcintl.push.heytapmobile.com','device-ups.push.heytapmobi.com','heytapdl.com','update.intl.miui.com','account.xiaomi.com','api.account.xiaomi.com','micloud.xiaomi.net','api.micloud.xiaomi.net','find.api.micloud.xiaomi.net','market.xiaomi.com','xmpush.global.xiaomi.com'];
 export const allRegions=(s:State):Region[]=>[...REGIONS,...(s.customRegions||[]).filter(r=>r.id&&r.regex)];
 export function makePlan(s:State):Plan{
   const client=CLIENTS.find(c=>c.id===s.client)!;
@@ -150,6 +153,8 @@ export function makePlan(s:State):Plan{
   if(o.stun!=='off')push({t:'stun',p:o.stun==='reject'?'REJECT':'PROXY'});
   push({t:'comment',v:'国内常用域名直连（放在广告拦截之前，防误伤）'});
   for(const d of SAFE_DIRECT)push({t:'suffix',v:d,p:'DIRECT'});
+  push({t:'comment',v:'厂商隐私拦截的放行例外（系统更新 / 推送 / 账号 / 云服务，先于拦截）'});
+  for(const d of PRIVACY_DIRECT)push({t:'suffix',v:d,p:'DIRECT'});
   const onIds=new Set(services.map(x=>x.g.id));
   const exMap:Record<string,string>={'apple-cn':'apple','steam-cn':'steam','google-cn':'google','microsoft-cn':'microsoft','win-update':'microsoft'};
   for(const e of DIRECT_EXC){const need=exMap[e.id];if(!need||onIds.has(need))push({t:'site',name:e.geosite,g:{id:e.id,name:e.id,category:'direct',cat:'direct',geosite:[e.geosite],geoip:[],def:'DIRECT',defOn:true,risk:'',notes:e.note},p:'DIRECT'})}
@@ -162,6 +167,13 @@ export function makePlan(s:State):Plan{
   if(o.telemetry&&eff(telG).on!==false)push({t:'site',name:'category-telemetry',g:telG,p:'REJECT'});
   {const trk=GROUPS.find(g=>g.id==='trackers');
    if(trk&&o.trackers!==false&&eff(trk).on!==false){push({t:'comment',v:'追踪器 / 分析拦截（只拒绝域名）'});for(const d of trk.domains||[])push({t:'suffix',v:d,p:'REJECT',via:'trackers'})}}
+  // 国产手机隐私拦截（OPPO / 一加、小米默认开；系统组件与 110/120 应急通道默认关，自选）
+  const priv=(id:string,comment:string)=>{const g=GROUPS.find(x=>x.id===id);
+    if(g&&eff(g).on!==false){push({t:'comment',v:comment});for(const d of g.domains||[])push({t:'suffix',v:d,p:'REJECT',via:id})}};
+  priv('oppo-privacy','OPPO / 一加隐私拦截');
+  priv('xiaomi-privacy','小米隐私拦截');
+  priv('privacy-system','系统 / 安全组件上传拦截（自选）');
+  priv('privacy-emergency','110 / 120 应急通道拦截（高风险自选）');
   // 服务（具体的在前）
   stage='service';
   const order=[...services];
@@ -219,7 +231,7 @@ function findConflicts(s:State,rules:Rule[],services:{g:RuleGroup;p:Policy}[],pn
     if(m.p==='REJECT'&&/(google|apple|microsoft|cloudflare|github)\.com$/.test(m.d))out.push({level:'warn',text:`拦截「${m.d}」可能让很多服务无法使用，请确认。`});
   }
   for(const x of services){if(x.g.risk==='高'&&(x.p==='PROXY'||x.p==='HOME'))out.push({level:'info',text:`「${x.g.name}」风控较敏感，出口建议选某个固定地区（手动组），不要用自动测速，否则 IP 频繁变动可能触发风控。`})}
-  for(const [id,g] of Object.entries(s.groups)){const grp=GROUP_BY_ID[id];if(!grp||!g.on)continue;if(g.policy.startsWith('R:')&&!regions.some(r=>'R:'+r.id===g.policy.split('/')[0]))out.push({level:'warn',text:`「${grp.name}」选的地区没有在「节点」页启用，已改为「一键代理」。`})}
+  for(const [id,g] of Object.entries(s.groups)){const grp=GROUP_BY_ID[id];if(!grp||!g.on)continue;if(g.policy?.startsWith('R:')&&!regions.some(r=>'R:'+r.id===g.policy.split('/')[0]))out.push({level:'warn',text:`「${grp.name}」选的地区没有在「节点」页启用，已改为「一键代理」。`})}
   if(o.ads!=='off')out.push({level:'info',text:'广告拦截排在服务分流之前：某个 App 或网站打不开时，先把「广告拦截」调成 Lite 或关闭试试。'});
   if(s.platform==='ios'&&s.apps.length)out.push({level:'info',text:'iOS 不能按 App 分流：你选的 App 已被换成它对应的服务组（见上方提示）。'});
   const dupRules=new Set<string>();for(const r of rules){if(r.t==='suffix'){const k=r.v;if(dupRules.has(k)&&r.st!=='service')out.push({level:'info',text:`域名 ${k} 在规则里出现了多次，只有第一条生效。`});dupRules.add(k)}}
